@@ -83,17 +83,35 @@ def cortex_env(label, cortex_home, jev="off"):
 
 
 def assert_cortex(env, cortex_home):
-    """`command -v cortex` must resolve inside the frozen checkout."""
-    p = subprocess.run(["bash", "-lc", "command -v cortex"], capture_output=True,
-                       text=True, env=env)
-    got = p.stdout.strip()
+    """Every way `cortex` can be reached must land in the frozen checkout.
+
+    Three, and all three are checked, because each one is how a real call arrives:
+
+      * this run's own PATH, which the autopilot and the benchmark inherit;
+      * a LOGIN shell's PATH, which is how `/harvest` and `/evolve` reach it from
+        inside a rollout — a login profile re-prepends ~/.local/bin, so prepending
+        the frozen bin/ here is not enough on its own;
+      * `cortex` with no PATH help at all.
+
+    A run measured with a different Cortex than it records is worthless, and the
+    cheapest way to be sure is to check rather than to arrange.
+    """
     want = str((cortex_home / "bin" / "cortex").resolve())
-    if not got:
-        die("no `cortex` on PATH")
-    if str(Path(got).resolve()) != want:
-        die(f"`cortex` resolves to {got}\n  expected the frozen checkout: {want}\n"
-            "  Refusing to run: a run measured with a different Cortex than it records is worthless.")
-    return got
+    seen = {}
+    seen["run PATH"] = shutil.which("cortex", path=env["PATH"])
+    seen["login shell"] = subprocess.run(["bash", "-lc", "command -v cortex"],
+                                         capture_output=True, text=True, env=env).stdout.strip()
+    seen["plain PATH"] = shutil.which("cortex")
+    wrong = {k: v for k, v in seen.items()
+             if not v or str(Path(v).resolve()) != want}
+    if wrong:
+        lines = "\n".join(f"    {k:12} -> {v or '(not found)'}" for k, v in seen.items())
+        die(f"`cortex` does not resolve to the frozen checkout everywhere.\n"
+            f"  want: {want}\n{lines}\n"
+            "  Point ~/.local/bin/cortex at the frozen worktree for the programme:\n"
+            f"    ln -sfn {cortex_home / 'bin' / 'cortex'} ~/.local/bin/cortex\n"
+            "  and record it in DEVIATIONS.md.")
+    return seen["run PATH"]
 
 
 def sh(cmd, env, cwd=None, log=None, check=True):

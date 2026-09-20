@@ -140,3 +140,38 @@ lab: refusing to have `bench.py report` write .../lab/bench/REPORT.md
 
 `lab/bin/verify-d0` was added to make the claim checkable at any point, and reports
 `1393 file(s) checked … UNCHANGED`.
+
+---
+
+## D-05 · `~/.local/bin/cortex` repointed at the frozen worktree
+
+**When:** 2026-09-20, Phase 1, before any evaluation rollout.
+**Data seen:** none.
+
+The brief's §3.2 asks that every run put the frozen checkout's `bin/` first on
+`PATH`. Asserting it turned out to be the interesting part: prepending the frozen
+`bin/` to a run's own `PATH` is **not** enough, because `/harvest` and `/evolve`
+reach `cortex` from inside a rollout through a **login** shell, and a login profile
+re-prepends `~/.local/bin` — which symlinked into the live working copy:
+
+```
+run-eval: `cortex` resolves to /home/samuele/.local/bin/cortex
+  expected the frozen checkout: .../cortex-eval-v1.0/bin/cortex
+  Refusing to run: a run measured with a different Cortex than it records is worthless.
+```
+
+So the symlink was repointed for the duration of the programme:
+
+```
+before: ~/.local/bin/cortex -> .../Cortex/bin/cortex          (the live checkout)
+after:  ~/.local/bin/cortex -> .../cortex-eval-v1.0/bin/cortex (the frozen tag)
+```
+
+The original target is recorded in `cortex-eval/cortex-symlink-before.txt` and is
+restored when the programme ends. `run-eval`'s assertion now checks **all three**
+ways `cortex` can be reached — the run's own PATH, a login shell's PATH, and the
+bare PATH — and refuses to start unless all three land in the frozen checkout.
+
+This is the deviation that matters least and was found the most usefully: without
+it, every run would have been driven by whatever the working checkout happened to
+contain that hour, and nothing in the data would have shown it.
