@@ -887,6 +887,66 @@ t_keep_requires_fired() {
   ok "$(echo "$j" | jq -r '[.gates_failed[] | startswith("gate5")] | any')" "true" "G5 and gate5 is named"
 }
 
+t_observe_efficiency_fields() {
+  # turns, tool_calls and read_contributing: the efficiency half of a rollout row.
+  # They are the reason the sweep row schema is 3 and not 2.
+  local H="$TMP/h4e-harness" W="$TMP/h4e-work" P="$TMP/h4e-prompt" S="$TMP/h4e.jsonl"
+  mkdir -p "$H/skills" "$H/rules" "$W"
+  echo "do it" > "$P"
+  local init; init=$(printf '{"type":"system","subtype":"init","cwd":"%s","skills":[],"claude_code_version":"2.1.276"}' "$W")
+  rd2() { printf '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"%s","name":"%s","input":{"file_path":"%s"}}]}}\n{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"%s","is_error":%s}]}}\n' "$1" "${4:-Read}" "$2" "$1" "${3:-false}"; }
+  local res='{"type":"result","num_turns":7,"usage":{"input_tokens":10,"output_tokens":5},"total_cost_usd":0.5}'
+  { echo "$init"; rd2 a "$W/CONTRIBUTING.md"; rd2 b "$W/src/calc.py"; echo "$res"; } > "$S"
+  local o; o=$(HX observe "$S" "$H" "$W" "$P")
+  ok "$(echo "$o" | jq -r .turns)" "7" "E turns comes from the result event"
+  ok "$(echo "$o" | jq -r .tool_calls)" "2" "E tool_calls counts the agent's tool uses, not the results"
+  ok "$(echo "$o" | jq -r .read_contributing)" "1" "E reading CONTRIBUTING.md is recorded"
+  { echo "$init"; rd2 b "$W/src/calc.py"; echo "$res"; } > "$S"
+  ok "$(HX observe "$S" "$H" "$W" "$P" | jq -r .read_contributing)" "0" "E not reading it is recorded as 0"
+  { echo "$init"; rd2 a "$W/CONTRIBUTING.md" true; echo "$res"; } > "$S"
+  ok "$(HX observe "$S" "$H" "$W" "$P" | jq -r .read_contributing)" "0" "E a Read that errored did not read it"
+  echo "see @CONTRIBUTING.md" > "$P"; { echo "$init"; echo "$res"; } > "$S"
+  ok "$(HX observe "$S" "$H" "$W" "$P" | jq -r .read_contributing)" "0" "E an @-mention is not a Read"
+  echo "do it" > "$P"
+  { echo "$init"; } > "$S"
+  ok "$(HX observe "$S" "$H" "$W" "$P" | jq -r .turns)" "null" "E no result event: turns is unknown, not 0"
+  echo "not json at all" > "$S"
+  local e; e=$(HX observe "$S" "$H" "$W" "$P")
+  ok "$(echo "$e" | jq -r '[.turns, .tool_calls, .read_contributing] | map(tostring) | join(",")')" "null,null,null" \
+     "E an unreadable stream reports every new field as unknown too"
+}
+
+t_sweep_row_schema_3() {
+  # A sweep writes schema 3 and carries the new fields; the readers must cope with
+  # BOTH, because D0's rows are schema 2 and will never have them.
+  local R="$TMP/h4s"; make_repo "$R"; STUB="$TMP/stubh4s"; LOG="$R/log"
+  mk_cand s3
+  stub "$STUB" 'if [ -d .claude/skills/s3 ]; then fire s3; sed -i "s/a - b/a + b/" src/calc.py; fi; exit 0'
+  sweep --candidate s3 --phase confirm >/dev/null
+  local f; f=$(ls -1t "$R/.evolve/runs"/*.jsonl | head -1)
+  ok "$(jq -r 'select(.event == "start") | .schema' "$f")" "3" "S3 a sweep declares schema 3"
+  ok "$(jq -s '[.[] | select(.v != null) | has("turns") and has("tool_calls") and has("read_contributing")] | all' "$f")" \
+     "true" "S3 every rollout row carries the efficiency fields"
+  # a schema-2 row (no new fields at all) still scores exactly as it did
+  local j2 j3
+  j3=$(score | jq -c '{verdict, candidate_fired_runs, candidate_visible_runs}')
+  python3 - "$f" <<'PYEOF'
+import json, sys
+p = sys.argv[1]
+out = []
+for line in open(p):
+    r = json.loads(line)
+    if r.get("event") == "start":
+        r["schema"] = 2
+    for k in ("turns", "tool_calls", "read_contributing"):
+        r.pop(k, None)
+    out.append(json.dumps(r))
+open(p, "w").write("\n".join(out) + "\n")
+PYEOF
+  j2=$(score | jq -c '{verdict, candidate_fired_runs, candidate_visible_runs}')
+  ok "$j2" "$j3" "S3 an old schema-2 row scores identically: the bump added fields, it changed no verdict"
+}
+
 t_observe_failure_unknown() {
   local R="$TMP/h8"; make_repo "$R"; STUB="$TMP/stubh8"; LOG="$R/log"
   mk_cand vbd
@@ -2871,6 +2931,7 @@ ALL_TESTS=(t_git_isolation t_infra_not_capability t_timeout_is_a_real_failure \
          t_preflight_still_works t_happy_path t_bad_input \
          t_rules_snapshot_overrides_base t_rule_fired_via_read t_rule_replace t_observe_forms \
          t_visible_notes t_legacy_no_visible t_keep_requires_fired t_observe_failure_unknown \
+         t_observe_efficiency_fields t_sweep_row_schema_3 \
          t_cross_tier_guard t_sweep_dry_run t_reach_uses_sweep_tasks t_task_id_and_sha_validation \
          t_config_guards t_cli_version_gate t_rule_promote_bury t_check_errors \
          t_check_folded_description t_live_items_never_block t_dead_glob_repair t_glob_unit \

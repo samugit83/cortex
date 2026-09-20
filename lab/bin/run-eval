@@ -1,0 +1,319 @@
+#!/usr/bin/env python3
+"""run-eval — one isolated evaluation run, from empty repository to exported rows.
+
+  run-eval new R1 [--control] [--jev off|on]    build the run's own copy of the lab
+  run-eval rounds R1 [--from 1] [--to 10]       drive the autopilot through the rounds
+  run-eval bench R1 [--arms a,b] [--k 5] [--train-k 3]
+                                                validate the holdout on this run's final
+                                                code, build the arms, run the benchmark
+  run-eval export R1                            append this run's rows to reports/data
+  run-eval env R1                               print the environment, for doing it by hand
+  run-eval list                                 what exists
+
+Every run gets its own repository, its own lab state, its own benchmark output and
+its own sandbox root, so two runs can never see each other and none of them can see
+D0. The Cortex under test is the frozen worktree (`--cortex`, default
+`../cortex-eval-v1.0`), put first on PATH and asserted before anything spends a
+token: a run measured with a different Cortex than it claims is worthless, and the
+cheapest way to be sure is to check rather than to arrange.
+
+Layout, all under `cortex-eval/`:
+
+    runs/R1/cortex-lab-R1/     the repository the run works in
+    runs/R1/state.json         the lab state
+    runs/R1/bench/             tasks.json, arms.json, results.jsonl, REPORT.md
+    runs/R1/sandbox/           environment.sandbox_root for this run only
+    runs/R1/manifest.json      what this run is, on which Cortex, with which judge
+    runs/R1/autopilot.log      the driver's own log
+"""
+import argparse
+import json
+import os
+import shutil
+import subprocess
+import sys
+from datetime import datetime
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+CORTEX = HERE.parent.parent
+WORKSPACE = CORTEX.parent / "cortex-eval"
+RUNS = WORKSPACE / "runs"
+D0_CONFIG = CORTEX.parent / "cortex-lab" / ".evolve" / "config.yaml"
+FROZEN = CORTEX.parent / "cortex-eval-v1.0"
+
+
+def die(msg, code=1):
+    print(f"run-eval: {msg}", file=sys.stderr)
+    sys.exit(code)
+
+
+def run_dir(label):
+    return RUNS / label
+
+
+def paths(label):
+    d = run_dir(label)
+    return {"dir": d, "repo": d / f"cortex-lab-{label}", "state": d / "state.json",
+            "bench": d / "bench", "sandbox": d / "sandbox",
+            "manifest": d / "manifest.json", "log": d / "autopilot.log",
+            "autopilot_json": d / "autopilot.json"}
+
+
+def cortex_env(label, cortex_home, jev="off"):
+    """The environment every command of this run inherits.
+
+    PATH puts the frozen Cortex first. JEV_* is set explicitly rather than left to
+    whatever the operator's .env says, because a run's treatment must not depend on
+    anyone's dotfiles.
+    """
+    p = paths(label)
+    env = dict(os.environ)
+    env["PATH"] = f"{cortex_home / 'bin'}{os.pathsep}" + env.get("PATH", "")
+    env["LAB_REPO"] = str(p["repo"])
+    env["LAB_STATE"] = str(p["state"])
+    env["BENCH_OUT"] = str(p["bench"])
+    env["BENCH_SANDBOX"] = str(p["sandbox"] / "bench")
+    env["DISABLE_AUTOUPDATER"] = "1"
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+    env["JEV_ENABLED"] = "1" if jev == "on" else "0"
+    if jev != "on":
+        env["JEV_API_KEY"] = ""                 # an empty value shadows a key set lower down
+    return env
+
+
+def assert_cortex(env, cortex_home):
+    """`command -v cortex` must resolve inside the frozen checkout."""
+    p = subprocess.run(["bash", "-lc", "command -v cortex"], capture_output=True,
+                       text=True, env=env)
+    got = p.stdout.strip()
+    want = str((cortex_home / "bin" / "cortex").resolve())
+    if not got:
+        die("no `cortex` on PATH")
+    if str(Path(got).resolve()) != want:
+        die(f"`cortex` resolves to {got}\n  expected the frozen checkout: {want}\n"
+            "  Refusing to run: a run measured with a different Cortex than it records is worthless.")
+    return got
+
+
+def sh(cmd, env, cwd=None, log=None, check=True):
+    print(f"$ {' '.join(str(c) for c in cmd)}", flush=True)
+    if log:
+        with open(log, "a") as fh:
+            fh.write(f"\n$ {' '.join(str(c) for c in cmd)}\n")
+        with open(log, "a") as fh:
+            p = subprocess.run(cmd, env=env, cwd=cwd, stdout=fh, stderr=subprocess.STDOUT)
+    else:
+        p = subprocess.run(cmd, env=env, cwd=cwd)
+    if check and p.returncode != 0:
+        die(f"failed ({p.returncode}): {' '.join(str(c) for c in cmd)}")
+    return p.returncode
+
+
+# ------------------------------------------------------------------- `new` --
+def write_config(repo, sandbox):
+    """D0's config, with only the sandbox root changed.
+
+    Everything else is copied byte for byte — the model pin, max_runs_per_cycle, the
+    parallel settings, the gates' thresholds — so that a difference between D0 and a
+    replicate cannot be a configuration difference.
+    """
+    text = D0_CONFIG.read_text(encoding="utf-8")
+    out, changed = [], False
+    for line in text.splitlines():
+        if line.strip().startswith("sandbox_root:"):
+            indent = line[:len(line) - len(line.lstrip())]
+            out.append(f"{indent}sandbox_root: {sandbox}   # this run only")
+            changed = True
+        else:
+            out.append(line)
+    if not changed:
+        die("D0's config.yaml has no environment.sandbox_root to redirect")
+    (repo / ".evolve" / "config.yaml").write_text("\n".join(out) + "\n", encoding="utf-8")
+
+
+def cmd_new(a):
+    p = paths(a.label)
+    cortex_home = Path(a.cortex).expanduser().resolve()
+    if p["dir"].exists() and not a.force:
+        die(f"{p['dir']} exists — pass --force to delete and rebuild it")
+    if p["dir"].exists():
+        shutil.rmtree(p["dir"])
+    for d in ("dir", "bench", "sandbox"):
+        p[d].mkdir(parents=True, exist_ok=True)
+    env = cortex_env(a.label, cortex_home, a.jev)
+    cortex = assert_cortex(env, cortex_home)
+
+    sh([str(HERE / "lab"), "build"], env, log=p["log"])
+    sh([cortex, "init", str(p["repo"])], env, log=p["log"])
+    write_config(p["repo"], p["sandbox"] / "evolve")
+    sh([cortex, "config"], env, cwd=p["repo"], log=p["log"])
+    sh(["git", "add", "-A"], env, cwd=p["repo"])
+    sh(["git", "commit", "-q", "-m", "Cortex: init"], env, cwd=p["repo"])
+
+    man = {"run": a.label, "kind": "control" if a.control else "evaluation",
+           "created": datetime.now().isoformat(timespec="seconds"),
+           "cortex_home": str(cortex_home),
+           "cortex_tag": git_describe(cortex_home), "cortex_commit": git_head(cortex_home),
+           "cortex_resolved": cortex, "jev": a.jev, "control": bool(a.control),
+           "repo": str(p["repo"]), "state": str(p["state"]), "bench": str(p["bench"]),
+           "sandbox_root": str(p["sandbox"] / "evolve"),
+           # The frozen tag freezes `cortex`, which is the system under test. The lab
+           # tooling that drives it (autopilot, lab, bench.py, scenarios.py) lives in
+           # the working checkout, so its commit is recorded here too: any change to
+           # the instrument between runs is then visible rather than assumed away.
+           "lab_commit": git_head(CORTEX), "lab_describe": git_describe(CORTEX),
+           "lab_dirty": bool(subprocess.run(["git", "status", "--porcelain"], cwd=CORTEX,
+                                            capture_output=True, text=True).stdout.strip()),
+           "model": "claude-haiku-4-5-20251001",
+           "cli_version": subprocess.run(["claude", "--version"], capture_output=True,
+                                         text=True).stdout.strip(),
+           "config_from": str(D0_CONFIG)}
+    p["manifest"].write_text(json.dumps(man, indent=1) + "\n")
+    print(json.dumps(man, indent=1))
+
+
+def git_describe(repo):
+    p = subprocess.run(["git", "describe", "--tags", "--always"], cwd=repo,
+                       capture_output=True, text=True)
+    return p.stdout.strip() or None
+
+
+def git_head(repo):
+    p = subprocess.run(["git", "rev-parse", "HEAD"], cwd=repo, capture_output=True, text=True)
+    return p.stdout.strip() or None
+
+
+# ---------------------------------------------------------------- `rounds` --
+def cmd_rounds(a):
+    p = paths(a.label)
+    man = json.loads(p["manifest"].read_text())
+    cortex_home = Path(man["cortex_home"])
+    env = cortex_env(a.label, cortex_home, man["jev"])
+    assert_cortex(env, cortex_home)
+    # the autopilot keeps its own log and turn record beside the run, not in Cortex
+    env["LAB_STATE"] = str(p["state"])
+    for r in range(a.start, a.end + 1):
+        cmd = [str(HERE / "autopilot"), "round", str(r), "--jev", man["jev"]]
+        if man["control"]:
+            cmd.append("--no-evolve")
+        print(f"\n===== {a.label} round {r} =====", flush=True)
+        rc = sh(cmd, env, check=False)
+        if rc != 0:
+            die(f"{a.label}: round {r} stopped with {rc}. Nothing is repaired by hand: "
+                "read the log, record a FINDING, and decide.")
+
+
+# ----------------------------------------------------------------- `bench` --
+def cmd_bench(a):
+    p = paths(a.label)
+    man = json.loads(p["manifest"].read_text())
+    cortex_home = Path(man["cortex_home"])
+    env = cortex_env(a.label, cortex_home, man["jev"])
+    assert_cortex(env, cortex_home)
+    bench = str(CORTEX / "lab" / "bench" / "bench.py")
+
+    if not a.skip_validate:
+        # §5.1: every holdout scenario is validated on THIS run's final code before it
+        # is benchmarked. One that fails is excluded from this run, in every arm, and
+        # listed — deciding that after seeing a result would not be an exclusion rule.
+        import types
+        src = (HERE / "scenarios.py").read_text()
+        m = types.ModuleType("sc")
+        exec(compile(src, "scenarios.py", "exec"), m.__dict__)
+        ids = [s["id"] for s in m.SCENARIOS if s["split"] == "holdout"]
+        out = p["dir"] / "holdout-validity.log"
+        print(f"validating {len(ids)} holdout scenarios on {a.label}'s final code -> {out}")
+        with open(out, "w") as fh:
+            rc = subprocess.run([str(HERE / "lab"), "validate", *ids], env=env,
+                                stdout=fh, stderr=subprocess.STDOUT).returncode
+        bad = [l.split()[1] for l in out.read_text().splitlines() if l.startswith("FAIL ")]
+        (p["dir"] / "excluded.json").write_text(json.dumps(
+            {"run": a.label, "excluded": bad, "reason": "reference fix or test invalid on final code",
+             "checked": ids, "at": datetime.now().isoformat(timespec="seconds")}, indent=1) + "\n")
+        if bad:
+            print(f"EXCLUDED from {a.label}: {', '.join(bad)} (see {out})")
+        if rc not in (0, 1):
+            die("holdout validation errored")
+
+    sh([sys.executable, bench, "prepare"], env)
+    sh([sys.executable, bench, "arms", "--arms", a.arms], env)
+    sh([sys.executable, bench, "run", "--k", str(a.k), "--arms", a.arms,
+        *(["--jobs", a.jobs] if a.jobs else [])], env, check=False)
+    sh([sys.executable, bench, "report"], env)
+
+
+# ---------------------------------------------------------------- `export` --
+def cmd_export(a):
+    p = paths(a.label)
+    man = json.loads(p["manifest"].read_text())
+    sh([str(HERE / "export-run"), "--run", a.label,
+        "--kind", "control" if man["control"] else "evaluation",
+        "--repo", str(p["repo"]), "--state", str(p["state"]),
+        "--bench", str(p["bench"]), "--autopilot", str(p["autopilot_json"]),
+        "--note", f"cortex {man.get('cortex_tag')} · jev {man['jev']}"], dict(os.environ))
+
+
+def cmd_env(a):
+    p = paths(a.label)
+    man = json.loads(p["manifest"].read_text())
+    env = cortex_env(a.label, Path(man["cortex_home"]), man["jev"])
+    for k in ("PATH", "LAB_REPO", "LAB_STATE", "BENCH_OUT", "BENCH_SANDBOX",
+              "JEV_ENABLED", "JEV_API_KEY", "DISABLE_AUTOUPDATER"):
+        print(f"export {k}={env[k]!r}")
+
+
+def cmd_list(_a):
+    if not RUNS.is_dir():
+        print("no runs yet")
+        return
+    for d in sorted(RUNS.glob("*")):
+        m = d / "manifest.json"
+        if m.is_file():
+            man = json.loads(m.read_text())
+            print(f"{man['run']:6} {man['kind']:11} cortex {str(man.get('cortex_tag')):12} "
+                  f"jev {man['jev']:3} {man['created']}")
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    n = sub.add_parser("new")
+    n.add_argument("label")
+    n.add_argument("--control", action="store_true")
+    n.add_argument("--jev", default="off", choices=["off", "on"])
+    n.add_argument("--cortex", default=str(FROZEN))
+    n.add_argument("--force", action="store_true")
+    n.set_defaults(func=cmd_new)
+
+    r = sub.add_parser("rounds")
+    r.add_argument("label")
+    r.add_argument("--from", dest="start", type=int, default=1)
+    r.add_argument("--to", dest="end", type=int, default=10)
+    r.set_defaults(func=cmd_rounds)
+
+    b = sub.add_parser("bench")
+    b.add_argument("label")
+    b.add_argument("--arms", default="none,evolved")
+    b.add_argument("--k", type=int, default=5)
+    b.add_argument("--jobs", default=None)
+    b.add_argument("--skip-validate", action="store_true")
+    b.set_defaults(func=cmd_bench)
+
+    e = sub.add_parser("export")
+    e.add_argument("label")
+    e.set_defaults(func=cmd_export)
+
+    v = sub.add_parser("env")
+    v.add_argument("label")
+    v.set_defaults(func=cmd_env)
+
+    sub.add_parser("list").set_defaults(func=cmd_list)
+
+    a = ap.parse_args()
+    return a.func(a) or 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

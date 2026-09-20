@@ -13,6 +13,14 @@
   --jev off | on             whether Cortex may consult Jev during this run.
                              DEFAULT: off, for every run that produces a primary
                              number. See "Jev" below.
+  --no-evolve                the CONTROL run: every session, every correction and
+                             every /harvest exactly as usual, and no /evolve at
+                             all. Corrections still fall if the agent is learning
+                             from the code it has already written, so this is what
+                             an evaluation run's fall has to beat (H4).
+  --max-turns N              cap one Claude call at N assistant turns (default 40).
+                             A call that hits it is recorded with hit_turn_cap.
+  --turn-timeout MIN         abandon one Claude call after MIN minutes (default 15).
 
 Every Claude turn is a real headless Claude Code session in cortex-lab (Haiku 4.5),
 fed exactly what the user would type: the scenario's prompt, the correction
@@ -45,6 +53,7 @@ judge without taking anyone's word for it.
 """
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -53,6 +62,8 @@ from datetime import datetime
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+import guard                                     # noqa: E402
 src = (HERE / "lab").read_text()
 L = types.ModuleType("labtool")
 L.__file__ = str(HERE / "lab")
@@ -68,6 +79,12 @@ DENY = ["Bash(sudo:*)", "Bash(git push:*)", "Bash(curl:*)", "Bash(wget:*)", "Bas
         "Bash(rm -rf $HOME:*)", "ScheduleWakeup", "CronCreate", "RemoteTrigger", "WebFetch", "WebSearch"]
 MAX_CORRECTIONS = 3
 MAX_EVOLVE_CALLS = 14
+# One user message must not be able to run for an hour or to spend a session's
+# whole budget in one turn. Both caps are recorded on the turn they stop, so a
+# run that hit them can be told from one that did not.
+MAX_TURNS = 40
+TURN_TIMEOUT_MIN = 15
+NO_EVOLVE = False
 
 # Jev state for this run, decided once in main() and recorded in the manifest.
 JEV = {"enabled": False, "model": None, "base_url": None}
@@ -94,6 +111,21 @@ def jev_env(base=None):
 
 
 ALIASES = ("jev-latest", "jev-preview")
+
+
+def resolve_flags(argv):
+    """--no-evolve, --max-turns and --turn-timeout, taken out of argv."""
+    global NO_EVOLVE, MAX_TURNS, TURN_TIMEOUT_MIN
+    if "--no-evolve" in argv:
+        argv.remove("--no-evolve")
+        NO_EVOLVE = True
+    for flag, setter in (("--max-turns", "MAX_TURNS"), ("--turn-timeout", "TURN_TIMEOUT_MIN")):
+        if flag in argv:
+            i = argv.index(flag)
+            if i + 1 >= len(argv) or not argv[i + 1].isdigit() or int(argv[i + 1]) < 1:
+                raise SystemExit(f"autopilot: {flag} takes a positive whole number")
+            globals()[setter] = int(argv[i + 1])
+            del argv[i:i + 2]
 
 
 def resolve_jev(argv):
@@ -124,12 +156,19 @@ def resolve_jev(argv):
 def write_manifest():
     """One record per run of what the judge was, beside the model under test."""
     man = {"what": "manifest", "t": datetime.now().isoformat(timespec="seconds"),
-           "rollout_model": MODEL, "jev": dict(JEV),
-           "cortex": subprocess.run(["command", "-v", "cortex"], capture_output=True,
-                                    text=True, shell=False).stdout.strip() or None}
+           "rollout_model": MODEL, "jev": dict(JEV), "no_evolve": NO_EVOLVE,
+           "turn_cap": MAX_TURNS, "turn_timeout_min": TURN_TIMEOUT_MIN,
+           "repo": str(REPO), "state": str(L.STATE),
+           "cortex": shutil.which("cortex"),
+           "cortex_version": subprocess.run(["cortex", "version"], capture_output=True,
+                                            text=True).stdout.strip() or None,
+           "cli_version": subprocess.run(["claude", "--version"], capture_output=True,
+                                         text=True).stdout.strip() or None}
     record(man)
     log(f"manifest: rollout model {MODEL} | jev "
-        + (f"ON ({JEV['model']})" if JEV["enabled"] else "OFF"))
+        + (f"ON ({JEV['model']})" if JEV["enabled"] else "OFF")
+        + (" | CONTROL RUN: no /evolve" if NO_EVOLVE else "")
+        + f" | cortex {man['cortex']}")
 
 
 def log(msg):
@@ -145,10 +184,17 @@ def record(entry):
     TURNS.write_text(json.dumps(data, indent=1))
 
 
-def turn(prompt, resume=None, what="", timeout=45 * 60):
-    """One user message to Claude Code, headless. Returns the result JSON (or an error stub)."""
+def turn(prompt, resume=None, what="", timeout=None):
+    """One user message to Claude Code, headless. Returns the result JSON (or an error stub).
+
+    Two caps bound a single message: --max-turns, which Claude Code enforces, and a
+    wall-clock timeout, which this does. Both are recorded on the turn they stopped
+    (`hit_turn_cap`, `rc` 124), because a capped turn is a different observation
+    from one that finished, and the report has to be able to count them.
+    """
+    timeout = TURN_TIMEOUT_MIN * 60 if timeout is None else timeout
     cmd = ["claude", "--model", MODEL, "--permission-mode", "bypassPermissions",
-           "--output-format", "json"]
+           "--output-format", "json", "--max-turns", str(MAX_TURNS)]
     if resume:
         cmd += ["--resume", resume]
     cmd += ["--disallowedTools", *DENY, "-p", prompt]
@@ -160,13 +206,18 @@ def turn(prompt, resume=None, what="", timeout=45 * 60):
         rc = p.returncode
     except subprocess.TimeoutExpired:
         out, rc = {}, 124
+    hit_cap = out.get("subtype") == "error_max_turns" or out.get("stop_reason") == "max_turns"
     res = {"what": what, "t": datetime.now().isoformat(timespec="seconds"), "rc": rc,
            "session": out.get("session_id") or resume, "cost": out.get("total_cost_usd"),
            "turns": out.get("num_turns"), "secs": round(time.time() - t0),
+           "hit_turn_cap": bool(hit_cap), "turn_cap": MAX_TURNS, "timeout_min": TURN_TIMEOUT_MIN,
            "is_error": out.get("is_error", rc != 0), "result": (out.get("result") or "")[-1500:]}
     record(res)
     log(f"   turn {what}: {res['secs']}s ${res['cost']} rc={rc}"
-        + (f" ERROR" if res["is_error"] else "") + f" | {res['result'][-160:].strip().replace(chr(10), ' ')}")
+        + (" ERROR" if res["is_error"] else "")
+        + (f" FINDING hit the {MAX_TURNS}-turn cap" if hit_cap else "")
+        + (f" FINDING timed out after {TURN_TIMEOUT_MIN} min" if rc == 124 else "")
+        + f" | {res['result'][-160:].strip().replace(chr(10), ' ')}")
     return res
 
 
@@ -252,6 +303,14 @@ def snapshot():
 
 
 def evolve(r):
+    if NO_EVOLVE:
+        # The control run's whole point: the same sessions, the same corrections,
+        # the same /harvest, and nothing learned. `lab commit` still runs, so the
+        # round's code and harvested tasks are committed exactly as usual.
+        log(f"round {r}: /evolve SKIPPED (control run)")
+        rc, out = lab("commit")
+        log(f"   {out.strip()}")
+        return
     start = snapshot()
     log(f"round {r}: /evolve (cycles so far {start['cycles']}, candidates {start['cands']})")
     stale = 0
@@ -345,6 +404,16 @@ def prune(max_turns=12):
 def main():
     argv = sys.argv[1:]
     resolve_jev(argv)                     # before anything spends a token
+    resolve_flags(argv)
+    known = {"round", "evolve", "prune", "ask", "reharvest"}
+    if not argv or argv[0] not in known:
+        print(__doc__.strip())
+        return 2
+    # nothing above this line writes anything; everything below it does
+    guard.protect(REPO, "run the autopilot against")
+    guard.protect(STATE_DIR, "write autopilot state into")
+    if NO_EVOLVE and argv[:1] == ["evolve"]:
+        raise SystemExit("autopilot: --no-evolve and `evolve` contradict each other")
     if len(argv) >= 1 and argv[0] == "prune":
         write_manifest()
         return prune()

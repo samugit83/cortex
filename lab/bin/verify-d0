@@ -1,0 +1,114 @@
+#!/usr/bin/env python3
+"""verify-d0 — prove the development run is still exactly what it was.
+
+The report's definition of done says "D0's data and results/FINAL.md are untouched
+and still reproduce". That is a claim, so it needs a command.
+
+  verify-d0                 check every protected path against the backup
+  verify-d0 --rehash        rewrite the backup's checksums (only right after taking
+                            a fresh backup; it makes the check vacuous otherwise)
+
+It compares the live D0 against `cortex-eval/backup-D0`, ignoring the three things
+that change without anything having been written: `.git/index` (a cache git
+refreshes on any read-only status), `__pycache__`, and the backup's own checksum
+file. Anything else is a real difference and is printed.
+"""
+import argparse
+import hashlib
+import os
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+CORTEX = HERE.parent.parent
+BACKUP = CORTEX.parent / "cortex-eval" / "backup-D0"
+SUMS = BACKUP / "SHA256SUMS.txt"
+IGNORE = (".git/index", "__pycache__", "SHA256SUMS.txt", ".git/FETCH_HEAD",
+          ".git/logs", ".git/gc.log")
+
+# live path  <-  backup copy
+PAIRS = [(CORTEX.parent / "cortex-lab", BACKUP / "cortex-lab"),
+         (CORTEX / "lab" / "state", BACKUP / "lab-state"),
+         (CORTEX / "lab" / "results", BACKUP / "lab-results")]
+# lab/bench holds D0's evidence beside tools that are meant to change, so only the
+# evidence is compared
+FILES = [(CORTEX / "lab" / "bench" / n, BACKUP / "lab-bench" / n)
+         for n in ("results.jsonl", "tasks.json", "REPORT.md")]
+
+
+def skip(rel):
+    return any(part in rel or rel.startswith(part) for part in IGNORE)
+
+
+def digest(p):
+    h = hashlib.sha256()
+    with open(p, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def walk(root):
+    out = {}
+    for d, dirs, fs in os.walk(root):
+        dirs[:] = [x for x in dirs if x != "__pycache__"]
+        for f in fs:
+            p = Path(d) / f
+            rel = str(p.relative_to(root))
+            if not skip(rel):
+                out[rel] = p
+    return out
+
+
+def compare(live, backup, problems):
+    if not backup.exists():
+        problems.append(f"no backup for {live}: {backup} is missing")
+        return 0
+    if live.is_file():
+        if not live.exists():
+            problems.append(f"MISSING {live}")
+            return 0
+        if digest(live) != digest(backup):
+            problems.append(f"CHANGED {live}")
+        return 1
+    a, b = walk(live), walk(backup)
+    for rel in sorted(set(b) - set(a)):
+        problems.append(f"DELETED {live / rel}")
+    for rel in sorted(set(a) - set(b)):
+        problems.append(f"ADDED   {live / rel}")
+    for rel in sorted(set(a) & set(b)):
+        if digest(a[rel]) != digest(b[rel]):
+            problems.append(f"CHANGED {live / rel}")
+    return len(a)
+
+
+def rehash():
+    lines = []
+    for root in (BACKUP,):
+        for rel, p in sorted(walk(root).items()):
+            lines.append(f"{digest(p)}  {rel}")
+    SUMS.write_text("\n".join(lines) + "\n")
+    print(f"{len(lines)} files -> {SUMS}")
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--rehash", action="store_true")
+    a = ap.parse_args()
+    if a.rehash:
+        rehash()
+        return 0
+    if not BACKUP.is_dir():
+        sys.exit(f"verify-d0: no backup at {BACKUP}. Take one before anything else.")
+    problems, n = [], 0
+    for live, backup in PAIRS + FILES:
+        n += compare(live, backup, problems)
+    for line in problems:
+        print(line)
+    print(f"\n{n} file(s) checked against {BACKUP}: "
+          + ("UNCHANGED" if not problems else f"{len(problems)} DIFFERENCE(S)"))
+    return 1 if problems else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

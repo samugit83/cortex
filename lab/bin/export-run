@@ -1,0 +1,382 @@
+#!/usr/bin/env python3
+"""export-run — turn one run into the flat rows every analysis script reads.
+
+  export-run --run D0 --kind development \
+             --repo ../cortex-lab --state lab/state/state.json \
+             --bench lab/bench --autopilot lab/state/autopilot.json \
+             --out lab/reports/data
+
+The programme has runs of five kinds (development, evaluation, control, gate,
+prune) produced months and tools apart, and the report's rule is that every
+number comes from a script reading `reports/data/`. That only works if D0 — which
+ran before any of this existed — is readable by exactly the same scripts as R1.
+So this reads a run wherever its pieces are and appends:
+
+  runs.jsonl      one row: what the run was, on which Cortex, with or without Jev
+  sessions.jsonl  one row per lab session: corrections, verdicts, cost
+  cycles.jsonl    one row per /evolve cycle: candidate, form, verdict, rollouts, cost
+  rollouts.jsonl  one row per rollout, from the benchmark AND from every sweep
+  items.jsonl     one row per item the run produced, kept or buried
+
+Every row carries `run`, so the files are append-only across runs and a reader
+never has to know which directory a number came from.
+
+READ-ONLY on the run. It writes only under --out, and it rewrites that run's own
+rows rather than appending twice, so it is safe to re-run.
+"""
+import argparse
+import json
+import os
+import re
+import subprocess
+import sys
+from datetime import datetime
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+CORTEX = HERE.parent.parent
+FILES = ("runs.jsonl", "sessions.jsonl", "cycles.jsonl", "sweeps.jsonl",
+         "rollouts.jsonl", "items.jsonl")
+
+
+def read_json(p, default=None):
+    try:
+        return json.loads(Path(p).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return default
+
+
+def read_lines(p):
+    try:
+        for line in Path(p).read_text(encoding="utf-8", errors="replace").splitlines():
+            line = line.strip()
+            if line:
+                try:
+                    yield json.loads(line)
+                except ValueError:
+                    continue
+    except OSError:
+        return
+
+
+def git(repo, *args):
+    p = subprocess.run(["git", *args], cwd=repo, capture_output=True, text=True)
+    return p.stdout.strip() if p.returncode == 0 else None
+
+
+# --------------------------------------------------------------- the sweeps --
+def sweeps(evolve):
+    """(header, rows) per sweep file, newest last. The header carries the
+    candidate, the phase and the schema; the rows are the rollouts."""
+    runs = Path(evolve) / "runs"
+    for f in sorted(runs.glob("*.jsonl")) if runs.is_dir() else []:
+        hdr, rows, end = None, [], None
+        for r in read_lines(f):
+            if r.get("event") == "start":
+                hdr = r
+            elif r.get("event") in ("done", "truncated", "incomplete"):
+                end = r
+            elif r.get("v") is not None:
+                rows.append(r)
+        if hdr is not None:
+            yield f, hdr, rows, end
+
+
+# ------------------------------------------------------------- the journal --
+FIELD = re.compile(r"^(kind|paths|theme|layer|screen|confirm|recheck|protected|DECISION|suite|notes?)"
+                   r":\s*(.*)$")
+
+
+def journal_entries(evolve):
+    """The journal is written for a person, so it is parsed leniently: an entry
+    is a `## ` heading plus the `field: value` lines under it. Anything that does
+    not parse is kept verbatim in `raw`, never dropped."""
+    text = ""
+    try:
+        text = (Path(evolve) / "journal.md").read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return []
+    out = []
+    for block in re.split(r"^## ", text, flags=re.M)[1:]:
+        lines = block.splitlines()
+        head = lines[0].strip()
+        m = re.match(r"(\d{4}-\d{2}-\d{2})\s+(.*)$", head)
+        entry = {"date": m.group(1) if m else None,
+                 "name": (m.group(2) if m else head).strip() or None,
+                 "raw": "## " + block.rstrip()}
+        for line in lines[1:]:
+            f = FIELD.match(line)
+            if f:
+                key = "notes" if f.group(1).startswith("note") else f.group(1).lower()
+                entry[key] = (entry.get(key, "") + " " + f.group(2).strip()).strip()
+        d = entry.get("decision", "")
+        # Only the DECISION line decides. The word "barren" appears in prose all
+        # over this journal; reading it as a verdict turned an experimenter's note
+        # into a cycle the first time this was written.
+        entry["verdict"] = ("KEEP" if d.startswith("KEEP") else
+                            "KILL" if d.startswith("KILL") else
+                            "BARREN" if d.upper().startswith("BARREN") or entry["name"] == "(barren)"
+                            else (d.split()[0] if d else None))
+        # A journal entry is not the same thing as a /evolve cycle. The journal also
+        # carries the experimenter's own notes and re-tests, in parentheses, and
+        # `cortex cycle` never counted those: `.evolve/state.json`'s counter is the
+        # authority and this rule reproduces it exactly (10 named + 7 barren = 17).
+        entry["is_cycle"] = bool(entry["name"] == "(barren)"
+                                 or (entry["verdict"] in ("KEEP", "KILL")
+                                     and "(" not in (entry["name"] or "")))
+        entry["journal_index"] = len(out)
+        out.append(entry)
+    return out
+
+
+def gates_failed(entry):
+    """Which gate the journal says killed it, when it says."""
+    d = (entry.get("decision") or "") + " " + (entry.get("notes") or "")
+    return sorted(set(re.findall(r"gate\s*(\d+)", d, re.I)))
+
+
+# ------------------------------------------------------------------- items --
+def items(repo, evolve):
+    out = []
+    for d in sorted((Path(repo) / ".claude" / "skills").glob("*")):
+        if (d / "SKILL.md").is_file():
+            out.append({"name": d.name, "kind": "skill", "fate": "kept",
+                        "text": (d / "SKILL.md").read_text(encoding="utf-8", errors="replace")})
+    for f in sorted((Path(repo) / ".claude" / "rules").glob("*.md")):
+        out.append({"name": f.stem, "kind": "rule", "fate": "kept",
+                    "text": f.read_text(encoding="utf-8", errors="replace")})
+    gy = Path(evolve) / "graveyard"
+    for d in sorted(p for p in gy.glob("*") if p.is_dir()) if gy.is_dir() else []:
+        f = (d / "SKILL.md") if (d / "SKILL.md").is_file() else (d / "RULE.md")
+        out.append({"name": d.name, "kind": "skill" if f.name == "SKILL.md" else "rule",
+                    "fate": "buried",
+                    "text": f.read_text(encoding="utf-8", errors="replace") if f.is_file() else "",
+                    "why": (d / "BURIED.md").read_text(encoding="utf-8", errors="replace")[:4000]
+                           if (d / "BURIED.md").is_file() else None})
+    return out
+
+
+def item_meta(text):
+    """tier, paths and always-on characters, by Cortex's own accounting."""
+    fm = {}
+    if text.startswith("---\n"):
+        end = text.find("\n---\n", 3)
+        if end != -1:
+            for line in text[4:end + 1].splitlines():
+                if ":" in line and not line.startswith((" ", "-", "\t")):
+                    k, v = line.split(":", 1)
+                    fm[k.strip()] = v.strip()
+            paths = re.findall(r'^\s*-\s*"?([^"\n]+)"?\s*$', text[4:end + 1], re.M)
+        else:
+            paths = []
+    else:
+        paths = []
+    return {"description": fm.get("description"), "paths": paths,
+            "chars": len(text)}
+
+
+# ---------------------------------------------------------------- sessions --
+def sessions(run, state, autopilot, scenarios):
+    st = read_json(state, {}) or {}
+    turns = read_json(autopilot, []) or []
+    by_sid = {}
+    for t in turns:
+        what = t.get("what") or ""
+        sid = what.split()[0] if what and what.split() else None
+        if sid and re.fullmatch(r"H?[A-E]\d\d?", sid):
+            by_sid.setdefault(sid, []).append(t)
+    out = []
+    for sid, rec in sorted((st.get("scenarios") or {}).items()):
+        s = scenarios.get(sid, {})
+        attempts = rec.get("attempts") or []
+        verdicts = [a.get("verdict") for a in attempts]
+        ts = by_sid.get(sid, [])
+        out.append({
+            "run": run, "sid": sid, "round": s.get("round"), "family": s.get("family"),
+            "split": s.get("split"), "title": s.get("title"),
+            "status": rec.get("status"), "task": rec.get("task"), "base": rec.get("base"),
+            "attempts": len(attempts), "verdicts": verdicts,
+            # a correction is every verdict that was not already 'ok'
+            "corrections": sum(1 for v in verdicts[:-1] if v != "ok") if verdicts else 0,
+            "right_first_time": int(bool(verdicts) and verdicts[0] == "ok"),
+            "ended_ok": int(bool(verdicts) and verdicts[-1] == "ok"),
+            "harvested": bool(rec.get("task")),
+            "turns": sum(t.get("turns") or 0 for t in ts) or None,
+            "cost_usd": round(sum(t.get("cost") or 0 for t in ts), 4) or None,
+            "secs": sum(t.get("secs") or 0 for t in ts) or None,
+            "hit_turn_cap": int(any(t.get("hit_turn_cap") for t in ts)),
+            "claude_turns": len(ts) or None,
+        })
+    return out
+
+
+def scenario_index():
+    import types
+    src = (HERE / "scenarios.py").read_text()
+    m = types.ModuleType("sc")
+    exec(compile(src, "scenarios.py", "exec"), m.__dict__)
+    rounds = {sid: r for r, ids in m.ROUNDS.items() for sid in ids}
+    return {s["id"]: {"family": s["family"], "split": s["split"], "title": s["title"],
+                      "round": rounds.get(s["id"])} for s in m.SCENARIOS}
+
+
+# ---------------------------------------------------------------- rollouts --
+def bench_rollouts(run, bench):
+    tasks = read_json(Path(bench) / "tasks.json", {}) or {}
+    base = {t["id"]: t.get("base") for t in tasks.get("tasks", [])}
+    for r in read_lines(Path(bench) / "results.jsonl"):
+        yield {"run": run, "source": "bench", "arm": r.get("arm"), "task": r.get("task"),
+               "split": r.get("split"), "family": r.get("family"), "r": r.get("r"),
+               "pass": r.get("pass"), "valid": r.get("valid"), "verdict": r.get("verdict"),
+               "secs": r.get("secs"), "tokens": r.get("tokens"), "cost_usd": r.get("cost_usd"),
+               "turns": r.get("turns"), "tool_calls": r.get("tool_calls"),
+               "read_contributing": r.get("read_contributing"),
+               "visible": r.get("visible"), "fired": r.get("skills"), "rules": r.get("rules"),
+               "base": base.get(r.get("task")), "t": r.get("t")}
+
+
+def sweep_rollouts(run, evolve):
+    for f, hdr, rows, end in sweeps(evolve):
+        for r in rows:
+            yield {"run": run, "source": "sweep", "sweep": f.name,
+                   "candidate": hdr.get("candidate") or None,
+                   "candidate_kind": hdr.get("candidate_kind") or None,
+                   "candidate_tier": hdr.get("candidate_tier") or None,
+                   "phase": hdr.get("phase"), "schema": hdr.get("schema"),
+                   "arm": r.get("v"), "task": r.get("t"), "r": r.get("r"),
+                   "pass": r.get("pass"), "valid": r.get("valid"), "verdict": r.get("why") or None,
+                   "secs": r.get("secs"), "wall_secs": r.get("wall_secs"),
+                   "tokens": r.get("tokens"), "cost_usd": r.get("cost_usd"),
+                   "turns": r.get("turns"), "tool_calls": r.get("tool_calls"),
+                   "read_contributing": r.get("read_contributing"),
+                   "visible": r.get("visible"), "fired": r.get("skills"), "rules": r.get("rules"),
+                   "model": hdr.get("model"), "cli_version": r.get("cli_version")}
+
+
+# ------------------------------------------------------------------ cycles --
+def sweep_rows(run, evolve):
+    """One row per sweep: the machine-readable half of what a cycle cost.
+
+    Sweeps are NOT attributed to a journal entry here. A candidate can be swept in
+    more than one cycle under the same name (D0 swept `check-changelog-on-shop-edits`
+    twice and `clock-in-billing` three), and a name-only join silently adds those
+    together — which is how a buried candidate first came out of this exporter with
+    406 rollouts and a KEEP. The analysis joins on name AND time, or reports sweeps
+    as the cost unit, and says which.
+    """
+    out = []
+    for f, hdr, rows, end in sweeps(evolve):
+        out.append({"run": run, "sweep": f.name, "candidate": hdr.get("candidate") or None,
+                    "replaced": hdr.get("replaced") or None,
+                    "kind": hdr.get("candidate_kind") or None,
+                    "tier": hdr.get("candidate_tier") or None,
+                    "phase": hdr.get("phase"), "mode": hdr.get("mode"),
+                    "k": hdr.get("k"), "tasks": hdr.get("tasks"),
+                    "schema": hdr.get("schema"), "model": hdr.get("model"),
+                    "cli_version": hdr.get("cli_version"), "workers": hdr.get("workers"),
+                    "started": hdr.get("t"), "epoch": hdr.get("epoch"),
+                    "ended": (end or {}).get("t"), "outcome": (end or {}).get("event"),
+                    "rollouts": len(rows),
+                    "invalid": sum(1 for r in rows if not r.get("valid")),
+                    "passed": sum(1 for r in rows if r.get("pass")),
+                    "cost_usd": round(sum(r.get("cost_usd") or 0 for r in rows), 4) or None,
+                    "secs": sum(r.get("secs") or 0 for r in rows) or None})
+    return out
+
+
+def cycles(run, evolve):
+    """One row per journal entry, with `is_cycle` saying which of them `cortex
+    cycle` counted. The journal's own fields are carried through verbatim."""
+    out = []
+    for e in journal_entries(evolve):
+        out.append({"run": run, "journal_index": e["journal_index"], "is_cycle": e["is_cycle"],
+                    "name": e.get("name"), "date": e.get("date"),
+                    "verdict": e.get("verdict"), "kind": e.get("kind"),
+                    "paths": e.get("paths"), "theme": e.get("theme"), "layer": e.get("layer"),
+                    "screen": e.get("screen"), "confirm": e.get("confirm"),
+                    "recheck": e.get("recheck"), "protected": e.get("protected"),
+                    "suite": e.get("suite"), "decision": e.get("decision"),
+                    "notes": e.get("notes"), "gates_failed": gates_failed(e),
+                    "raw": e.get("raw")})
+    return out
+
+
+# -------------------------------------------------------------------- main --
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--run", required=True, help="the run's label, e.g. D0 or R1")
+    ap.add_argument("--kind", default="evaluation",
+                    choices=["development", "evaluation", "control", "gate", "prune",
+                             "model-change", "external"])
+    ap.add_argument("--repo", required=True)
+    ap.add_argument("--state", default=None, help="the lab state file")
+    ap.add_argument("--bench", default=None, help="the benchmark output directory")
+    ap.add_argument("--autopilot", default=None, help="autopilot.json")
+    ap.add_argument("--evolve", default=None, help="defaults to <repo>/.evolve")
+    ap.add_argument("--note", default=None)
+    ap.add_argument("--out", default=str(CORTEX / "lab" / "reports" / "data"))
+    a = ap.parse_args()
+
+    repo = Path(a.repo).expanduser().resolve()
+    evolve = Path(a.evolve).expanduser() if a.evolve else repo / ".evolve"
+    out = Path(a.out).expanduser()
+    out.mkdir(parents=True, exist_ok=True)
+    idx = scenario_index()
+
+    sess = sessions(a.run, a.state, a.autopilot, idx) if a.state else []
+    cyc = cycles(a.run, evolve)
+    sw = sweep_rows(a.run, evolve)
+    rolls = (list(bench_rollouts(a.run, a.bench)) if a.bench else []) + list(sweep_rollouts(a.run, evolve))
+    its = []
+    for it in items(repo, evolve):
+        its.append({"run": a.run, **it, **item_meta(it["text"])})
+
+    man = read_json(a.autopilot, []) or []
+    manifest = next((t for t in reversed(man) if t.get("what") == "manifest"), {})
+    arms = read_json(Path(a.bench) / "arms.json", {}) if a.bench else {}
+    row = {
+        "run": a.run, "kind": a.kind, "note": a.note,
+        "repo": str(repo), "evolve": str(evolve), "state": a.state, "bench": a.bench,
+        "head": git(repo, "rev-parse", "HEAD"), "commits": git(repo, "rev-list", "--count", "HEAD"),
+        "cortex": manifest.get("cortex"), "cortex_version": manifest.get("cortex_version"),
+        "cli_version": manifest.get("cli_version"),
+        "rollout_model": manifest.get("rollout_model"),
+        "jev": manifest.get("jev") or {"enabled": None},
+        "no_evolve": manifest.get("no_evolve"),
+        "turn_cap": manifest.get("turn_cap"), "turn_timeout_min": manifest.get("turn_timeout_min"),
+        "sessions": len(sess), "cycles": len([c for c in cyc if c.get("is_cycle")]),
+        "journal_entries": len(cyc), "sweeps": len(sw),
+        "kept": sorted(i["name"] for i in its if i["fate"] == "kept"),
+        "buried": sorted(i["name"] for i in its if i["fate"] == "buried"),
+        "rollouts": len(rolls),
+        "sweep_rollouts": sum(1 for r in rolls if r["source"] == "sweep"),
+        "bench_rollouts": sum(1 for r in rolls if r["source"] == "bench"),
+        "arms": {k: v for k, v in arms.items() if k not in ("built", "repo")} if arms else None,
+        # Three separable costs: the rollouts (sweeps + benchmark), and every Claude
+        # turn the autopilot drove (sessions, corrections, /harvest, /evolve, /prune).
+        # Summing session rows alone misses the /evolve turns, which is most of the
+        # difference between $148 and the $155 D0 reported.
+        "rollout_cost_usd": round(sum(r.get("cost_usd") or 0 for r in rolls), 2),
+        "agent_cost_usd": round(sum(t.get("cost") or 0 for t in man
+                                    if isinstance(t.get("cost"), (int, float))), 2),
+        "cost_usd": round(sum(r.get("cost_usd") or 0 for r in rolls)
+                          + sum(t.get("cost") or 0 for t in man
+                                if isinstance(t.get("cost"), (int, float))), 2),
+        "exported": datetime.now().isoformat(timespec="seconds"),
+    }
+
+    for fname, rows in (("runs.jsonl", [row]), ("sessions.jsonl", sess),
+                        ("cycles.jsonl", cyc), ("sweeps.jsonl", sw),
+                        ("rollouts.jsonl", rolls), ("items.jsonl", its)):
+        p = out / fname
+        keep = [r for r in read_lines(p) if r.get("run") != a.run]   # replace this run's rows
+        with open(p, "w", encoding="utf-8") as fh:
+            for r in keep + rows:
+                fh.write(json.dumps(r, sort_keys=True) + "\n")
+        print(f"{fname:16} +{len(rows):5}  (total {len(keep) + len(rows)})")
+    print(f"-> {out}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -37,6 +37,7 @@ HERE = Path(__file__).resolve().parent
 LAB_HOME = HERE.parent                       # Cortex/lab
 sys.path.insert(0, str(HERE))
 import scenarios as S                        # noqa: E402
+import guard                                 # noqa: E402
 
 REPO = Path(os.environ.get("LAB_REPO", LAB_HOME.parent.parent / "cortex-lab"))
 STATE = Path(os.environ.get("LAB_STATE", LAB_HOME / "state" / "state.json"))
@@ -68,6 +69,7 @@ def load_state():
 
 
 def save_state(st):
+    guard.protect(STATE, "write the lab state to")
     STATE.parent.mkdir(parents=True, exist_ok=True)
     tmp = STATE.with_suffix(".tmp")
     tmp.write_text(json.dumps(st, indent=2, sort_keys=True) + "\n")
@@ -692,9 +694,14 @@ def cmd_rounds(args):
 COMMANDS = {"build": cmd_build, "validate": cmd_validate, "next": cmd_next, "verify": cmd_verify,
             "done": cmd_done, "prompt": cmd_prompt, "status": cmd_status, "audit": cmd_audit,
             "rounds": cmd_rounds, "commit": cmd_commit}
+# commands that change the lab repository. `validate` and `audit` clone it to a
+# temp directory and never write to it; `status` and `prompt` only read.
+WRITES_REPO = {"build", "next", "done", "commit"}
 
 if __name__ == "__main__":
     if len(sys.argv) < 2 or sys.argv[1] not in COMMANDS:
         print(__doc__.strip())
         sys.exit(2)
+    if sys.argv[1] in WRITES_REPO:
+        guard.protect(REPO, f"run `lab {sys.argv[1]}` against")
     sys.exit(COMMANDS[sys.argv[1]](sys.argv[2:]) or 0)

@@ -633,15 +633,18 @@ class ListCategoryTests(unittest.TestCase):
 ''', "\nfrom tests.support import run_cli")},
     prompt=("Support wants `shop list --category <name>` to list one category only. QA added "
             "tests/test_list_category.py. Please add the option."),
+    # `cmd_list`'s body and the `--sort` line are both rewritten by A01/A04/A05
+    # (training), so a reference fix anchored there cannot be applied to a finished
+    # run's code. Filtering the rows is less elegant than filtering the products,
+    # and it is the version that survives a run.
     solve=[("replace", "shop/cli.py",
-            "from .catalog import find, load_catalog, sort_products\n",
-            "from .catalog import find, in_category, load_catalog, sort_products\n"),
+            '    print(format_table(["SKU", "Name", "Category", "Price", "Stock"], rows))\n',
+            '    if args.category:\n        rows = [r for r in rows if r[2] == args.category]\n'
+            '    print(format_table(["SKU", "Name", "Category", "Price", "Stock"], rows))\n'),
            ("replace", "shop/cli.py",
-            "def cmd_list(args) -> int:\n    products = sort_products(load_catalog(args.catalog), args.sort)\n",
-            "def cmd_list(args) -> int:\n    products = sort_products(load_catalog(args.catalog), args.sort)\n    if args.category:\n        products = in_category(products, args.category)\n"),
-           ("replace", "shop/cli.py",
-            '    p.add_argument("--sort", choices=["name", "price"], default="name")\n',
-            '    p.add_argument("--sort", choices=["name", "price"], default="name")\n    p.add_argument("--category", help="only this category")\n'),
+            '    p = sub.add_parser("list", help="list the products")\n',
+            '    p = sub.add_parser("list", help="list the products")\n'
+            '    p.add_argument("--category", help="only this category")\n'),
            ("changelog", "Added", "`shop list --category <name>` lists one category.")],
 )
 
@@ -1303,21 +1306,604 @@ class StaleStockTests(unittest.TestCase):
     prompt=("Purchasing wants a list of products not restocked for 60 days. Please add "
             "stale_stock(products, days=60, today=None) to shop/catalog.py, `today` defaulting "
             "to the current date. Tests: tests/test_stale_stock.py."),
-    solve=[("replace", "shop/catalog.py", "from datetime import date\n",
-            "from datetime import date, timedelta\n"),
-           ("replace", "shop/catalog.py", "from .billing.money import Money\n",
-            "from . import clock\nfrom .billing.money import Money\n"),
+    # Anchored on the __future__ line: E04 (training) rewrites BOTH of catalog.py's
+    # import lines, so a reference fix anchored there cannot be applied to a finished
+    # run's code and the scenario could not be validated where it matters. Importing
+    # timedelta and clock again is harmless when E04's fix already imported them.
+    solve=[("replace", "shop/catalog.py", "from __future__ import annotations\n",
+            "from __future__ import annotations\n\nfrom datetime import timedelta\n\nfrom . import clock\n"),
            ("write_append", "shop/catalog.py",
             "\n\ndef stale_stock(products: list[Product], days: int = 60, today: date | None = None) -> list[Product]:\n"
             "    \"\"\"Products whose last delivery is more than `days` days old.\"\"\"\n"
             "    cutoff = (today or clock.today()) - timedelta(days=days)\n"
             "    return [p for p in products if p.restocked < cutoff]\n")],
-    naive=[("replace", "shop/catalog.py", "from datetime import date\n",
-            "from datetime import date, timedelta\n"),
+    naive=[("replace", "shop/catalog.py", "from __future__ import annotations\n",
+            "from __future__ import annotations\n\nfrom datetime import timedelta\n"),
            ("write_append", "shop/catalog.py",
             "\n\ndef stale_stock(products: list[Product], days: int = 60, today: date | None = None) -> list[Product]:\n"
             "    cutoff = (today or date.today()) - timedelta(days=days)\n"
             "    return [p for p in products if p.restocked < cutoff]\n")],
+)
+
+# ==================================================== the second holdout set ===
+# HA4-HA6, HB4-HB6, HC4-HC6, HD4-HD6, HE4-HE6: fifteen more holdout scenarios, so
+# every family has SIX instead of three and a per-family number means something.
+#
+# HOW THEY WERE WRITTEN, because it is what makes them honest. The development run
+# D0 had already finished when these were written, so its evolved items were known.
+# Each scenario here was derived ONLY from CONTRIBUTING.md and its family's
+# definition at the top of this file — never from the text of any evolved item, and
+# never from what D0's harness happened to be good at. The report says so openly in
+# its threats section: the discipline is the mitigation, not a proof.
+#
+# Two mechanical rules keep them measurable:
+#   * each one touches code NO TRAINING scenario touches, so it still fails on
+#     whatever final code a run produces (a training fix must never have solved it);
+#   * for A, B, C and E there is a `naive` fix that PASSES the scenario's own test
+#     and breaks only the house rule, so the lint / changelog half of the oracle is
+#     the only thing that can tell them apart.
+#
+# They are NOT in ROUNDS: nothing here is ever run as a training session.
+
+# ------------------------------------------------------------------ A: 4-6 ---
+scenario(
+    id="HA4", family="A", split="holdout", title="export to a file",
+    author=PM, message="test(cli): export --output writes a file (PROD-63)",
+    test="tests.test_export_output",
+    files={"tests/test_export_output.py": unit('''
+class ExportOutputTests(unittest.TestCase):
+    def test_writes_the_file(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "out.csv")
+            code, out, _ = run_cli("export", ORDERS, "--format", "csv", "--output", path)
+            self.assertEqual(code, 0)
+            self.assertEqual(out, "")
+            with open(path, encoding="utf-8") as fh:
+                self.assertIn("A-1001", fh.read())
+
+    def test_without_output_it_still_prints(self):
+        code, out, _ = run_cli("export", ORDERS, "--format", "csv")
+        self.assertEqual(code, 0)
+        self.assertIn("A-1001", out)
+''', "import os\nimport tempfile\n\nfrom tests.support import ORDERS, run_cli")},
+    prompt=("Support exports orders by copying them out of the terminal. Please make "
+            "`shop export <orders.json> --format csv --output out.csv` write the export to "
+            "that file and print nothing; without --output it should print as it does today. "
+            "QA added tests/test_export_output.py."),
+    solve=[("replace", "shop/cli.py",
+            "    sys.stdout.write(exporter.export(load_orders(args.orders)))\n    return 0\n",
+            "    text = exporter.export(load_orders(args.orders))\n"
+            "    if args.output:\n"
+            "        with open(args.output, \"w\", encoding=\"utf-8\") as fh:\n"
+            "            fh.write(text)\n"
+            "    else:\n"
+            "        sys.stdout.write(text)\n"
+            "    return 0\n"),
+           ("replace", "shop/cli.py",
+            "    p.add_argument(\"--format\", required=True, help=f\"one of: {', '.join(available())}\")\n",
+            "    p.add_argument(\"--format\", required=True, help=f\"one of: {', '.join(available())}\")\n"
+            "    p.add_argument(\"--output\", help=\"write to this file instead of stdout\")\n"),
+           ("changelog", "Added",
+            "`shop export --output FILE` writes the export to a file instead of stdout.")],
+)
+
+scenario(
+    id="HA5", family="A", split="holdout", title="invoice item count",
+    author=PM, message="test(cli): the invoice says how many items (PROD-71)",
+    test="tests.test_invoice_items",
+    files={"tests/test_invoice_items.py": unit('''
+class InvoiceItemsTests(unittest.TestCase):
+    def test_items_line_before_the_subtotal(self):
+        code, out, _ = run_cli("invoice", CART)
+        self.assertEqual(code, 0)
+        heads = [l for l in out.splitlines() if l.startswith(("Items:", "Subtotal:"))]
+        self.assertEqual(heads[0], "Items: 3")
+        self.assertTrue(heads[1].startswith("Subtotal:"))
+''', "\nfrom tests.support import CART, run_cli")},
+    prompt=("Accounts cannot tell at a glance how big an invoice is. Please make "
+            "`shop invoice` print a line `Items: 3` (the number of items) immediately "
+            "before the Subtotal line. QA added tests/test_invoice_items.py."),
+    solve=[("replace", "shop/cli.py",
+            "    print(f\"Subtotal: {format_money(inv.subtotal)}\")\n",
+            "    print(f\"Items: {sum(l.qty for l in inv.lines)}\")\n"
+            "    print(f\"Subtotal: {format_money(inv.subtotal)}\")\n"),
+           ("changelog", "Added",
+            "`shop invoice` prints an `Items:` line with the number of items.")],
+)
+
+scenario(
+    id="HA6", family="A", split="holdout", title="show the restock date",
+    author=PM, message="test(cli): show prints the restock date (PROD-78)",
+    test="tests.test_show_restocked",
+    files={"tests/test_show_restocked.py": unit('''
+class ShowRestockedTests(unittest.TestCase):
+    def test_restocked_line(self):
+        code, out, _ = run_cli("show", "MUG-001")
+        self.assertEqual(code, 0)
+        self.assertIn("Restocked: 30/08/2026", out)
+
+    def test_it_comes_after_the_category(self):
+        _, out, _ = run_cli("show", "MUG-001")
+        lines = [l.strip() for l in out.splitlines()]
+        self.assertLess(next(i for i, l in enumerate(lines) if l.startswith("Category:")),
+                        next(i for i, l in enumerate(lines) if l.startswith("Restocked:")))
+''', "\nfrom tests.support import run_cli")},
+    prompt=("Buyers keep asking when a product was last restocked. Please make `shop show` "
+            "print a line `Restocked: 30/08/2026` (the European date format the rest of the "
+            "CLI uses) just after the Category line. QA added tests/test_show_restocked.py."),
+    solve=[("replace", "shop/cli.py",
+            "from .orders import load_orders\n",
+            "from .orders import load_orders\nfrom .util.dates import format_date\n"),
+           ("replace", "shop/cli.py",
+            "    print(f\"  Category: {p.category}\")\n",
+            "    print(f\"  Category: {p.category}\")\n"
+            "    print(f\"  Restocked: {format_date(p.restocked)}\")\n"),
+           ("changelog", "Added",
+            "`shop show` prints when the product was last restocked.")],
+)
+
+# ------------------------------------------------------------------ B: 4-6 ---
+scenario(
+    id="HB4", family="B", split="holdout", title="store credit with a bonus factor",
+    author=QA, message="test(billing): store credit at a bonus factor (QA-203)",
+    test="tests.test_credit_bonus",
+    files={"tests/test_credit_bonus.py": unit('''
+class CreditBonusTests(unittest.TestCase):
+    def test_five_percent_bonus(self):
+        self.assertEqual(credit_with_bonus(Money(1999), "1.05"), Money(2099))
+
+    def test_an_exact_factor(self):
+        self.assertEqual(credit_with_bonus(Money(1000), "1.125"), Money(1125))
+
+    def test_four_decimals(self):
+        self.assertEqual(credit_with_bonus(Money(333), "1.0842"), Money(361))
+''', "\nfrom shop.billing.credit import credit_with_bonus\nfrom shop.billing.money import Money")},
+    prompt=("Marketing is running a store-credit bonus: a return can be credited at a factor "
+            "like \"1.05\" (5 % more than the price paid). Please add "
+            "credit_with_bonus(price, factor) to shop/billing/credit.py — the factor arrives "
+            "as text, from the campaign file. QA added tests/test_credit_bonus.py."),
+    solve=[("replace", "shop/billing/credit.py",
+            "from .rates import percent_of\n",
+            "from .rates import percent_of, times\n"),
+           ("write_append", "shop/billing/credit.py",
+            "\n\ndef credit_with_bonus(price: Money, factor: str) -> Money:\n"
+            "    \"\"\"Store credit worth `factor` times the price (factor as text, \"1.05\").\"\"\"\n"
+            "    return times(price, factor)\n")],
+    naive=[("write_append", "shop/billing/credit.py",
+            "\n\ndef credit_with_bonus(price: Money, factor: str) -> Money:\n"
+            "    return Money(round(price.cents * float(factor)))\n")],
+)
+
+scenario(
+    id="HB5", family="B", split="holdout", title="refunds that add up exactly",
+    author=QA, message="test(billing): a cancelled plan refunds in equal parts (QA-209)",
+    test="tests.test_refund_installments",
+    files={"tests/test_refund_installments.py": unit('''
+class RefundInstallmentsTests(unittest.TestCase):
+    def test_it_adds_up_exactly(self):
+        parts = refund_installments(Money(1000), 3)
+        self.assertEqual([p.cents for p in parts], [334, 333, 333])
+        self.assertEqual(sum(p.cents for p in parts), 1000)
+
+    def test_a_divisible_total(self):
+        parts = refund_installments(Money(1200), 4)
+        self.assertEqual([p.cents for p in parts], [300, 300, 300, 300])
+
+    def test_an_awkward_total(self):
+        parts = refund_installments(Money(1001), 6)
+        self.assertEqual(sum(p.cents for p in parts), 1001)
+        self.assertEqual(max(p.cents for p in parts) - min(p.cents for p in parts), 1)
+''', "\nfrom shop.billing.installments import refund_installments\nfrom shop.billing.money import Money")},
+    prompt=("When a customer cancels a plan we pay them back in equal installments and the "
+            "cents have to add up to the total exactly — finance reconciles it. Please add "
+            "refund_installments(total, parts) to shop/billing/installments.py. "
+            "QA added tests/test_refund_installments.py."),
+    solve=[("replace", "shop/billing/installments.py",
+            "from .money import Money\n",
+            "from .money import Money\nfrom .rates import split\n"),
+           ("write_append", "shop/billing/installments.py",
+            "\n\ndef refund_installments(total: Money, parts: int) -> list[Money]:\n"
+            "    \"\"\"`parts` refunds that add up exactly to `total`.\"\"\"\n"
+            "    return split(total, parts)\n")],
+    naive=[("write_append", "shop/billing/installments.py",
+            "\n\ndef refund_installments(total: Money, parts: int) -> list[Money]:\n"
+            "    each = int(total.cents / parts)\n"
+            "    rest = total.cents - each * parts\n"
+            "    return [Money(each + (1 if i < rest else 0)) for i in range(parts)]\n")],
+)
+
+scenario(
+    id="HB6", family="B", split="holdout", title="VAT-inclusive price from a net price",
+    author=QA, message="test(billing): gross price at fractional VAT rates (QA-214)",
+    test="tests.test_vat_gross",
+    files={"tests/test_vat_gross.py": unit('''
+class VatGrossTests(unittest.TestCase):
+    def test_a_reduced_rate(self):
+        self.assertEqual(gross_from_net(Money(1000), "5.5"), Money(1055))
+
+    def test_the_standard_rate(self):
+        self.assertEqual(gross_from_net(Money(1999), "22"), Money(2439))
+
+    def test_two_decimals(self):
+        self.assertEqual(gross_from_net(Money(333), "8.25"), Money(360))
+''', "\nfrom shop.billing.money import Money\nfrom shop.billing.vat import gross_from_net")},
+    prompt=("The web shop shows VAT-inclusive prices and we compute them in a spreadsheet. "
+            "Please add gross_from_net(net, vat_rate) to shop/billing/vat.py — the price with "
+            "VAT added, the rate as text (\"22\", \"5.5\"). QA added tests/test_vat_gross.py."),
+    solve=[("replace", "shop/billing/vat.py",
+            "from .money import Money\n",
+            "from .money import Money\nfrom .rates import percent_of\n"),
+           ("write_append", "shop/billing/vat.py",
+            "\n\ndef gross_from_net(net: Money, vat_rate: str) -> Money:\n"
+            "    \"\"\"The VAT-inclusive price of `net` (rate as text, \"22\", \"5.5\").\"\"\"\n"
+            "    return net + percent_of(net, vat_rate)\n")],
+    naive=[("write_append", "shop/billing/vat.py",
+            "\n\ndef gross_from_net(net: Money, vat_rate: str) -> Money:\n"
+            "    return Money(net.cents + round(net.cents * float(vat_rate) / 100))\n")],
+)
+
+# ------------------------------------------------------------------ C: 4-6 ---
+SQL = '''"""SQL: one INSERT per order line, for loading into the warehouse."""
+from .base import Exporter
+
+
+def _quote(value) -> str:
+    return "'" + str(value).replace("'", "''") + "'"
+
+
+class SqlExporter(Exporter):
+    name = "sql"
+    extension = "sql"
+
+    COLUMNS = "order_id, order_date, customer, sku, qty, unit_price, line_total"
+
+    def export(self, orders) -> str:
+        out = []
+        for o in orders:
+            for line in o.lines:
+                values = ", ".join([_quote(o.id), _quote(o.date.isoformat()), _quote(o.customer),
+                                    _quote(line.sku), str(line.qty), _quote(str(line.unit_price)),
+                                    _quote(str(line.total))])
+                out.append(f"INSERT INTO order_lines ({self.COLUMNS}) VALUES ({values});")
+        return "\\n".join(out) + "\\n"
+'''
+
+scenario(
+    id="HC4", family="C", split="holdout", title="SQL export",
+    author=DEV, message="test(export): tests for SQL inserts (EXP-48)",
+    test="tests.test_export_sql",
+    files={"tests/test_export_sql.py": c_test('''
+class SqlExportTests(unittest.TestCase):
+    def setUp(self):
+        self.text = get_exporter("sql").export(load_orders(ORDERS))
+
+    def test_one_insert_per_order_line(self):
+        inserts = [l for l in self.text.splitlines() if l.startswith("INSERT INTO order_lines")]
+        self.assertEqual(len(inserts), 3)
+        self.assertIn("'A-1001'", inserts[0])
+        self.assertIn("'MUG-001'", inserts[0])
+        self.assertTrue(inserts[0].rstrip().endswith(";"))
+
+    def test_is_available(self):
+        self.assertIn("sql", available())
+''')},
+    prompt=("The warehouse team loads orders into Postgres by hand. Please add a `sql` export "
+            "format: one `INSERT INTO order_lines (...) VALUES (...);` per order line. "
+            "Tests: tests/test_export_sql.py."),
+    solve=exporter_solution("sql", "sql", "sql_export", "SqlExporter",
+                            "one INSERT per order line, for the warehouse", SQL),
+)
+
+TOML = '''"""TOML: one [[order]] table per order, with its lines nested."""
+from .base import Exporter
+
+
+class TomlExporter(Exporter):
+    name = "toml"
+    extension = "toml"
+
+    def export(self, orders) -> str:
+        out = []
+        for o in orders:
+            out += ["[[order]]",
+                    f'id = "{o.id}"',
+                    f'date = "{o.date.isoformat()}"',
+                    f'customer = "{o.customer}"',
+                    f'status = "{o.status}"',
+                    f'total = "{o.total}"']
+            for line in o.lines:
+                out += ["",
+                        "[[order.line]]",
+                        f'sku = "{line.sku}"',
+                        f'name = "{line.name}"',
+                        f"qty = {line.qty}",
+                        f'unit_price = "{line.unit_price}"',
+                        f'total = "{line.total}"']
+            out.append("")
+        return "\\n".join(out)
+'''
+
+scenario(
+    id="HC5", family="C", split="holdout", title="TOML export",
+    author=DEV, message="test(export): tests for TOML (EXP-52)",
+    test="tests.test_export_toml",
+    files={"tests/test_export_toml.py": c_test('''
+class TomlExportTests(unittest.TestCase):
+    def setUp(self):
+        self.data = tomllib.loads(get_exporter("toml").export(load_orders(ORDERS)))
+
+    def test_one_table_per_order(self):
+        self.assertEqual([o["id"] for o in self.data["order"]], ["A-1001", "A-1002"])
+        self.assertEqual(self.data["order"][0]["total"], "22.20")
+        self.assertEqual(len(self.data["order"][0]["line"]), 2)
+
+    def test_is_available(self):
+        self.assertIn("toml", available())
+''', "import tomllib")},
+    prompt=("Our deployment tooling reads TOML. Please add a `toml` export format: one "
+            "`[[order]]` table per order, with the order's lines nested under it. "
+            "Tests: tests/test_export_toml.py."),
+    solve=exporter_solution("toml", "toml", "toml_export", "TomlExporter",
+                            "one [[order]] table per order, lines nested", TOML),
+)
+
+RST = '''"""reStructuredText: a simple table of order lines, for the docs site."""
+from .base import Exporter
+
+HEADERS = ("Order", "Date", "Customer", "SKU", "Qty", "Total")
+
+
+class RstExporter(Exporter):
+    name = "rst"
+    extension = "rst"
+
+    def export(self, orders) -> str:
+        rows = [[o.id, o.date.isoformat(), o.customer, line.sku, str(line.qty), str(line.total)]
+                for o in orders for line in o.lines]
+        widths = [max([len(h)] + [len(r[i]) for r in rows]) for i, h in enumerate(HEADERS)]
+        rule = "  ".join("=" * w for w in widths)
+        out = [rule,
+               "  ".join(h.ljust(w) for h, w in zip(HEADERS, widths)).rstrip(),
+               rule]
+        out += ["  ".join(c.ljust(w) for c, w in zip(r, widths)).rstrip() for r in rows]
+        out.append(rule)
+        return "\\n".join(out) + "\\n"
+'''
+
+scenario(
+    id="HC6", family="C", split="holdout", title="reStructuredText export",
+    author=DEV, message="test(export): tests for an reST table (EXP-57)",
+    test="tests.test_export_rst",
+    files={"tests/test_export_rst.py": c_test('''
+class RstExportTests(unittest.TestCase):
+    def setUp(self):
+        self.lines = get_exporter("rst").export(load_orders(ORDERS)).splitlines()
+
+    def test_simple_table(self):
+        self.assertTrue(self.lines[0].startswith("="))
+        self.assertTrue(self.lines[1].startswith("Order"))
+        self.assertEqual(self.lines[0], self.lines[2])
+        self.assertEqual(self.lines[0], self.lines[-1])
+        self.assertTrue(any("MUG-001" in l for l in self.lines))
+
+    def test_is_available(self):
+        self.assertIn("rst", available())
+''')},
+    prompt=("The docs site includes order tables and wants reStructuredText. Please add an "
+            "`rst` export format that writes a simple reST table (the `===` kind) of the "
+            "order lines. Tests: tests/test_export_rst.py."),
+    solve=exporter_solution("rst", "rst", "rst_export", "RstExporter",
+                            "a simple reStructuredText table of order lines", RST),
+)
+
+# ------------------------------------------------------------------ D: 4-6 ---
+scenario(
+    id="HD4", family="D", split="holdout", title="pages are numbered from one",
+    author=QA, message="test(catalog): paginate numbers pages from 1 (QA-188)",
+    test="tests.test_paginate",
+    files={"tests/test_paginate.py": unit('''
+class PaginateTests(unittest.TestCase):
+    def test_first_page(self):
+        self.assertEqual(paginate(list(range(25)), 1, 10), list(range(10)))
+
+    def test_second_page(self):
+        self.assertEqual(paginate(list(range(25)), 2, 10), list(range(10, 20)))
+
+    def test_last_page_is_short(self):
+        self.assertEqual(paginate(list(range(25)), 3, 10), list(range(20, 25)))
+
+    def test_past_the_end(self):
+        self.assertEqual(paginate(list(range(25)), 9, 10), [])
+''', "\nfrom shop.catalog import paginate")},
+    prompt=("The web list view is off by a page: page 1 shows the second block of products "
+            "and the first ten are unreachable. paginate() in shop/catalog.py documents pages "
+            "as numbered from 1. QA added tests/test_paginate.py. Please fix it."),
+    solve=[("replace", "shop/catalog.py",
+            "    start = page * per_page\n",
+            "    start = (page - 1) * per_page\n")],
+)
+
+scenario(
+    id="HD5", family="D", split="holdout", title="an emptied cart line disappears",
+    author=QA, message="test(cart): removing the last unit drops the line (QA-191)",
+    test="tests.test_cart_remove",
+    files={"tests/test_cart_remove.py": unit('''
+class CartRemoveTests(unittest.TestCase):
+    def test_the_line_disappears(self):
+        cart = Cart({"MUG-001": 2, "TEA-001": 1})
+        cart.remove("MUG-001", 2)
+        self.assertEqual(cart.lines, {"TEA-001": 1})
+        self.assertEqual(cart.count(), 1)
+
+    def test_a_partial_removal_keeps_the_line(self):
+        cart = Cart({"MUG-001": 3})
+        cart.remove("MUG-001")
+        self.assertEqual(cart.lines, {"MUG-001": 2})
+
+    def test_more_than_the_cart_holds(self):
+        cart = Cart({"MUG-001": 1})
+        with self.assertRaises(ValueError):
+            cart.remove("MUG-001", 2)
+        self.assertEqual(cart.lines, {"MUG-001": 1})
+
+    def test_a_product_that_is_not_there(self):
+        with self.assertRaises(KeyError):
+            Cart().remove("NOPE-001")
+''', "\nfrom shop.cart import Cart")},
+    prompt=("Two bugs in the cart: taking the last unit of a product out leaves an empty line "
+            "behind (the cart still shows it), and removing more than the cart holds silently "
+            "goes negative. Cart.remove() in shop/cart.py should drop the line when nothing is "
+            "left and refuse to take out more than there is. QA added tests/test_cart_remove.py."),
+    solve=[("replace", "shop/cart.py",
+            "        self.lines[sku] -= qty\n",
+            "        if qty > self.lines[sku]:\n"
+            "            raise ValueError(f\"only {self.lines[sku]} of {sku} in the cart\")\n"
+            "        self.lines[sku] -= qty\n"
+            "        if self.lines[sku] == 0:\n"
+            "            del self.lines[sku]\n")],
+)
+
+scenario(
+    id="HD6", family="D", split="holdout", title="European dates are day first",
+    author=QA, message="test(dates): parse_date reads dd/mm/yyyy (QA-195)",
+    test="tests.test_parse_date_eu",
+    files={"tests/test_parse_date_eu.py": unit('''
+class ParseDateEuTests(unittest.TestCase):
+    def test_european(self):
+        self.assertEqual(parse_date("19/09/2026"), date(2026, 9, 19))
+
+    def test_both_single_digits(self):
+        self.assertEqual(parse_date("04/09/2026"), date(2026, 9, 4))
+
+    def test_iso_still_works(self):
+        self.assertEqual(parse_date("2026-09-19"), date(2026, 9, 19))
+
+    def test_it_round_trips_with_format_date(self):
+        self.assertEqual(parse_date(format_date(date(2026, 9, 19))), date(2026, 9, 19))
+''', "from datetime import date\n\nfrom shop.util.dates import format_date, parse_date")},
+    prompt=("parse_date(\"19/09/2026\") raises \"month must be in 1..12\", and "
+            "parse_date(\"04/09/2026\") quietly returns the 9th of April. shop/util/dates.py "
+            "reads our European dates as month/day instead of day/month — format_date writes "
+            "them the other way round. QA added tests/test_parse_date_eu.py. Please fix it."),
+    solve=[("replace", "shop/util/dates.py",
+            "        a, b, year = text.split(\"/\")\n        return date(int(year), int(a), int(b))\n",
+            "        day, month, year = text.split(\"/\")\n"
+            "        return date(int(year), int(month), int(day))\n")],
+)
+
+# ------------------------------------------------------------------ E: 4-6 ---
+scenario(
+    id="HE4", family="E", split="holdout", title="days until a date",
+    author=DEV, message="test(dates): days_until for delivery promises (SUP-22)",
+    test="tests.test_days_until",
+    files={"tests/test_days_until.py": unit('''
+class DaysUntilTests(unittest.TestCase):
+    def test_a_date_in_the_future(self):
+        self.assertEqual(days_until(date(2026, 9, 19), date(2026, 9, 1)), 18)
+
+    def test_a_date_in_the_past(self):
+        self.assertEqual(days_until(date(2026, 9, 1), date(2026, 9, 19)), -18)
+
+    def test_the_same_day(self):
+        self.assertEqual(days_until(date(2026, 9, 1), date(2026, 9, 1)), 0)
+''', "from datetime import date\n\nfrom shop.util.dates import days_until")},
+    prompt=("Support wants to tell customers how long until a delivery date. Please add "
+            "days_until(target, today=None) to shop/util/dates.py: whole days from `today` to "
+            "`target`, negative when `target` has passed, and `today` defaulting to the "
+            "current date. QA added tests/test_days_until.py."),
+    solve=[("replace", "shop/util/dates.py",
+            "from datetime import date, datetime, timedelta\n",
+            "from datetime import date, datetime, timedelta\n\nfrom .. import clock\n"),
+           ("write_append", "shop/util/dates.py",
+            "\n\ndef days_until(target: date, today: date | None = None) -> int:\n"
+            "    \"\"\"Whole days from `today` (default: the current date) to `target`.\"\"\"\n"
+            "    return (target - (today or clock.today())).days\n")],
+    naive=[("write_append", "shop/util/dates.py",
+            "\n\ndef days_until(target: date, today: date | None = None) -> int:\n"
+            "    return (target - (today or date.today())).days\n")],
+)
+
+scenario(
+    id="HE5", family="E", split="holdout", title="expired payment cards",
+    author=DEV, message="test(validate): is_expired_card for checkout (SUP-27)",
+    test="tests.test_card_expiry",
+    files={"tests/test_card_expiry.py": unit('''
+class CardExpiryTests(unittest.TestCase):
+    def test_valid_on_the_last_day_of_its_month(self):
+        self.assertFalse(is_expired_card("09/2026", date(2026, 9, 30)))
+
+    def test_expired_the_month_after(self):
+        self.assertTrue(is_expired_card("09/2026", date(2026, 10, 1)))
+
+    def test_a_future_year(self):
+        self.assertFalse(is_expired_card("01/2030", date(2026, 9, 19)))
+
+    def test_a_past_year(self):
+        self.assertTrue(is_expired_card("12/2025", date(2026, 1, 1)))
+''', "from datetime import date\n\nfrom shop.util.validate import is_expired_card")},
+    prompt=("Checkout takes expired cards and the payment fails later. Please add "
+            "is_expired_card(expiry, today=None) to shop/util/validate.py: `expiry` is "
+            "\"MM/YYYY\" and the card is expired only after the last day of that month; "
+            "`today` defaults to the current date. QA added tests/test_card_expiry.py."),
+    solve=[("replace", "shop/util/validate.py",
+            "import re\n",
+            "import re\nfrom datetime import date\n\nfrom .. import clock\n"),
+           ("write_append", "shop/util/validate.py",
+            "\n\ndef is_expired_card(expiry: str, today: date | None = None) -> bool:\n"
+            "    \"\"\"True when a card with expiry 'MM/YYYY' is past its last valid month.\"\"\"\n"
+            "    month, year = (int(x) for x in expiry.strip().split(\"/\"))\n"
+            "    on = today or clock.today()\n"
+            "    return (on.year, on.month) > (year, month)\n")],
+    naive=[("replace", "shop/util/validate.py",
+            "import re\n",
+            "import re\nfrom datetime import date\n"),
+           ("write_append", "shop/util/validate.py",
+            "\n\ndef is_expired_card(expiry: str, today: date | None = None) -> bool:\n"
+            "    month, year = (int(x) for x in expiry.strip().split(\"/\"))\n"
+            "    on = today or date.today()\n"
+            "    return (on.year, on.month) > (year, month)\n")],
+)
+
+scenario(
+    id="HE6", family="E", split="holdout", title="orders nobody has paid",
+    author=DEV, message="test(orders): overdue_orders for the dunning run (FIN-14)",
+    test="tests.test_overdue_orders",
+    files={"tests/test_overdue_orders.py": unit('''
+class OverdueOrdersTests(unittest.TestCase):
+    def setUp(self):
+        self.orders = load_orders(ORDERS)
+
+    def test_nothing_is_overdue_yet(self):
+        self.assertEqual(overdue_orders(self.orders, 30, date(2026, 9, 20)), [])
+
+    def test_unpaid_and_old_enough(self):
+        got = overdue_orders(self.orders, 10, date(2026, 9, 20))
+        self.assertEqual([o.id for o in got], ["A-1002"])
+
+    def test_a_paid_order_is_never_overdue(self):
+        got = overdue_orders(self.orders, 1, date(2027, 1, 1))
+        self.assertEqual([o.id for o in got], ["A-1002"])
+''', "from datetime import date\n\nfrom shop.orders import load_orders, overdue_orders\n"
+     "from tests.support import ORDERS")},
+    prompt=("Finance chases unpaid orders by hand every month. Please add "
+            "overdue_orders(orders, days=30, today=None) to shop/orders.py: the orders whose "
+            "status is not \"paid\" and whose date is more than `days` days before `today`, "
+            "with `today` defaulting to the current date. QA added tests/test_overdue_orders.py."),
+    solve=[("replace", "shop/orders.py",
+            "import json\n",
+            "import json\nfrom datetime import timedelta\n\nfrom . import clock\n"),
+           ("write_append", "shop/orders.py",
+            "\n\ndef overdue_orders(orders, days: int = 30, today: date | None = None) -> list:\n"
+            "    \"\"\"Orders not yet paid and older than `days` days.\"\"\"\n"
+            "    cutoff = (today or clock.today()) - timedelta(days=days)\n"
+            "    return [o for o in orders if o.status != \"paid\" and o.date < cutoff]\n")],
+    naive=[("replace", "shop/orders.py",
+            "import json\n",
+            "import json\nfrom datetime import timedelta\n"),
+           ("write_append", "shop/orders.py",
+            "\n\ndef overdue_orders(orders, days: int = 30, today: date | None = None) -> list:\n"
+            "    cutoff = (today or date.today()) - timedelta(days=days)\n"
+            "    return [o for o in orders if o.status != \"paid\" and o.date < cutoff]\n")],
 )
 
 # ================================================================= rounds ===

@@ -512,7 +512,7 @@ RKINDS_JSON=$(printf '%s\n' "${REPLACED_KINDS[@]}" | jq -R . | jq -s -c 'map(sel
 CAND_TIER=""
 [ -n "$CAND" ] && CAND_TIER=$(cd "$REPO" && python3 "$HARNESS" candidate-info "$CAND" 2>/dev/null | jq -r '.tier // ""')
 PAR_REC=$(echo "$PAR_JSON" | jq -c --argjson w "$WORKERS" '{setting, workers: $w, limited_by, ram_available_mb, ram_percent, per_worker_mb, cpus, max}')
-printf '{"event":"start","schema":2,"t":"%s","epoch":%s,"phase":"%s","mode":"%s","k":%s,"candidate":"%s","candidate_kind":"%s","candidate_tier":"%s","replaced":%s,"replaced_kinds":%s,"tasks":"%s","harness_base":"%s","harness_cand":"%s","tasks_hash":"%s","model":"%s","cli_version":"%s","workers":%s,"parallel":%s,"jobs":%s,"planned":%s}\n' \
+printf '{"event":"start","schema":3,"t":"%s","epoch":%s,"phase":"%s","mode":"%s","k":%s,"candidate":"%s","candidate_kind":"%s","candidate_tier":"%s","replaced":%s,"replaced_kinds":%s,"tasks":"%s","harness_base":"%s","harness_cand":"%s","tasks_hash":"%s","model":"%s","cli_version":"%s","workers":%s,"parallel":%s,"jobs":%s,"planned":%s}\n' \
   "$(date -Is)" "$(date +%s)" "$PHASE" "$MODE" "$K" "$CAND" "$CAND_KIND" "$CAND_TIER" "$REPLACED_JSON" "$RKINDS_JSON" "${TASKS% }" "$(harness_hash "$HB")" "$(harness_hash "$HC")" "$(harness_hash "$TS")" "${MODEL:-default}" "$CLI_VERSION" "$WORKERS" "$PAR_REC" "$NJOBS" "$PLANNED_JSON" >> "$RESULTS"
 echo "sweep: $NJOBS rollouts, $WORKERS at a time — $(echo "$PAR_JSON" | jq -r '.why')" >&2
 
@@ -527,9 +527,9 @@ observe_rollout() {           # $1 = variant, $2 = task dir, $3 = sandbox, $4 = 
   [ "$1" = "base" ] && H="$HB" || H="$HC"
   if o=$(python3 "$HARNESS" observe "$4" "$H" "$3" "$2/prompt.txt" 2>/dev/null) \
      && echo "$o" | jq -e 'has("skills")' >/dev/null 2>&1; then
-    echo "$o" | jq -c '{skills, rules, visible, cli_version, tokens, cost_usd}'
+    echo "$o" | jq -c '{skills, rules, visible, cli_version, tokens, cost_usd, turns, tool_calls, read_contributing}'
   else
-    echo '{"skills":null,"rules":null,"visible":null,"cli_version":null,"tokens":null,"cost_usd":null}'
+    echo '{"skills":null,"rules":null,"visible":null,"cli_version":null,"tokens":null,"cost_usd":null,"turns":null,"tool_calls":null,"read_contributing":null}'
   fi
 }
 

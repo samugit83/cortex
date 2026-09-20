@@ -1,0 +1,18 @@
+# Paths the lab tools refuse to write to (lab/bin/guard.py).
+#
+# D0 is the finished development run and the report's development-run column
+# comes from it. It is read-only for the whole evaluation programme.
+#
+# This list lives in Cortex, never inside the lab repository, so that turning the
+# guard on leaves D0 byte for byte as the run ended.
+#
+# One absolute path per line ('~' is expanded). A sibling whose name merely
+# starts the same way (cortex-lab-R1 beside cortex-lab) is NOT protected.
+
+~/Progetti didattici/cortex-lab
+~/Progetti didattici/Cortex/lab/state
+~/Progetti didattici/Cortex/lab/results
+~/Progetti didattici/Cortex/lab/bench/results.jsonl
+~/Progetti didattici/Cortex/lab/bench/tasks.json
+~/Progetti didattici/Cortex/lab/bench/REPORT.md
+~/Progetti didattici/cortex-eval/backup-D0

@@ -1254,6 +1254,7 @@ def to_relative(p, roots):
 
 def observe(stream, harness_dir, sandbox, prompt_file):
     init, result, fired, visible_names, reads, errored = None, None, set(), set(), [], set()
+    tool_calls = 0
     with open(stream, encoding="utf-8", errors="replace") as fh:
         events = []
         for line in fh:
@@ -1280,6 +1281,8 @@ def observe(stream, harness_dir, sandbox, prompt_file):
             for c in (ev.get("message") or {}).get("content") or []:
                 if not isinstance(c, dict):
                     continue
+                if c.get("type") == "tool_use" and t == "assistant":
+                    tool_calls += 1
                 if c.get("type") == "tool_use" and c.get("name") == "Skill":
                     s = (c.get("input") or {}).get("skill")
                     if isinstance(s, str):
@@ -1297,7 +1300,10 @@ def observe(stream, harness_dir, sandbox, prompt_file):
     for r in (sandbox, init.get("cwd")):
         if isinstance(r, str) and r:
             roots += [os.path.normpath(r), os.path.realpath(r)]
-    touched = [to_relative(p, roots) for i, p in reads if i not in errored]
+    read_paths = [to_relative(p, roots) for i, p in reads if i not in errored]
+    read_contributing = int(any(r == "CONTRIBUTING.md" or (r or "").endswith("/CONTRIBUTING.md")
+                                for r in read_paths if r))
+    touched = list(read_paths)
     try:
         with open(prompt_file, encoding="utf-8", errors="replace") as fh:
             for m in re.finditer(r"(?:^|\s)@([^\s]+)", fh.read()):
@@ -1310,8 +1316,10 @@ def observe(stream, harness_dir, sandbox, prompt_file):
     rules_fired = sorted(n for n, g in rules.items() if not g.patterns or g.any_of(touched))
     names = set(skills) | set(rules)
     visible = sorted((visible_names | fired | set(rules_fired)) & names)
-    tokens, cost = None, None
+    tokens, cost, turns = None, None, None
     if isinstance(result, dict):     # real usage of this rollout, for cost estimates
+        if isinstance(result.get("num_turns"), int):
+            turns = result["num_turns"]
         u = result.get("usage") or {}
         parts = [u.get(k) for k in ("input_tokens", "output_tokens",
                                     "cache_creation_input_tokens", "cache_read_input_tokens")]
@@ -1321,7 +1329,8 @@ def observe(stream, harness_dir, sandbox, prompt_file):
             cost = round(float(result["total_cost_usd"]), 6)
     return {"skills": sorted(fired | set(rules_fired)), "rules": rules_fired,
             "visible": visible, "cli_version": init.get("claude_code_version"),
-            "tokens": tokens, "cost_usd": cost}
+            "tokens": tokens, "cost_usd": cost, "turns": turns,
+            "tool_calls": tool_calls, "read_contributing": read_contributing}
 
 
 def cmd_observe(argv):
@@ -1332,6 +1341,7 @@ def cmd_observe(argv):
     except Exception as ex:          # unknown is not "never fired": say unknown
         print(json.dumps({"skills": None, "rules": None, "visible": None,
                           "cli_version": None, "tokens": None, "cost_usd": None,
+                          "turns": None, "tool_calls": None, "read_contributing": None,
                           "error": str(ex)[:200]}))
         return 2
     print(json.dumps(out, sort_keys=True))
