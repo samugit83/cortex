@@ -47,6 +47,7 @@ what each decision rule keeps, and the context that pruning saves.
 | **RQ3** | Does what the gates keep improve performance on held-out tasks? | POOL + LOOP |
 | **RQ4** | Can pruning and narrowing reduce always-on context without losing solve rate? | PRUNE |
 | **RQ5** | What kind of skills survive measurement? | QUAL |
+| **RQ6** | Can a calibrated judge predict, *before* a sweep is paid for, that a candidate will be rejected — where a free deterministic check cannot? | SCOPE (offline, no rollouts) |
 
 ### Primary endpoints (fixed before experiments, step 3.3)
 
@@ -56,12 +57,20 @@ what each decision rule keeps, and the context that pruning saves.
 Everything else is secondary. Having two named primary endpoints protects the
 paper from "we looked at 40 numbers and reported the best one".
 
+**RQ6 is deliberately not a primary.** Cortex ships an optional judge in its
+proposal layer, and it would be easy to over-claim for it. It is scored against
+verdicts that already exist, it steers nothing that produces a primary number, and
+its own validation (`jev/RESULTS.md`) may not exist when the paper is written. If
+it is unvalidated, RQ6 reports the deterministic control only — which is still a
+result, because that control demonstrably fails.
+
 ### Two paper sizes
 
 | | Minimum publishable paper | Full paper |
 |---|---|---|
-| Contents | Design + SIM + noise study + pitfalls catalog | adds POOL gate reliability, held-out results, LOOP, PRUNE, QUAL |
+| Contents | Design + SIM + noise study + pitfalls catalog + the boundary (§3.7) and SCOPE, both of which cost no rollouts | adds POOL gate reliability, held-out results, LOOP, PRUNE, QUAL |
 | Rollouts | ~150 | ~1,300–1,700 |
+| Judge | scored offline against existing verdicts (SCOPE); 0 rollouts either way | same |
 | Story | "measuring agent-harness changes is harder than it looks, and here is a system that does it carefully" | the full measured-evolution story |
 
 Plan for the full paper. The minimum paper is the fallback if the budget
@@ -75,10 +84,16 @@ every part of it is also in the full paper.
 Page budgets sum to 10. Each section says what it needs before it can be
 written.
 
+**Reallocated** when the proposal/fitness boundary (§3.7) was added: 0.25 pp moved
+from the introduction to the design section. §5.6 (RQ6) fits inside Results' 2.5 pp
+because it is one figure and one table. If §3 still overruns, cut 3.7's worked
+example rather than the boundary claim itself — the claim is what stops a reviewer
+discovering the judge unaided.
+
 ### Abstract (~200 words): written last
 Problem → gap → Cortex → 3–4 headline numbers (noise, false-KEEP rate, held-out effect, context saved) → artifact link.
 
-### 1. Introduction (1.25 pp)
+### 1. Introduction (1 pp)
 - 1.1 Agents are steered by editable text (skills, `CLAUDE.md`, rules), not weights.
 - 1.2 Skills pile up unmeasured, cost context on every turn, and noise hides whether they help.
 - 1.3 Why naive evaluation fails: one number from RQ1 and one from RQ2.
@@ -93,14 +108,25 @@ Problem → gap → Cortex → 3–4 headline numbers (noise, false-KEEP rate, h
 - 2.4 avg@k and why a single run is not a measurement.
 - *Needs:* tier behaviour re-verified on the pinned CLI (step 2.2).
 
-### 3. Cortex: Design (2.25 pp)
+### 3. Cortex: Design (2.5 pp)
 - 3.1 Design principles: constraint → design (**Tab 2**, condensed from the README).
 - 3.2 Tasks and verifiers: `/harvest`, task anatomy, `preflight`, quarantine.
 - 3.3 Measurement protocol: live base/cand arms, snapshot, isolated clones, cache purge, two-stage screen (k=2, failing tasks) → confirm (k=3, all tasks).
 - 3.4 Acceptance gates, formally (**Alg 1**): 0 scorable · 1 gain > 0 · 2 worst drop ≤ δ · 3 protected set intact · 4 net·k ≥ 2 · 5 candidate loaded.
 - 3.5 Pruning and narrowing: fitness = solve_rate − λ·context_cost; ACCEPT / REJECT / UNMEASURED.
 - 3.6 Attribution: visible vs invoked, one change per cycle, marginal value.
-- 3.7 Implementation: components, LOC, dependencies, cost formula.
+- 3.7 **The proposal/fitness boundary.** Cortex ships an optional calibrated judge
+  (Jev) that helps choose *what to try* — the theme, the tier, the scope — and is
+  barred from deciding *what the result was*. State the boundary and then show it is
+  **mechanical, not a promise**: `score.sh`, `preflight.sh` and `sweep.sh` contain no
+  reference to it, a test in the shipped suite asserts that, no judge call runs inside
+  a rollout sandbox, and every call site has a defined keyless path. Give the
+  measurement that motivated it (glob breadth cannot separate healthy from destructive
+  items; the relevance ratio can) and the one that scores it (RQ6). **Write this
+  section even if RQ6 is null.** A reviewer who discovers an LLM judge in a paper whose
+  thesis is "not an opinion, not an LLM judge" will discount everything; one who reads
+  the boundary here, with the assertion that enforces it, gets a contribution instead.
+- 3.8 Implementation: components, LOC, dependencies, cost formula.
 - *Needs:* gates frozen (step 3.2). **Written first**; it describes what exists.
 
 ### 4. Experimental Setup (1 pp)
@@ -117,6 +143,10 @@ Problem → gap → Cortex → 3–4 headline numbers (noise, false-KEEP rate, h
 - 5.3 **RQ3** held-out effect: **Tab 5**, held-out change of what each rule kept; LOOP end-to-end result; train vs held-out gap.
 - 5.4 **RQ4** pruning: **Fig 4**, always-on chars vs solve rate before/after; were the planted controls handled correctly?
 - 5.5 **RQ5** what survives: **Tab 6**, kept vs killed by category, 2–3 short examples.
+- 5.6 **RQ6** predicting rejection: **Fig 5**, relevance and breadth against fate, one
+  point per candidate, the floor drawn. **Tab 8**, per-candidate predictions with the
+  counterfactual saving *and* the false-alarm count. Report breadth as the control on
+  the same rows; if breadth separates, say the judge is unnecessary.
 
 ### 6. Lessons: Threats to Measurement Validity (0.75 pp)
 **Tab 7**: pitfall → symptom → how Cortex detects it. Candidates: stale build
@@ -132,13 +162,21 @@ One paragraph per group, each ending "unlike these, Cortex…":
 - Self-improving agent design: ADAS, Darwin Gödel Machine, DarwinX (the direct parent), and the 2026 harness/skill-evolution papers in [concept-audit.md](concept-audit.md) §9.
 - Agent benchmarks and evaluation reliability: SWE-bench (Verified), SWE-smith, SWE-Gym, variance/reproducibility studies.
 - Statistical decision-making under noise: A/B testing, sequential tests.
+- LLM-as-judge calibration and selective prediction: judge-reliability studies,
+  calibration of verbalised confidence, selective prediction / abstention, and
+  early-stopping or triage in expensive evaluation. This is the group RQ6 sits in,
+  and it is the group a reviewer will reach for on seeing a judge in the loop.
+  **Check specifically whether anyone triages harness candidates before measuring
+  them** — that is the RQ6 novelty claim and it must be checked, not assumed.
 
 Placed after the results because the comparison is sharper once the reader has seen them.
 Move it to §2 if a venue expects that.
 
 ### 8. Discussion and Limitations (0.5 pp)
 Proxy saturation; transfer across repos; single vendor/CLI; cost; skills that only
-work together; internal/external validity.
+work together; internal/external validity; **and the judge**: it is optional, off by
+default, absent from every primary number, confined to proposal, and — if J0 has not
+run — unvalidated, in which case say so rather than implying it works.
 
 ### 9. Conclusion (0.25 pp)
 
@@ -163,6 +201,9 @@ F. Cost per experiment · G. Simulation details · H. Pre-registration and devia
 | Tab 5 | held-out effect per rule | POOL, LOOP | 5.3 |
 | Tab 6 | what survives | QUAL | 5.5 |
 | Tab 7 | measurement pitfalls | experience | 6 |
+| Fig 5 | relevance and breadth vs fate, per candidate | SCOPE | 5.6 |
+| Tab 8 | per-candidate prediction, saving, false alarms | SCOPE | 5.6 |
+| Fig 6 | the proposal/fitness boundary: what may consult a model and what may not | new, §3.7 | 3.7 |
 
 ---
 
@@ -194,6 +235,7 @@ same candidates, and adding a new rule later costs zero tokens.
 | **LOOP** | 1 repo: 3–4 real `/evolve` cycles on train tasks, final harness vs base on held-out, k=10. Shows the whole system, proposal included, works end to end. | RQ3 | ~190 |
 | **PRUNE** | 1 repo: an over-grown harness (~12 items) with planted controls; run `/prune`. | RQ4 | ~250 |
 | **QUAL** | Code every candidate by category (procedure / domain knowledge / tooling / other) with a written codebook; second coder + Cohen's κ if possible. | RQ5 | 0 |
+| **SCOPE** | Replay `cortex scope` over every candidate of every completed run and join the prediction with the recorded verdict and cost. Breadth is the control. `lab/bin/scope-replay`. | RQ6 | **0** |
 
 ### The candidate pool (per repo)
 
@@ -236,6 +278,12 @@ This turns "pruning seemed to work" into a checkable claim.
 - [ ] **0.2** Request an arXiv **endorsement** for cs.SE now if this is your first submission; it can take weeks.
 - [ ] **0.3** `git init`, first commit, public GitHub repo, `LICENSE`, `CITATION.cff`.
 - [ ] **0.4** Run `test/run-tests.sh`; fix failures; record the result.
+- [ ] **0.4b** **Decide the judge's status before writing §3.7 or RQ6.** Run
+      `python3 jev/validate.py --corpus jev/corpus`. Green → cite `jev/RESULTS.md`
+      (model id, agreement, separation, calibration) and RQ6 has both arms. Not run
+      (no key, or the account cannot route) → say so in §3.7 and §8, and RQ6 reports
+      the deterministic control only. Either way the boundary section is written;
+      only the claim changes.
 - [ ] **0.5** One full real cycle (`/harvest` ×3+ → `/evolve` → `/prune`) on a real repo; write it up in `end_to_end_test.md`.
 - [ ] **0.6** Start a running log `paper/notes/incidents.md`: every measurement pitfall hit from now on, with date and evidence. (Feeds §6.)
 - [ ] **0.7** Choose the template; create the LaTeX skeleton and `make figures`; check it builds.
@@ -257,6 +305,9 @@ This turns "pruning seemed to work" into a checkable claim.
   - [ ] WikiSkill (2608.27454)
   - [ ] Lilian Weng, "Harness Engineering for Self-Improvement" (blog, Jul 2026)
   - [ ] plus: studies of `CLAUDE.md` / `AGENTS.md` files, and of variance in agent benchmarks
+  - [ ] **for RQ6 specifically**: does any of them triage or filter harness candidates
+        *before* measuring them, and does any use a calibrated judge anywhere in the
+        loop? If one does, RQ6 is a replication, not a contribution — say which.
 - [ ] **1.2b** Expected differentiator: **budgeted deletion + context cost + tier placement**, plus a placebo-controlled test of the gates. DarwinX does neither pruning nor context cost; confirm the rest don't either.
 - [ ] **1.3** Comparison table: prior work × {edits harness text, verifier-based fitness, statistical handling of noise, deletes/prunes, context-cost aware, single-user scale}.
 - [ ] **1.4** Final **contributions** (3–5) and RQs; one outside reader checks them.
@@ -378,7 +429,7 @@ Estimated from the README's ~150k tokens per rollout; **recompute after PILOT**.
 | Experiment | Rollouts | Tokens |
 |---|---|---|
 | PILOT | ~40 | ~6M |
-| SIM, QUAL | 0 | 0 |
+| SIM, QUAL, SCOPE | 0 | 0 |
 | POOL, 3 repos × (100 base + 6 × 50 cand) | ~1,200 | ~180M |
 | LOOP | ~190 | ~29M |
 | PRUNE | ~250 | ~38M |
@@ -406,6 +457,9 @@ Scale-down ladder, least damaging first:
 | R6 | Public tasks are in the model's training data | Prefer post-cutoff or generated tasks; report public and harvested separately. |
 | R7 | Placebo turns out to have a real effect | Report it: it shows how easily "irrelevant" text changes agent behaviour. Add a second placebo. |
 | R8 | Prior work already does the core idea (G1) | Reposition on what is left: deletion/narrowing, placebo-controlled gate evaluation, pitfalls. |
+| **R9** | **J0 never runs**, so the judge is unvalidated when the paper is written | RQ6 reports the deterministic control alone. "Glob breadth cannot separate a healthy item from a destructive one" is measured, needs no key, and stands on its own. Do **not** claim the judge works on the strength of the mechanism existing. |
+| **R10** | **A reviewer reads "not an opinion, not an LLM judge" and then finds a judge in the repository** | §3.7 states the boundary before anyone has to go looking, and shows it is enforced by a test rather than by intent. The judge is off by default, absent from every primary, and scored in RQ6 rather than assumed. |
+| **R11** | **The judge's model moves under a run** (`jev-latest` is an alias on a third party's server) | Any Jev-on run pins an exact version; `lab/bin/autopilot` refuses to start otherwise, and `roundcheck` emits a FINDING if two models answered in one round. Primaries are Jev-off, so they cannot be affected at all. |
 
 ---
 

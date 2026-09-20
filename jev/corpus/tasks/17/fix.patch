@@ -1,0 +1,36 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index dad5c66..c985bf2 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -15,6 +15,9 @@ All notable changes users can see. Format: [Keep a Changelog](https://keepachang
+ - `shop list` sorts products by price (cheapest first) by default; use `--sort name` to sort by name.
+ - Prices over €1,000 now show with thousands separators (e.g. €1,249.00).
+ 
++### Fixed
++- `shop show` and `shop list` now display "Out of stock" instead of "0 left" when a product's stock is zero.
++
+ ## [0.9.0] - 2026-08-28
+ 
+ ### Added
+diff --git a/shop/cli.py b/shop/cli.py
+index 3e3779b..a15f6d2 100644
+--- a/shop/cli.py
++++ b/shop/cli.py
+@@ -16,7 +16,7 @@ from .util.text import pluralize
+ 
+ def cmd_list(args) -> int:
+     products = sort_products(load_catalog(args.catalog), args.sort)
+-    rows = [[p.sku, p.name, p.category, format_money(p.price), f"{p.stock} left"] for p in products]
++    rows = [[p.sku, p.name, p.category, format_money(p.price), "Out of stock" if p.stock == 0 else f"{p.stock} left"] for p in products]
+     print(format_table(["SKU", "Name", "Category", "Price", "Stock"], rows))
+     return 0
+ 
+@@ -30,7 +30,7 @@ def cmd_show(args) -> int:
+     print(f"  SKU:      {p.sku}")
+     print(f"  Category: {p.category}")
+     print(f"  Price:    {format_money(p.price)}")
+-    print(f"  Stock:    {p.stock} left")
++    print(f"  Stock:    {'Out of stock' if p.stock == 0 else f'{p.stock} left'}")
+     return 0
+ 
+ 

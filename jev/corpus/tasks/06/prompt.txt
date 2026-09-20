@@ -1,0 +1,1 @@
+Finance wants a TOTAL row at the bottom of `shop report`: total items and total amount. QA added tests/test_report_total.py. Can you add it?

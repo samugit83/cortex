@@ -1,0 +1,36 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 8a009a0..500d969 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -5,6 +5,7 @@ All notable changes users can see. Format: [Keep a Changelog](https://keepachang
+ ## [Unreleased]
+ 
+ ### Added
++- `shop list --limit N` to show only the first N products.
+ - `shop export --format tsv` for exporting orders as tab-separated values (handles commas in customer names).
+ - `shop export --format markdown` for exporting orders as a markdown table.
+ - `shop report` now includes a TOTAL row at the bottom showing total items and total amount.
+diff --git a/shop/cli.py b/shop/cli.py
+index a15f6d2..05f6885 100644
+--- a/shop/cli.py
++++ b/shop/cli.py
+@@ -16,6 +16,11 @@ from .util.text import pluralize
+ 
+ def cmd_list(args) -> int:
+     products = sort_products(load_catalog(args.catalog), args.sort)
++    if args.limit is not None:
++        if args.limit <= 0:
++            print("error: --limit must be a positive integer", file=sys.stderr)
++            return 1
++        products = products[:args.limit]
+     rows = [[p.sku, p.name, p.category, format_money(p.price), "Out of stock" if p.stock == 0 else f"{p.stock} left"] for p in products]
+     print(format_table(["SKU", "Name", "Category", "Price", "Stock"], rows))
+     return 0
+@@ -76,6 +81,7 @@ def build_parser() -> argparse.ArgumentParser:
+ 
+     p = sub.add_parser("list", help="list the products")
+     p.add_argument("--sort", choices=["name", "price"], default="price")
++    p.add_argument("--limit", type=int, help="limit number of products to show")
+     p.set_defaults(func=cmd_list)
+ 
+     p = sub.add_parser("show", help="show one product")

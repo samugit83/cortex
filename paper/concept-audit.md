@@ -33,6 +33,16 @@
 
 ---
 
+- **The system has changed since this audit.** Cortex now has an optional
+  calibrated judge (Jev) in its **proposal** layer — which theme recurs, which
+  tier fits, how much of the suite a candidate is about — and it is barred from
+  the fitness decision by construction. Two consequences for this document:
+  §5 gains a candidate claim (pre-sweep scope prediction, ranked 5) whose novelty
+  is **not yet checked** against the papers in §9, and §6's "deterministic gate,
+  not an LLM judge" line has to be re-worded rather than dropped. Both are marked
+  in place. Nothing else in this audit changes: the gates, the deletion rules and
+  the attribution semantics are the same code they were.
+
 ## 2. How this audit was done
 
 1. I read the whole project: README (3,228 lines), the original THEORY.md, the three command
@@ -239,7 +249,28 @@ Phrase every claim as "to our knowledge", with the citations from §3.
    - shared services running the main branch's code.
 
    It complements the ABC checklist and Anthropic's eval posts.
-5. **Placebo-calibrated acceptance (NEW, if you do it).** Prior work uses
+5. **Pre-sweep scope prediction (NEW, and unvalidated — check before claiming).**
+   Predicting, before a sweep is paid for, that a candidate will be rejected, by
+   estimating the share of its injections that are *semantically relevant* rather
+   than merely reachable. The novelty rests on two things, and the second is the
+   one that matters:
+   - the free deterministic alternative was tried and **measurably fails**: over
+     the recorded lab run, glob breadth overlaps between kept and
+     regression-buried items (kept 19%/50%/96%; buried 12%/12%/46%/58%/96%), so
+     what a glob *reaches* cannot tell a healthy item from a destructive one;
+   - what separates them is the ratio of relevant to total injections, whose
+     numerator requires judging what a task is *about* — the only quantity in the
+     system that needs a model at all.
+
+   This is the operational half of claim 1: exposure becomes **predicted** as well
+   as measured. **Before claiming it**, check ASSAY, SkillReducer, DemoEvolve and
+   every 2026 harness paper in §9 for pre-measurement candidate triage, and check
+   the judge-calibration literature for the same idea under another name. Also note
+   the standing caveat: as of writing, Cortex's own validation of the judge (J0) has
+   not been run, so the *signal* is demonstrated and the *judge's ability to compute
+   it* is not. Claim only the half you have.
+
+6. **Placebo-calibrated acceptance (NEW, if you do it).** Prior work uses
    placebo skills as an extra *comparison arm* (Signal or Noise? 2608.23067;
    Huang 2607.07504). Nobody runs known-null edits *through the acceptance rule*
    to measure its false-accept rate on real coding-agent harnesses. PACE does
@@ -260,6 +291,19 @@ Phrase every claim as "to our knowledge", with the citations from §3.
 - fail-to-pass task validation, and repo-mined skill evaluation in Claude Code (SWE-bench family, Skill Issue);
 - model-specific harnesses and "scaffolding goes stale" (Self-Harness, Anthropic, DarwinX App. E);
 - a deterministic gate as opposed to an LLM judge (HarnessX, SkillOpt).
+
+**One of these needs re-wording now, not dropping.** Cortex ships an optional
+calibrated judge in its *proposal* layer, so any sentence of the form "Cortex uses
+no model" is false as written. Three phrasings, only the third of which survives:
+
+| | |
+|---|---|
+| ✗ | "Cortex uses a deterministic gate rather than an LLM judge" — prior art (HarnessX, SkillOpt), and now imprecise about our own system |
+| ✗ | "Cortex uses no model of any kind" — false: `/evolve` may consult one |
+| ✓ | "No model participates in the **fitness** decision, and the separation is enforced mechanically: `score.sh`, `preflight.sh` and `sweep.sh` contain no reference to the judge, a shipped test asserts it, and no judge call runs inside a rollout sandbox" |
+
+The third is narrower, checkable by a reader with a grep, and it is the only one
+the code supports. Audit every draft sentence against it.
 
 ---
 

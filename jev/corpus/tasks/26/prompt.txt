@@ -1,0 +1,1 @@
+The shelf labels say €0.00/kg for small packs: price_per_kg() divides too early. QA added tests/test_price_per_kg.py. Please fix it.

@@ -1,0 +1,3 @@
+Ops wants to archive old orders. Please add archive_old_orders(orders, days=90, today=None) to shop/orders.py, returning (recent, archived); `today` defaults to the current date. Tests: tests/test_order_archive.py.
+
+Works, but CI is still red: `make lint` rejects datetime.now() / date.today() in shop/. We only read the time through shop.clock (clock.now(), clock.today()) — see CONTRIBUTING.md. Please fix it.

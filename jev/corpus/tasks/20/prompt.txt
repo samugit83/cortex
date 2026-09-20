@@ -1,0 +1,1 @@
+Support wants `shop list --limit N` to show only the first N products. QA added tests/test_list_limit.py. Can you add the option?

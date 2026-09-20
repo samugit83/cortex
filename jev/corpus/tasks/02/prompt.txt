@@ -1,0 +1,1 @@
+The 12.5% spring promo is charging customers the wrong amount — apply_discount() ignores the decimals. QA added tests/test_discount_rates.py and it fails. Please fix it.

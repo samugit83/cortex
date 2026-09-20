@@ -1,0 +1,5 @@
+id: 02
+title: fix apply_discount to handle fractional percentages
+base_sha: ea5ac0cd5eee4e2322521ad80809ddb219161c09
+timeout_s: 600
+harvested: 2026-09-19

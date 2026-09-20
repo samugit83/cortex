@@ -1,0 +1,5 @@
+id: 17
+title: Show 'Out of stock' instead of '0 left' for zero-stock products
+base_sha: 66e07a25e01869ce22c7b15616c804acfe924f67
+timeout_s: 600
+harvested: 2026-09-20

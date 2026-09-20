@@ -1,0 +1,3 @@
+Checkout should hold items for 15 minutes. Please add Cart.reserve(minutes=15), which sets cart.expires_at (UTC), and Cart.is_expired(at=None), which defaults to now. The tests are in tests/test_cart_reservation.py.
+
+Then the user corrected: CI is still red: `make lint` rejects datetime.now() / date.today() in shop/. We only read the time through shop.clock (clock.now(), clock.today()) — see CONTRIBUTING.md. Please fix it.

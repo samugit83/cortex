@@ -1,0 +1,31 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index c985bf2..8a009a0 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -17,6 +17,7 @@ All notable changes users can see. Format: [Keep a Changelog](https://keepachang
+ 
+ ### Fixed
+ - `shop show` and `shop list` now display "Out of stock" instead of "0 left" when a product's stock is zero.
++- Shipping cost calculation now uses pro-rata pricing for partial kilograms instead of truncating to whole kilos.
+ 
+ ## [0.9.0] - 2026-08-28
+ 
+diff --git a/shop/billing/shipping.py b/shop/billing/shipping.py
+index 5b3d600..aa5d292 100644
+--- a/shop/billing/shipping.py
++++ b/shop/billing/shipping.py
+@@ -1,5 +1,6 @@
+ """Shipping costs."""
+ from .money import Money
++from .rates import times
+ 
+ BASE_FEE = Money(299)
+ 
+@@ -7,5 +8,5 @@ BASE_FEE = Money(299)
+ def shipping_cost(weight_kg: str, rate_per_kg: str) -> Money:
+     """Base fee plus `rate_per_kg` (text, "4.50") for the parcel's weight in kg (text, "1.25"), pro rata."""
+     per_kg = Money.parse(rate_per_kg)
+-    kilos = int(weight_kg.split(".")[0])
+-    return BASE_FEE + per_kg * kilos
++    weight_charge = times(per_kg, weight_kg)
++    return BASE_FEE + weight_charge

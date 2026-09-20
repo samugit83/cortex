@@ -1,0 +1,5 @@
+id: 11
+title: invoice due_date: use shop.clock not date.today()
+base_sha: 1fb372eb1518a788c50afadc5aa85862480c6247
+timeout_s: 600
+harvested: 2026-09-20

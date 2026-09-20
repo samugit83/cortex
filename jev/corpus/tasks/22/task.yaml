@@ -1,0 +1,5 @@
+id: 22
+title: add new_arrivals function to catalog
+base_sha: a7dec4e7b65ae90307655b61232a79426298625f
+timeout_s: 600
+harvested: 2026-09-20

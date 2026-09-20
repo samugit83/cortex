@@ -39,6 +39,13 @@ USAGE
                          How each skill/rule was used in your sessions (last
                          prune.usage_days) and which tasks can measure it —
                          for choosing what /prune tests, never for deleting
+  cortex scope [--candidate <n>] [--replace "<a> [b]"] [--tasks "01 02"] [--json]
+                         Before a sweep: which tasks a candidate would be injected
+                         into, and how many of them are actually about its subject.
+                         Advisory — it warns, it never blocks and never kills
+  cortex themes [--json] [--days N]
+                         Which problem recurs most, counted over every lesson (and,
+                         with Jev, every transcript) instead of a sample
   cortex prune plan [--items "<a> [b]"] [--why "<a>=reason"] | approve | cancel
          | next | record <name> --verdict V | finish [--force] | status
          | estimate [--tasks "01 02"]
@@ -56,8 +63,9 @@ USAGE
                          N rollouts at once (measurement.parallel.rollouts)
   cortex score           Print the last sweep's scores as JSON
   cortex clean           Remove worktrees and stale run state
-  cortex doctor          Check the environment is usable, and what parallel
-                         auto resolves to on this machine right now
+  cortex doctor          Check the environment is usable, what parallel auto
+                         resolves to on this machine right now, whether Jev is
+                         reachable, and whether this repo's commands are current
 
 Normally you do not call sweep/score by hand — /evolve and /prune do.
 __HELP__
@@ -111,6 +119,38 @@ cmd_doctor() {
       j=$(HARNESS parallel --kind "$k" --jobs 64 --json 2>/dev/null) || continue
       printf '  %-10s %s at a time — %s\n' "$k" "$(echo "$j" | jq -r .workers)" "$(echo "$j" | jq -r .why)"
     done
+  fi
+  # Jev is optional everywhere, so it can never make the environment incomplete:
+  # a missing key, a disabled switch and an unreachable endpoint are all states
+  # in which Cortex runs exactly as it does today.
+  if command -v python3 >/dev/null 2>&1; then
+    python3 "$CORTEX_HOME/bin/jev.py" doctor || true
+  fi
+  # A repo whose command files predate this Cortex silently runs the OLD /evolve,
+  # /harvest and /prune — the Jev steps are simply absent, with no error anywhere.
+  # Without this line that failure mode is invisible.
+  local repo reg c cur rec stale=()
+  if repo="$(git rev-parse --show-toplevel 2>/dev/null)"; then
+    reg="$repo/.claude/commands/.cortex-installed"
+    for c in harvest evolve prune; do
+      if [ ! -f "$repo/.claude/commands/$c.md" ]; then
+        stale+=("$c.md is not installed")
+      elif ! cmp -s "$CORTEX_HOME/commands/$c.md" "$repo/.claude/commands/$c.md"; then
+        cur=$(sha256sum < "$repo/.claude/commands/$c.md" | cut -c1-64)
+        rec=$(awk -v n="$c" '$1 == n {print $2}' "$reg" 2>/dev/null)
+        if [ -n "$rec" ] && [ "$cur" = "$rec" ]; then
+          stale+=("$c.md is older than this Cortex")
+        else
+          stale+=("$c.md is older than this Cortex (yours is customised) — Jev steps inactive")
+        fi
+      fi
+    done
+    if [ "${#stale[@]}" -gt 0 ]; then
+      printf '  %-10s %s\n' "commands" "${stale[0]}"
+      local i
+      for ((i = 1; i < ${#stale[@]}; i++)); do printf '  %-10s %s\n' "" "${stale[$i]}"; done
+      printf '  %-10s %s\n' "" "run: cortex init ${repo}"
+    fi
   fi
   [ "$ok" -eq 0 ] && echo "environment ok" || echo "environment incomplete"
   return $ok
@@ -250,7 +290,7 @@ Y
 
   # one line at a time: a repo initialised by an older Cortex gets the new lines too
   local line added=0
-  for line in ".evolve/runs/" ".evolve/candidate/"; do
+  for line in ".evolve/runs/" ".evolve/candidate/" ".evolve/jev/" ".env"; do
     if ! grep -qxF "$line" "$repo/.gitignore" 2>/dev/null; then
       [ "$added" -eq 0 ] && { echo ""; echo "# cortex runtime"; } >> "$repo/.gitignore"
       echo "$line" >> "$repo/.gitignore"; added=1
@@ -287,6 +327,8 @@ cmd_status() {
   local model
   model=$(jq -r '.model // ""' "$repo/.evolve/config.json" 2>/dev/null)
   echo "model    ${model:-(not pinned — rollouts use the CLI default)}"
+  # next to `model`, because it is the other setting that changes what /evolve does
+  python3 "$CORTEX_HOME/bin/jev.py" status 2>/dev/null || true
   # .evolve/ablation/ only exists in repos set up by an older Cortex, where
   # /prune moved live skills out of .claude/skills/ to measure them.
   local parked
@@ -307,7 +349,23 @@ cmd_config() {            # cortex config [--check]
   if [ "${1:-}" = "--check" ]; then
     "$CORTEX_HOME/bin/compile-config.py" "$repo" --quiet >/dev/null && echo "config.yaml is valid"
   else
-    "$CORTEX_HOME/bin/compile-config.py" "$repo" && jq . "$repo/.evolve/config.json"
+    # The exit code is the whole point of this command: an invalid config.yaml
+    # must make it non-zero. Anything printed AFTER the compile has to preserve
+    # that, or a broken config starts exiting 0.
+    local rc=0
+    if "$CORTEX_HOME/bin/compile-config.py" "$repo"; then
+      jq . "$repo/.evolve/config.json" || rc=$?
+    else
+      rc=$?
+    fi
+    # Two systems now carry the same values (.env beats config.yaml beats the
+    # built-in default), so print the effective one and where it came from.
+    if [ "$rc" -eq 0 ]; then
+      echo ""
+      echo "jev (effective value, and where it came from):"
+      python3 "$CORTEX_HOME/bin/jev.py" config 2>/dev/null || true
+    fi
+    return "$rc"
   fi
 }
 
@@ -525,6 +583,9 @@ cmd_clean() {             # cortex clean [--runs]   (--runs also deletes results
   git -C "$repo" worktree prune 2>/dev/null || true
   if [ "${1:-}" = "--runs" ]; then
     rm -f "$repo/.evolve/runs/"*.jsonl "$repo/.evolve/runs/"*.log 2>/dev/null || true
+    # the Jev log is an answer log ABOUT those results; it goes with them.
+    # (`cortex clean` without --runs leaves it alone, like the results.)
+    rm -rf "$repo/.evolve/jev" 2>/dev/null || true
     echo "cleaned (sandboxes + results)"
   else
     echo "cleaned (sandboxes; results kept — use --runs to delete them)"
@@ -543,6 +604,9 @@ case "${1:-}" in
   task)      shift; repo_root >/dev/null; exec python3 "$CORTEX_HOME/bin/harness.py" task "$@" ;;
   phase)     shift; repo_root >/dev/null; exec python3 "$CORTEX_HOME/bin/harness.py" evolve-phase "$@" ;;
   usage)     shift; repo_root >/dev/null; exec python3 "$CORTEX_HOME/bin/harness.py" usage "$@" ;;
+  scope)     shift; repo_root >/dev/null; exec python3 "$CORTEX_HOME/bin/harness.py" scope "$@" ;;
+  themes)    shift; repo_root >/dev/null; exec python3 "$CORTEX_HOME/bin/harness.py" themes "$@" ;;
+  jev)       shift; exec python3 "$CORTEX_HOME/bin/jev.py" "$@" ;;
   prune)     shift; repo_root >/dev/null; exec python3 "$CORTEX_HOME/bin/harness.py" prune "$@" ;;
   promote)   shift; cmd_promote "$@" ;;
   bury)      shift; cmd_bury "$@" ;;

@@ -1,0 +1,5 @@
+id: 06
+title: add TOTAL row to sales report
+base_sha: 0a342beb922c7b6b4a3cd15e4f6cd964a26e88a5
+timeout_s: 600
+harvested: 2026-09-19

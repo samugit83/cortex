@@ -1,0 +1,126 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index c33458a..b7d76a1 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -8,6 +8,7 @@ All notable changes users can see. Format: [Keep a Changelog](https://keepachang
+ - `shop list --limit N` to show only the first N products.
+ - `shop export --format tsv` for exporting orders as tab-separated values (handles commas in customer names).
+ - `shop export --format markdown` for exporting orders as a markdown table.
++- `shop export --format html` for exporting orders as an HTML table.
+ - `shop report` now includes a TOTAL row at the bottom showing total items and total amount.
+ - Invoice due date calculation: `due_date(issued=None, days=30)` returns a date 30 days after the issue date (or today if no issue date is given).
+ - `archive_old_orders(orders, days=90, today=None)` separates recent orders from those older than the specified threshold, returning `(recent, archived)`.
+diff --git a/docs/exporters.md b/docs/exporters.md
+index 8930f6a..302ba52 100644
+--- a/docs/exporters.md
++++ b/docs/exporters.md
+@@ -6,6 +6,7 @@ these formats.
+ | name | extension | description |
+ |------|-----------|-------------|
+ | csv  | csv       | one row per order line, comma separated |
++| html | html      | a table with one row per order line |
+ | json | json      | the orders as a JSON array, amounts as decimal strings |
+ | markdown | md | a table with one row per order line |
+ | ndjson | ndjson | one JSON object per order line (newline-delimited JSON) |
+diff --git a/shop/plugins/html_export.py b/shop/plugins/html_export.py
+new file mode 100644
+index 0000000..07e4f9b
+--- /dev/null
++++ b/shop/plugins/html_export.py
+@@ -0,0 +1,33 @@
++"""HTML: a table with one row per order line."""
++from .base import Exporter
++
++
++class HtmlExporter(Exporter):
++    name = "html"
++    extension = "html"
++
++    def export(self, orders) -> str:
++        headers = ["order", "date", "customer", "sku", "qty", "unit_price", "line_total"]
++        lines = ["<table>"]
++
++        # Header row
++        lines.append("<tr>")
++        for header in headers:
++            lines.append(f"<th>{header}</th>")
++        lines.append("</tr>")
++
++        # Data rows
++        for o in orders:
++            for line in o.lines:
++                lines.append("<tr>")
++                lines.append(f"<td>{o.id}</td>")
++                lines.append(f"<td>{o.date.isoformat()}</td>")
++                lines.append(f"<td>{o.customer}</td>")
++                lines.append(f"<td>{line.sku}</td>")
++                lines.append(f"<td>{line.qty}</td>")
++                lines.append(f"<td>{line.unit_price}</td>")
++                lines.append(f"<td>{line.total}</td>")
++                lines.append("</tr>")
++
++        lines.append("</table>")
++        return "\n".join(lines) + "\n"
+diff --git a/shop/plugins/registry.py b/shop/plugins/registry.py
+index a3a926b..6fb5ae4 100644
+--- a/shop/plugins/registry.py
++++ b/shop/plugins/registry.py
+@@ -1,5 +1,6 @@
+ """Which export formats exist. A format that is not listed here does not exist."""
+ from .csv_export import CsvExporter
++from .html_export import HtmlExporter
+ from .json_export import JsonExporter
+ from .markdown_export import MarkdownExporter
+ from .ndjson_export import NdjsonExporter
+@@ -8,6 +9,7 @@ from .xml_export import XmlExporter
+ 
+ EXPORTERS = {
+     "csv": CsvExporter,
++    "html": HtmlExporter,
+     "json": JsonExporter,
+     "markdown": MarkdownExporter,
+     "ndjson": NdjsonExporter,
+diff --git a/tests/golden/order.html b/tests/golden/order.html
+new file mode 100644
+index 0000000..75d8f85
+--- /dev/null
++++ b/tests/golden/order.html
+@@ -0,0 +1,38 @@
++<table>
++<tr>
++<th>order</th>
++<th>date</th>
++<th>customer</th>
++<th>sku</th>
++<th>qty</th>
++<th>unit_price</th>
++<th>line_total</th>
++</tr>
++<tr>
++<td>A-1001</td>
++<td>2026-09-02</td>
++<td>Rossi SRL</td>
++<td>MUG-001</td>
++<td>2</td>
++<td>8.50</td>
++<td>17.00</td>
++</tr>
++<tr>
++<td>A-1001</td>
++<td>2026-09-02</td>
++<td>Rossi SRL</td>
++<td>TEA-001</td>
++<td>1</td>
++<td>5.20</td>
++<td>5.20</td>
++</tr>
++<tr>
++<td>A-1002</td>
++<td>2026-09-05</td>
++<td>Studio Verde</td>
++<td>LMP-001</td>
++<td>1</td>
++<td>39.00</td>
++<td>39.00</td>
++</tr>
++</table>

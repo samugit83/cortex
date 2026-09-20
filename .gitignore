@@ -5,3 +5,12 @@ lab/state/autopilot.log
 lab/bench/results.jsonl
 lab/bench/tasks.json
 .DS_Store
+
+# jev/corpus/ IS committed on purpose: it is the snapshot J0 scored, and
+# `cortex clean --runs` deletes the .evolve/runs/ it came from. This one is the
+# scratch file corpus.py writes while exploring, and it is not evidence.
+jev/firing_corpus.jsonl
+
+# secrets. NEVER commit a .env: it holds JEV_API_KEY, and a key that reaches a
+# commit reaches every clone and every rollout sandbox made from one.
+.env

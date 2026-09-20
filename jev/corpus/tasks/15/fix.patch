@@ -1,0 +1,13 @@
+diff --git a/shop/util/text.py b/shop/util/text.py
+index 00cc2a0..40066cc 100644
+--- a/shop/util/text.py
++++ b/shop/util/text.py
+@@ -16,7 +16,7 @@ def truncate(text: str, width: int, ellipsis: str = "…") -> str:
+     """Cut `text` to at most `width` characters, ending with `ellipsis` when cut."""
+     if len(text) <= width:
+         return text
+-    return text[:width] + ellipsis
++    return text[:width - len(ellipsis)] + ellipsis
+ 
+ 
+ def pluralize(count: int, noun: str, plural: str | None = None) -> str:

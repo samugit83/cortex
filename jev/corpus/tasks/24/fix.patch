@@ -1,0 +1,25 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index b7d76a1..c596b85 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -21,6 +21,7 @@ All notable changes users can see. Format: [Keep a Changelog](https://keepachang
+ ### Fixed
+ - `shop show` and `shop list` now display "Out of stock" instead of "0 left" when a product's stock is zero.
+ - Shipping cost calculation now uses pro-rata pricing for partial kilograms instead of truncating to whole kilos.
++- `add_business_days()` now correctly skips Saturdays (previously counted them as working days).
+ 
+ ## [0.9.0] - 2026-08-28
+ 
+diff --git a/shop/util/dates.py b/shop/util/dates.py
+index af6df7a..6e62011 100644
+--- a/shop/util/dates.py
++++ b/shop/util/dates.py
+@@ -24,7 +24,7 @@ def add_business_days(start: date, days: int) -> date:
+     added = 0
+     while added < days:
+         current += timedelta(days=1)
+-        if current.weekday() < 6:
++        if current.weekday() < 5:
+             added += 1
+     return current
+ 

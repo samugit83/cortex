@@ -1,0 +1,1 @@
+We paste order summaries into our wiki. Can you add a `markdown` export format (a table, one row per order line)? The tests are in tests/test_export_markdown.py.

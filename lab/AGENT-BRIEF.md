@@ -22,6 +22,7 @@ Read this whole brief before touching anything.
 | `lab/bench/bench.py` | the benchmark: `prepare`, `run`, `report`; arms differ only by harness |
 | `lab/bin/lab`, `lab/bin/scenarios.py` | session helper, oracle, 41 scenarios (`LAB_REPO`/`LAB_STATE` aware) |
 | `Cortex/README.md`, `docs/THEORY.md` | what Cortex does and why |
+| `Cortex/docs/JEV.md` | **read this before planning any run.** Cortex gained an optional judge after D0; §1.15 and §3.2b say what that does to this programme |
 | `Cortex/paper/concept-audit.md` | what is genuinely new; your results must support §5 there |
 | `Cortex/paper/plan.md` | the paper this report feeds |
 
@@ -69,10 +70,11 @@ Read this whole brief before touching anything.
 | 1.8 | **No A/A check.** Nothing shows the pipeline reports zero when there is nothing to find | the `none2` arm (§4.4) |
 | 1.9 | **`/prune` decided "nothing to test"**, so H10 is untested | the prune experiment with planted items (§4.6) |
 | 1.10 | **No pre-registration** | write one before the new runs (§3.6) |
-| 1.11 | **`lab/README.md`'s rounds table contradicts the code.** The code groups families (R1=B, R2=A, R3=C, R4=E, R5=D, …), the README interleaves them | fix the README to match `scenarios.py: ROUNDS` |
+| 1.11 | ~~`lab/README.md`'s rounds table contradicts the code~~ — **already fixed; verified round by round against `scenarios.py: ROUNDS`. Do not spend time on it.** | nothing |
 | 1.12 | **One model.** Every number is conditional on Haiku 4.5 | the model-change study (§4.8) |
 | 1.13 | **One repository, built by us.** The hardest attack on the whole paper | a second, real repository with tasks mined from its history (§4.9) |
 | 1.14 | **No artifact package.** A reviewer who cannot re-run anything discounts everything | §7 |
+| **1.15** | **Cortex gained a judge after D0.** `/evolve` can now consult Jev when choosing the theme, the tier and the scope. It never touches the gates — but it changes *which* candidate is proposed, which is the treatment. D0 ran without it, so D0 and any Jev-on run are not comparable, and §3.2's freeze does not freeze it | **§3.2b**: pin it or switch it off, and record which. Default **off** for every primary number. Score it separately (**H16–H18**, §4.11) |
 
 ---
 
@@ -99,6 +101,9 @@ number, interval, and the pre-registered margin where one applies.
 | **H13** | D0 replicates: what the development run found holds on the frozen version | D0 vs R1…Rn |
 | **H14** | **Model change:** after an upgrade, re-measurement changes which items earn their place, and the gain from the same harness differs | model-change study (§4.8) |
 | **H15** | **External validity:** the loop also helps on a repository nobody in this project built, with tasks mined from its own history | second repository (§4.9) |
+| **H16** | **Pre-sweep scope prediction.** A candidate's *relevance* — the share of the tasks it is injected into that are actually about it — separates KEPT from BURIED-on-regression, where the free alternative (glob breadth) does not | `lab/bin/scope-replay`, §4.11. **No new rollouts** |
+| **H17** | **Trigger prediction.** The judge's predicted fire rate tracks the measured one (D0: 52/52 for a rule, 20/27 and 7/123 for two gated skills) | §4.11, joined with the firing data H3 already collects |
+| **H18** | **Census vs sample.** Counting every lesson and transcript chooses a different theme than reading a sample does | one Jev-on run, §4.11 |
 
 **Honesty rules.** You are testing the thesis, not selling it. Fix the analysis
 before you see the data; log every deviation in `DEVIATIONS.md`; report every
@@ -130,6 +135,35 @@ changes D0's tooling and every future run.
    `v1.1-eval`, and **restart the affected runs from scratch**. Never pool runs
    from different tags in a primary result.
 
+### 3.2b Freeze the judge too, or switch it off
+Tagging Cortex freezes Cortex. It does not freeze **Jev**, which is a model on
+someone else's server reached through a moving alias, and which now participates in
+choosing what `/evolve` proposes.
+
+1. **Default: off.** Every run that produces a primary number — R1…Rn, C1…Cm, the
+   gate testbed (§4.5), the prune testbed (§4.6) — runs `autopilot … --jev off`.
+   That is the default, and it sets `JEV_ENABLED=0` and an empty `JEV_API_KEY`
+   explicitly, so a run's treatment cannot depend on the operator's own `.env`.
+2. **Why off, and not "on, it only helps the proposal":** D0 had no judge, so H13
+   ("D0 replicates") is only testable without one; and a judge that changes which
+   candidate is proposed changes the treatment, not the tooling. Put it in an arm,
+   not in the background.
+3. **If a run is deliberately Jev-on** (§4.11's H18 run, and only that one):
+   `JEV_MODEL` must be an exact version. `autopilot` refuses to start on
+   `jev-latest` / `jev-preview` and says why. Record the version, the endpoint and
+   `jev/RESULTS.md`'s `validated-model` in the manifest.
+4. **Treat the drift warning as a stop.** `bin/jev.py` prints
+   `answering model is X, J0 validated Y` once per run and keeps going, because it
+   is advisory in production. In an evaluation it is not advisory: stop the run,
+   record it, re-pin.
+5. `roundcheck N` prints a **FINDING** when more than one model answered in a round,
+   or when an alias did. Read it.
+
+**What does not need any of this:** the gates. `cortex score`, `check.sh`, preflight
+and `sweep.sh` contain no Jev code — Cortex's own suite asserts the string does not
+appear in them. So §4.5's placebo calibration measures exactly what it measured
+before, and that is worth stating in the report rather than leaving implicit.
+
 ### 3.3 One isolated copy per run
 `cortex-lab-R1…Rn`, `cortex-lab-C1…`, `cortex-lab-GATE`, `cortex-lab-PRUNE`.
 Each with its own `LAB_STATE`, its own `BENCH_OUT`, and **its own
@@ -147,6 +181,8 @@ copies made after a run ends; planting items there is the experiment.
 ### 3.5 Model, permissions, environment
 - Haiku 4.5 everywhere (`claude-haiku-4-5-20251001`). The optional model-change
   study (§4.8) is the only exception.
+- **Jev off** (§3.2b). The one Jev-on run in §4.11 is the only exception, and it is
+  never pooled with the others.
 - Sessions: the same permission mode D0 used (the autopilot's own mode), so the
   runs stay comparable. Rollouts: `acceptEdits`, never `bypassPermissions`.
 - Record the user-level skills visible in rollouts (from `init` events), as D0
@@ -180,7 +216,8 @@ Every number in the report comes from scripts in `reports/analysis/` reading
 ### 4.1 Phase 1 — preparation (no evaluation rollouts yet)
 
 1. **Back up** D0 (`cortex-lab`, `lab/state/`, `lab/results/`, `lab/bench/`).
-2. **Fix `lab/README.md`'s rounds table** to match `ROUNDS` in `scenarios.py`.
+2. ~~Fix `lab/README.md`'s rounds table~~ — **already correct.** Verified round by
+   round against `ROUNDS`. Skip it.
 3. **Extend the tooling** (all with tests, before the freeze):
    - `autopilot`: a `--no-evolve` mode for control runs; `LAB_REPO`-safe; a
      per-call turn cap (≈40) and timeout (≈15 min), recorded when hit.
@@ -190,6 +227,10 @@ Every number in the report comes from scripts in `reports/analysis/` reading
      and `read_contributing` (did the rollout Read `CONTRIBUTING.md`?).
    - `bin/harness.py observe` in Cortex: add `turns`, `tool_calls`,
      `read_contributing` so sweeps record them too.
+     **This changes the sweep row schema.** Bump `"schema"` from 2 to 3 in
+     `sweep.sh`, update every reader (`score.sh`, `usage_rows()`, `jev/corpus.py`,
+     `recorded_visible()`), and re-export D0 so old and new rows are read by the
+     same scripts. Do it in Phase 1, before the freeze — never mid-programme.
    - A results exporter that writes `reports/data/*.jsonl` from D0's existing
      runs, sessions and journal, so D0 is analysed by the same scripts.
 4. **Write the 15 new holdout scenarios** (3 per family → 6 per family total).
@@ -262,6 +303,12 @@ identically in every arm, and report them.
 **Testbed:** a copy of C1's final repository (tasks harvested, no items live).
 Reset it to the same commit before every candidate, and **never `cortex promote`** there.
 
+**Run this with Jev off, and say in the report that it would not matter.** The gates
+contain no Jev code — Cortex's suite asserts `jev` appears nowhere in `score.sh`,
+`preflight.sh` or `sweep.sh` — so the false-KEEP rate measured here is a property of
+the gates alone, before and after the judge existed. That is the cleanest evidence
+in the programme for the proposal/fitness boundary, and it costs one sentence.
+
 | Type | Min | Target | What |
 |---|---|---|---|
 | Placebo, topic | 5 | 10 | plausible, irrelevant advice, topic description |
@@ -304,10 +351,21 @@ second pass (`cortex prune plan --items …`) for any planted item it skipped.
 **Target:** also plant B as an always-on skill instead of a rule, and see
 whether `/prune` proposes and measures the narrowing.
 
+**With Jev off** (the default) `cortex prune plan` prints no `DOUBT` column and the
+items run in the order the plan shows — which is what this experiment measures.
+If you also run the pass Jev-on as a secondary observation, note that `jev_rank`
+is a **sort order only**: it cannot delete anything, every verdict still comes from
+that item's own sweep, and a plan built Jev-on and executed Jev-off runs the same
+approved items. The question worth recording is narrow and cheap: *did the ranking
+put the planted useless items above the real ones?* Report it as an observation,
+never as a verdict.
+
 ### 4.7 Checkpoint B (after §4.8 and §4.9, when all data is in)
 `reports/CHECKPOINT-B.md`: data complete, what is missing and why, spend so far.
 Phases run in this order: 3 (runs) → 4 (benchmark) → 5 (gates) → 6 (prune) →
-7 (model change) → 8 (second repository) → **Checkpoint B** → analysis.
+7 (model change) → 8 (second repository) → 9 (scoring the judge, §4.11) →
+**Checkpoint B** → analysis. Phase 9 needs no rollouts and can run any time after
+phase 3, but it must run *after* the verdicts exist — it is scored against them.
 
 ### 4.8 Phase 7 — the model-change study (required)
 
@@ -387,14 +445,68 @@ sessions ≈$0.40 each. **MIDDLE is the default.**
 | **Lab subtotal** | ≈$800 | **≈$1,050** | ≈$1,400 |
 | Model change (§4.8) | — | **≈$120** | ≈$150 |
 | Second repository (§4.9) | — | **≈$200** | ≈$250 |
-| **Total** | **≈$800** | **≈$1,370** | **≈$1,800** |
+| Scoring the judge (§4.11) | ≈$0.30 | **≈$0.30** | ≈$130 (adds the H18 run) |
+| **Total** | **≈$800** | **≈$1,370** | **≈$1,930** |
 | Wall time (12 workers) | ≈2–3 days | **≈3–4 days** | ≈4–6 days |
 
 Cut in this order if needed: prune to planted items only; holdout k 5→3;
 evaluation runs 4→3; placebos 20→10 (keep both types).
 **Never cut:** the control run, the holdout expansion, `none2`, the placebos,
 the primary `none`/`evolved` arms, or the second repository (§4.9) — it is the
-single most valuable block in the programme.
+single most valuable block in the programme. H16/H17 (§4.11) cannot be cut either,
+because they cost nothing: zero rollouts and ~$0.30. H18's Jev-on run is the first
+thing to drop if the budget tightens.
+
+### 4.11 Phase 9 — scoring the judge (H16, H17, H18)
+
+Cortex's proposal layer can now consult a judge. The programme has to say whether
+that helps, and the honest way to ask is to **score its predictions against runs
+that already happened** rather than let it steer the runs that produce the primaries.
+
+**H16 and H17 cost no rollouts at all.** Run after the runs finish:
+
+```bash
+lab/bin/scope-replay --evolve <run>/.evolve --out reports/data
+```
+
+It clones the run (never writing to the source), reconstructs every candidate from
+`.claude/` or the graveyard, runs `cortex scope --json` against that run's own task
+suite, and joins the prediction with the recorded verdict and cost. Do this for D0
+and for every R1…Rn.
+
+Report three things:
+
+1. **Does relevance separate?** Lowest KEPT against highest BURIED-on-regression,
+   pooled across runs, with a Clopper–Pearson interval on the classification rate.
+2. **Does the free alternative separate?** Breadth is the control and it must be
+   reported whether or not the judge is available. On D0 it does **not**: kept
+   19%/50%/96% against regression-buried 12%/12%/46%/58%/96%. If breadth separates
+   on the new runs, the judge is unnecessary and that is the finding.
+3. **The counterfactual, stated as a counterfactual.** How many rollouts and dollars
+   went to candidates the floor would have flagged — and how many KEPT items it would
+   have flagged too, which is the cost of acting on it. Never present the saving
+   without the false-alarm count beside it.
+
+**H17** joins the same rows with the firing data H3 already collects: predicted fire
+rate against measured. D0's three kept items (52/52, 20/27, 7/123) are the calibration
+set, and `check-changelog-on-shop-edits` — invoked 7 times in 123 rollouts while its
+family gained +67 — is the case that matters. Report H17 beside H12's `desc-only` arm:
+the arm measures the effect, the predictor is scored against it.
+
+**H18 needs one run, and it is optional.** `autopilot round 1..10 --jev on` with
+`JEV_MODEL` pinned, on its own isolated copy. Compare which theme each round chose
+against the Jev-off runs. It is **never pooled** with the primaries and never used
+for H1, H2 or H13.
+
+**Before any of this, check whether the judge is validated at all.** `jev/RESULTS.md`
+must exist and name the model it was measured against; if it does not, J0 has not run
+and `cortex scope`'s semantic half is unavailable. In that case run `scope-replay`
+anyway: it reports the deterministic half, and "the free check does not separate" is
+a publishable result on its own that needs no key.
+
+**Cost:** H16 and H17 are ~$0.30 of judge calls in total and zero rollouts. H18 is one
+ordinary run (~$130). Against a ≈$1,370 programme this is rounding error — do not let
+it displace anything in §4.10.
 
 ---
 
@@ -438,7 +550,20 @@ single most valuable block in the programme.
   Analyse the two models separately; never pool them;
 - **H15 (second repository):** its own paired analysis over its 4 holdout
   tasks at k=5, with a bootstrap CI. With so few tasks the interval will be
-  wide: report it as corroboration, not as a second primary result.
+  wide: report it as corroboration, not as a second primary result;
+- **H16 (scope prediction):** pooled over every candidate of every run. Report the
+  lowest KEPT and highest BURIED-on-regression relevance, the classification rate
+  with a Clopper–Pearson interval, and **breadth as the control on the same rows**.
+  If breadth separates too, say so plainly: the judge is then unnecessary. Predictions
+  were computed from each candidate's own text and its run's task suite, never from
+  the verdict — state that, because it is what makes them predictions;
+- **H17 (trigger prediction):** predicted against measured fire rate per item, over
+  all runs. Too few items for a correlation to mean much: report the pairs and the
+  rank order, not an r;
+- **H18 (census vs sample):** which theme each round chose, Jev-on against Jev-off.
+  Descriptive only — one run cannot support more;
+- **the judge is never in a primary.** H1, H2 and H13 come from Jev-off runs. If any
+  primary number ever depends on a Jev-on run, the analysis is wrong.
 
 ---
 
@@ -475,9 +600,10 @@ reports/
 11. **Reproducibility (H9, H13)**: runs against each other, and against D0.
 12. **A stronger model (H14)**: the benchmark and what `/prune` decided under it.
 13. **A repository we did not build (H15)**: its own section, with its own threats, never pooled with the lab.
+13b. **Predicting the verdict before paying for it (H16–H18)**: the scope replay, breadth as the control, the counterfactual saving *and* the false alarms, and what the judge's presence does and does not touch. Open it by naming the boundary: the gates contain no model, the proposal layer may.
 14. **Why failures remain**; **noise and cost**.
 15. **What the lab found in Cortex**: the defect catalogue (T16), as a contribution in its own right.
-16. **Threats to validity**: one synthetic repo (answered in part by §13), one main model (answered in part by §12), lintable rules only, scripted corrections, the holdout written after D0's items were known, Cortex changing during D0, environment, multiple comparisons.
+16. **Threats to validity**: one synthetic repo (answered in part by §13), one main model (answered in part by §12), lintable rules only, scripted corrections, the holdout written after D0's items were known, Cortex changing during D0, environment, multiple comparisons, **and a judge in the proposal layer** (answered in part by §13b) — say that Cortex ships one, that the primaries ran without it, that the gates contain no reference to it and a test asserts so, and that H16–H18 score it rather than assume it. A reviewer who finds the judge unprompted will discount the whole paper; one who reads it here will not.
 17. **Deviations**, and **how to reproduce**.
 
 ### Figures (PNG + SVG, matplotlib, readable in grayscale, n in every caption)
@@ -501,6 +627,8 @@ reports/
 | F15 | The description test (H12): `evolved` vs `desc-only` vs `none`, per family |
 | F16 | Model change (H14): the holdout gain under Haiku vs the stronger model, side by side |
 | F17 | Second repository (H15): pass rate per arm on its holdout tasks, with CIs |
+| F18 | **Scope prediction (H16):** predicted relevance (x) against fate (colour), one point per candidate over all runs, with the floor drawn — and breadth on the same axes beside it as the control |
+| F19 | Trigger prediction (H17): predicted against measured fire rate, one point per live item |
 
 ### Tables
 
@@ -524,6 +652,8 @@ reports/
 | T16 | **Defect catalogue:** every Cortex defect the lab found (D0's 39 plus anything new), one row each: class (task validity / scoring / isolation / attribution / tooling), symptom, how it was detected, why it would corrupt a measurement, the fix, the regression test, and which runs it affected. This is a contribution, so write it for an outside reader |
 | T17 | Second repository (H15): repo, mined tasks, split, pass rates per arm, gain with CI |
 | T18 | **Claims table:** every sentence the paper will assert → the figure or table that supports it → the exact number and interval. Flag any sentence without evidence and delete it |
+| T19 | **Scope replay (H16):** candidate × run → kind, injected/suite, relevance, breadth, fate, rollouts, cost; with the counterfactual saving and the false-alarm count as the two summary rows. Generated by `lab/bin/scope-replay`; never hand-typed |
+| T20 | **Judge provenance:** run → Jev on/off, exact model id, endpoint, requests, answered, fell back. Every run appears, including the ones that were off — "off" is the claim that has to be checkable |
 
 ---
 
@@ -563,6 +693,9 @@ package that a stranger can use, in `Cortex/lab/reports/` plus the repository ro
 - [ ] The defect catalogue (T16) is written for an outside reader.
 - [ ] `PREREGISTRATION.md` was committed before the first replicate rollout; `DEVIATIONS.md` lists every change.
 - [ ] Every evaluation, control, gate, prune, model-change and second-repository process ran on the frozen Cortex tag; the manifest proves it.
+- [ ] **Every run's manifest records whether Jev was on, and if it was, the exact model id** — never an alias. Runs that produce a primary number are Jev-off (T20 shows it).
+- [ ] **H16 and H17 are reported for D0 and every evaluation run**, with breadth as the control on the same rows, and with the false-alarm count printed beside any counterfactual saving.
+- [ ] `jev/RESULTS.md` is either present and cited, or its absence is stated: the semantic half of `cortex scope` is unvalidated until J0 has run, and the report says which.
 - [ ] D0 is reported and analysed by the same scripts, clearly marked as the development run on an unfrozen version.
 - [ ] The A/A arm's result is reported, whatever it shows.
 - [ ] The second repository is reported in its own section, never pooled with the lab.

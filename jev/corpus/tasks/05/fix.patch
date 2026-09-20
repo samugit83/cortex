@@ -1,0 +1,31 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index e995ea0..f94a2d2 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -6,6 +6,7 @@ All notable changes users can see. Format: [Keep a Changelog](https://keepachang
+ 
+ ### Changed
+ - `shop list` sorts products by price (cheapest first) by default; use `--sort name` to sort by name.
++- Prices over €1,000 now show with thousands separators (e.g. €1,249.00).
+ 
+ ## [0.9.0] - 2026-08-28
+ 
+diff --git a/shop/formatting.py b/shop/formatting.py
+index 3a80cc8..32202bd 100644
+--- a/shop/formatting.py
++++ b/shop/formatting.py
+@@ -5,10 +5,12 @@ SYMBOLS = {"EUR": "€", "USD": "$", "GBP": "£", "CHF": "CHF "}
+ 
+ 
+ def format_money(amount: Money, currency: str = "EUR") -> str:
+-    """'€12.50'; negative amounts as '-€12.50'."""
++    """'€1,249.00'; negative amounts as '-€1,249.00'."""
+     sign = "-" if amount.cents < 0 else ""
+     c = abs(amount.cents)
+-    return f"{sign}{SYMBOLS.get(currency, currency + ' ')}{c // 100}.{c % 100:02d}"
++    whole = c // 100
++    frac = c % 100
++    return f"{sign}{SYMBOLS.get(currency, currency + ' ')}{whole:,}.{frac:02d}"
+ 
+ 
+ def format_table(headers: list[str], rows: list[list[str]]) -> str:

@@ -16,6 +16,20 @@ PASS=0; FAIL=0; FAILED=()
 # oversubscribed machine invalid. Tests that need load set CORTEX_LOADAVG.
 export CORTEX_LOADAVG="${CORTEX_LOADAVG:-0}"
 export CORTEX_EXCLUSIVE_WAIT="${CORTEX_EXCLUSIVE_WAIT:-2}"
+# NO TEST MAKES AN API CALL, and no test reads the developer's own .env.
+#
+# JEV_ENV_FILE moves the machine-level .env, so /dev/null removes
+# $CORTEX_HOME/.env from the precedence chain entirely — otherwise a developer
+# with a real key and a raised budget would get different test results from a
+# developer without one, and a test of config.yaml could never fail. The three
+# lines below are then the only Jev state the suite starts with: off, no key (an
+# empty value shadows one set lower down), and an endpoint that cannot reach the
+# real API even by mistake. The jev: tests opt back in one at a time, always
+# against test/jev-stub.py.
+export JEV_ENV_FILE=/dev/null
+export JEV_ENABLED=0
+export JEV_API_KEY=""
+export JEV_BASE_URL="http://127.0.0.1:1/there-is-no-server-here"
 JOBS="${CORTEX_TEST_JOBS:-1}"
 if [ "${1:-}" = "-j" ]; then JOBS="${2:-auto}"; shift 2 || shift; fi
 if [ "$JOBS" = "auto" ]; then JOBS=$(nproc 2>/dev/null || echo 2); [ "$JOBS" -gt 8 ] && JOBS=8; fi
@@ -80,6 +94,10 @@ open(p,"w").writelines(out)
 P
 }
 
+jevcfg() {  # append a `jev:` block to config.yaml with these lines under it
+  { echo ""; echo "jev:"; printf '%s\n' "$@"; } >> .evolve/config.yaml
+}
+
 mk_cand() { mkdir -p ".evolve/candidate/$1"; printf -- '---\nname: %s\ndescription: d\n---\nCheck.\n' "$1" > ".evolve/candidate/$1/SKILL.md"; }
 
 stub() {                      # $1 = dir, $2 = body of the fake agent
@@ -135,6 +153,38 @@ synth() {                     # $1 = file, $2 = k, then "task base_passes cand_p
   done
   echo '{"event":"done"}' >> "$f"
 }
+
+# --- the Jev stub: test/jev-stub.py is to the System One API what `stub` above
+# --- is to the Claude CLI. Six new network call sites must not break the suite's
+# --- central rule, so every one of them is driven against this instead.
+jev_stub() {                  # $1 = a scratch dir; exports JEV_BASE_URL and JEV_CTL
+  JEV_DIR="$1"; mkdir -p "$JEV_DIR"; rm -f "$JEV_DIR/url" "$JEV_DIR/pid" "$JEV_DIR/log"
+  JEV_CTL="$JEV_DIR/control.json"; echo '{}' > "$JEV_CTL"
+  export JEV_STUB_LOG="$JEV_DIR/log" JEV_STUB_CONTROL="$JEV_CTL"
+  python3 "$CORTEX/test/jev-stub.py" --urlfile "$JEV_DIR/url" --pidfile "$JEV_DIR/pid" \
+    >/dev/null 2>&1 &
+  JEV_PID=$!
+  local i
+  for i in $(seq 1 200); do [ -s "$JEV_DIR/url" ] && break; sleep 0.05; done
+  export JEV_BASE_URL; JEV_BASE_URL="$(cat "$JEV_DIR/url" 2>/dev/null)"
+}
+jev_ctl() {                   # jev_ctl KEY VALUE ... ; changes a RUNNING stub's mind
+  python3 - "$JEV_CTL" "$@" <<'P'
+import json, sys
+p = sys.argv[1]
+try: d = json.load(open(p))
+except Exception: d = {}
+a = sys.argv[2:]
+for k, v in zip(a[::2], a[1::2]):
+    if v == "": d.pop(k, None)
+    else: d[k] = v
+json.dump(d, open(p, "w"))
+P
+}
+jev_on()   { export JEV_ENABLED=1 JEV_API_KEY=test-key; }
+jev_off()  { export JEV_ENABLED=0 JEV_API_KEY=""; }
+jev_stop() { [ -n "${JEV_PID:-}" ] && kill "$JEV_PID" 2>/dev/null; JEV_PID=""; jev_off; }
+jev_calls(){ grep -c '"kind": "POST"' "${JEV_DIR:-/nonexistent}/log" 2>/dev/null || echo 0; }
 
 sweep() { PATH="$STUB:$PATH" bash "$CORTEX/bin/sweep.sh" "$@" 2>>"$LOG"; }
 score() { bash "$CORTEX/bin/score.sh" "$@"; }
@@ -2069,6 +2119,740 @@ t_transcripts_scoped() {
 
 # ---------------------------------------------------------------- driver ----
 mkdir -p "$TMP"
+# ============================================================== JEV ==========
+# §3.8: six network call sites, and the suite's rule that no test makes an API
+# call. Every row of the off-switch contract (§3.10) is asserted here, because a
+# document cannot assert it.
+
+jev_fixture() {               # a repo with two tasks, a candidate and a live item
+  local R="$1"; make_repo "$R"
+  mk_task 02
+  mk_live billing-helpers
+  mkdir -p ".evolve/candidate/clock-rule"
+  printf -- '---\npaths:\n  - "src/**"\n---\n\n# src\n- NEVER read the wall clock. Use shop.clock.\n' \
+    > .evolve/candidate/clock-rule/RULE.md
+  printf '2026-09-18 | task 01 | read the wall clock | use shop.clock\n' >> .evolve/lessons.md
+  printf '2026-09-18 | task 02 | forgot the helper | use the helper\n'   >> .evolve/lessons.md
+  printf 'area: billing-helpers\n' > .evolve/tasks/01/notes.md
+  printf 'area: billing-helpers\n' > .evolve/tasks/02/notes.md
+}
+
+t_jev_keyless_is_today() {
+  local R="$TMP/j1"; jev_fixture "$R"; jev_off
+  # every command works, Jev off, exit codes unchanged
+  local o rc
+  o=$(bash "$CORTEX/bin/cortex" scope --candidate clock-rule 2>&1); rc=$?
+  ok "$rc" "0" "J scope with no key exits 0"
+  case "$o" in *"injected into"*) pass "J scope still prints its deterministic half" ;;
+                *) fail "J scope still prints its deterministic half" "$o" ;; esac
+  case "$o" in *"relevance         unavailable (jev disabled)"*) pass "J scope says relevance is unavailable, and why" ;;
+                *) fail "J scope says relevance is unavailable, and why" "$o" ;; esac
+  # the other keyless shape: the switch is ON but there is no key
+  o=$(JEV_ENABLED=1 JEV_API_KEY="" bash "$CORTEX/bin/cortex" scope --candidate clock-rule 2>&1); rc=$?
+  ok "$rc" "0" "J scope with the switch on but no key exits 0"
+  case "$o" in *"relevance         unavailable (no key)"*) pass "J scope distinguishes 'no key' from 'disabled'" ;;
+                *) fail "J scope distinguishes 'no key' from 'disabled'" "$o" ;; esac
+  o=$(bash "$CORTEX/bin/cortex" themes 2>&1); rc=$?
+  ok "$rc" "0" "J themes with no key exits 0"
+  case "$o" in *"source: areas (jev off)"*) pass "J themes names its keyless source" ;;
+                *) fail "J themes names its keyless source" "$o" ;; esac
+  case "$o" in *"billing-helpers"*) pass "J themes counts lessons by their task's area, keylessly" ;;
+                *) fail "J themes counts lessons by their task's area, keylessly" "$o" ;; esac
+  ok "$(bash "$CORTEX/bin/cortex" status >/dev/null 2>&1; echo $?)" "0" "J status exits 0 with no key"
+  ok "$(bash "$CORTEX/bin/cortex" status 2>/dev/null | grep -c '^jev      disabled')" "1" \
+     "J status says jev is disabled"
+  ok "$(bash "$CORTEX/bin/cortex" skills --quiet >/dev/null 2>&1; echo $?)" "0" "J skills unchanged with no key"
+  # and the verdict path is untouched: no jev import, no jev field, anywhere
+  ok "$(grep -c 'jev' "$CORTEX/bin/score.sh")" "0" "J bin/score.sh contains no reference to jev at all"
+  ok "$(grep -c 'jev' "$CORTEX/bin/preflight.sh")" "0" "J bin/preflight.sh contains no reference to jev"
+  ok "$(grep -c 'jev' "$CORTEX/bin/sweep.sh")" "0" "J bin/sweep.sh contains no reference to jev"
+}
+
+t_jev_disabled_opens_no_socket() {
+  local R="$TMP/j2"; jev_fixture "$R"; jev_stub "$TMP/j2stub"
+  # a key IS present, but the master switch is off: not one socket may be opened
+  export JEV_API_KEY=test-key JEV_ENABLED=0
+  bash "$CORTEX/bin/cortex" scope --candidate clock-rule >/dev/null 2>&1
+  bash "$CORTEX/bin/cortex" themes >/dev/null 2>&1
+  bash "$CORTEX/hooks/log-session.sh" </dev/null >/dev/null 2>&1
+  ok "$(jev_calls)" "0" "J enabled:false with a key present opens no socket at all"
+  jev_stop
+}
+
+t_jev_scope_states() {
+  local R="$TMP/j3"; jev_fixture "$R"; jev_stub "$TMP/j3stub"; jev_on
+  local o
+  # a candidate with no paths: scope does not apply, and that is not a warning
+  mk_cand always-skill
+  o=$(bash "$CORTEX/bin/cortex" scope --candidate always-skill 2>&1); local rc=$?
+  ok "$rc" "0" "J an always-on candidate exits 0"
+  case "$o" in *"is always-on"*"scope does not apply"*) pass "J an always-on candidate is told scope does not apply" ;;
+                *) fail "J an always-on candidate is told scope does not apply" "$o" ;; esac
+  ok "$(jev_calls)" "0" "J an always-on candidate costs no request"
+
+  # the happy path, and the JSON /evolve branches on
+  jev_ctl JEV_STUB_NOUL 0.95
+  local j; j=$(bash "$CORTEX/bin/cortex" scope --candidate clock-rule --json 2>/dev/null)
+  ok "$(echo "$j" | jq -r '.scope.relevance')" "1.0" "J relevance is the ratio over the answers it got"
+  ok "$(echo "$j" | jq -r '.scope.below_floor')" "false" "J 100% relevance is not below the floor"
+  ok "$(echo "$j" | jq -r '.jev.fell_back')" "false" "J --json says whether it fell back"
+  ok "$(echo "$j" | jq -r '.per_task | length')" "2" "J --json reports one row per task"
+
+  # below the floor: a warning, and still exit 0
+  jev_ctl JEV_STUB_NOUL 0.02
+  o=$(bash "$CORTEX/bin/cortex" scope --candidate clock-rule 2>&1); rc=$?
+  ok "$rc" "0" "J a candidate below the floor still exits 0 — scope never blocks"
+  case "$o" in *"WARNING"*"not about"*) pass "J below the floor it warns in words" ;;
+                *) fail "J below the floor it warns in words" "$o" ;; esac
+  case "$o" in *"no gate reads it"*) pass "J the warning says no gate reads it" ;;
+                *) fail "J the warning says no gate reads it" "$o" ;; esac
+
+  # some answered, some not: never count an unanswered task as irrelevant
+  jev_ctl JEV_STUB_NOUL 0.95 JEV_STUB_DROP relevant
+  j=$(bash "$CORTEX/bin/cortex" scope --candidate clock-rule --json 2>/dev/null)
+  ok "$(echo "$j" | jq -r '.scope.relevance')" "null" "J with no answers at all there is no ratio"
+  ok "$(echo "$j" | jq -r '.scope.unanswered')" "2" "J unanswered tasks are counted as unanswered"
+  ok "$(echo "$j" | jq -r '.scope.injected')" "2" "J the deterministic half is unaffected by a fallback"
+  jev_ctl JEV_STUB_DROP ""
+
+  # a thin task: judged on prompt.txt alone, and said so
+  rm -f .evolve/tasks/02/notes.md
+  j=$(bash "$CORTEX/bin/cortex" scope --candidate clock-rule --json 2>/dev/null)
+  ok "$(echo "$j" | jq -r '[.per_task[] | select(.thin)] | length')" "1" "J a task with no notes.md is marked thin"
+  jev_stop
+}
+
+t_jev_scope_refuses_without_tasks() {
+  local R="$TMP/j4"; make_repo "$R"; jev_off
+  rm -rf .evolve/tasks/01
+  mk_cand c1
+  local o rc; o=$(bash "$CORTEX/bin/cortex" scope --candidate c1 2>&1); rc=$?
+  ok "$rc" "2" "J scope with no valid tasks exits 2, like /evolve A1"
+  case "$o" in *"cortex preflight"*) pass "J scope with no valid tasks names preflight" ;;
+                *) fail "J scope with no valid tasks names preflight" "$o" ;; esac
+}
+
+t_jev_scope_replace() {
+  local R="$TMP/j5"; jev_fixture "$R"; jev_stub "$TMP/j5stub"; jev_on
+  local o; o=$(bash "$CORTEX/bin/cortex" scope --replace billing-helpers 2>&1)
+  case "$o" in *"billing-helpers"*"live (replaced)"*) pass "J scope --replace reports a LIVE item" ;;
+                *) fail "J scope --replace reports a LIVE item" "$o" ;; esac
+  o=$(bash "$CORTEX/bin/cortex" scope --candidate clock-rule --replace billing-helpers 2>&1)
+  ok "$(echo "$o" | grep -c '^scope: ')" "2" "J scope shows the candidate and the live item side by side"
+  ok "$(bash "$CORTEX/bin/cortex" scope --replace no-such-item >/dev/null 2>&1; echo $?)" "2" \
+     "J scope --replace on an unknown item exits 2"
+  jev_stop
+}
+
+t_jev_themes_census() {
+  local R="$TMP/j6"; jev_fixture "$R"; jev_stub "$TMP/j6stub"; jev_on
+  jev_ctl JEV_STUB_CHOICE billing-helpers
+  local o; o=$(bash "$CORTEX/bin/cortex" themes 2>&1)
+  case "$o" in *"source: census"*) pass "J themes with Jev reports source: census" ;;
+                *) fail "J themes with Jev reports source: census" "$o" ;; esac
+  ok "$(bash "$CORTEX/bin/cortex" themes --json 2>/dev/null | jq -r '.themes[0].count')" "2" \
+     "J the census counts every lesson, not only the ones naming a task"
+  ok "$(bash "$CORTEX/bin/cortex" themes --json 2>/dev/null | jq -r '.source')" "census" \
+     "J --json names the source too"
+  # the same rule for the census: an invented theme has no definition anywhere
+  jev_ctl JEV_STUB_CHOICE not-an-area
+  ok "$(bash "$CORTEX/bin/cortex" themes --json 2>/dev/null | jq -r '.themes[0].name')" "(unclassified)" \
+     "J a theme outside the offered criteria is not counted as a theme"
+  ok "$(bash "$CORTEX/bin/cortex" themes --json 2>/dev/null | jq -r '.themes[0].clears')" "false" \
+     "J and it can never clear min_theme_occurrences"
+  jev_ctl JEV_STUB_CHOICE billing-helpers
+  # and the keyless run on the same repo is still a valid, smaller answer
+  jev_off
+  ok "$(bash "$CORTEX/bin/cortex" themes --json 2>/dev/null | jq -r '.source')" "areas (jev off)" \
+     "J the same repo counts keylessly without error"
+  jev_stop
+}
+
+t_jev_hook_never_slow_never_noisy() {
+  local R="$TMP/j7"; jev_fixture "$R"; jev_stub "$TMP/j7stub"
+  echo scratch > untracked.txt
+  local today; today=$(jev_off; bash "$CORTEX/hooks/log-session.sh" </dev/null 2>&1)
+  ok "$today" "cortex: uncommitted work — consider /harvest" "J the keyless hook is byte-for-byte today's"
+
+  jev_on; jev_ctl JEV_STUB_NOUL 0.95
+  local o; o=$(bash "$CORTEX/hooks/log-session.sh" </dev/null 2>&1)
+  case "$o" in *"p=0.95"*"consider /harvest"*) pass "J with Jev the hook nudges with its probability" ;;
+                *) fail "J with Jev the hook nudges with its probability" "$o" ;; esac
+
+  jev_ctl JEV_STUB_NOUL 0.05
+  o=$(bash "$CORTEX/hooks/log-session.sh" </dev/null 2>&1)
+  ok "$o" "" "J below the threshold the hook stays SILENT even with a dirty tree"
+
+  # the design rule outranks the feature: a hung endpoint must not hang a session
+  jev_ctl JEV_STUB_HANG 1
+  local t0 t1; t0=$(date +%s)
+  o=$(JEV_TIMEOUT_S=2 bash "$CORTEX/hooks/log-session.sh" </dev/null 2>&1); t1=$(date +%s)
+  ok "$o" "cortex: uncommitted work — consider /harvest" "J a hung endpoint falls back to today's nudge"
+  if [ $((t1 - t0)) -le 8 ]; then pass "J a hung endpoint cannot hang the session end"
+  else fail "J a hung endpoint cannot hang the session end" "took $((t1 - t0))s"; fi
+  jev_ctl JEV_STUB_HANG ""
+  # the session record itself is written either way
+  ok "$(wc -l < .evolve/sessions.jsonl)" "4" "J the hook still logs one line per session in every branch"
+  jev_stop
+}
+
+t_jev_http_errors_fall_back() {
+  local R="$TMP/j8"; jev_fixture "$R"; jev_stub "$TMP/j8stub"; jev_on
+  local o rc
+  for code in 401 422 500; do
+    jev_ctl JEV_STUB_STATUS "$code"
+    o=$(bash "$CORTEX/bin/cortex" scope --candidate clock-rule 2>&1); rc=$?
+    ok "$rc" "0" "J http $code still exits 0"
+    case "$o" in *"relevance         unavailable"*) pass "J http $code falls back to the deterministic half" ;;
+                  *) fail "J http $code falls back to the deterministic half" "$o" ;; esac
+  done
+  # a 403 from a gateway is not "no key": its message is the whole diagnosis, and
+  # a reader has to be able to tell it from TypeSafe's "you sent no key" 403
+  jev_ctl JEV_STUB_STATUS 403
+  o=$(bash "$CORTEX/bin/cortex" scope --candidate clock-rule 2>&1); rc=$?
+  ok "$rc" "0" "J a 403 from the endpoint still exits 0"
+  case "$o" in *"refused"*"stub says 403"*) pass "J a 403 is reported as refused, with the endpoint's own message" ;;
+                *) fail "J a 403 is reported as refused, with the endpoint's own message" "$o" ;; esac
+  jev_ctl JEV_STUB_STATUS ""
+
+  # a bad key is not retried: retrying it only makes the wait longer
+  jev_ctl JEV_STUB_STATUS 401
+  rm -f "$JEV_DIR/log"
+  bash "$CORTEX/bin/cortex" scope --candidate clock-rule >/dev/null 2>&1
+  ok "$(jev_calls)" "2" "J a 401 is not retried — one request per task, then fall back"
+  jev_ctl JEV_STUB_STATUS ""
+
+  # malformed JSON, and a missing question id: a fallback, never a traceback
+  jev_ctl JEV_STUB_BODY '{"model":"x","answers":'
+  o=$(bash "$CORTEX/bin/cortex" scope --candidate clock-rule 2>&1); rc=$?
+  ok "$rc" "0" "J a malformed response exits 0"
+  case "$o" in *Traceback*) fail "J a malformed response never shows a traceback" "$o" ;;
+                *) pass "J a malformed response never shows a traceback" ;; esac
+  jev_ctl JEV_STUB_BODY ""
+  jev_stop
+}
+
+t_jev_429_is_retried_then_falls_back() {
+  local R="$TMP/j9"; jev_fixture "$R"; jev_stub "$TMP/j9stub"; jev_on
+  # 429 twice, then 200: honoured, and the answer arrives
+  jev_ctl JEV_STUB_STATUS 429 JEV_STUB_RETRY_AFTER 0 JEV_STUB_FAIL_TIMES 2 JEV_STUB_NOUL 0.9
+  local j; j=$(bash "$CORTEX/bin/cortex" scope --candidate clock-rule --json 2>/dev/null)
+  ok "$(echo "$j" | jq -r '.jev.answered > 0')" "true" "J a transient 429 is retried and then answered"
+
+  # 429 forever, with a Retry-After longer than the budget: falls back inside timeout_s
+  rm -f "$JEV_DIR/log"
+  jev_ctl JEV_STUB_FAIL_TIMES "" JEV_STUB_RETRY_AFTER 30
+  local t0 t1; t0=$(date +%s)
+  j=$(JEV_TIMEOUT_S=3 bash "$CORTEX/bin/cortex" scope --candidate clock-rule --json 2>/dev/null); t1=$(date +%s)
+  ok "$(echo "$j" | jq -r '.scope.relevance')" "null" "J a permanent 429 falls back"
+  ok "$(echo "$j" | jq -r '.scope.injected')" "2" "J and the deterministic half survives it"
+  if [ $((t1 - t0)) -le 10 ]; then pass "J a long Retry-After never exceeds the timeout budget"
+  else fail "J a long Retry-After never exceeds the timeout budget" "took $((t1 - t0))s"; fi
+  jev_stop
+}
+
+t_jev_model_drift_warns_once() {
+  local R="$TMP/j10"; jev_fixture "$R"; jev_stub "$TMP/j10stub"; jev_on
+  jev_ctl JEV_STUB_MODEL jev-9.9.9 JEV_STUB_NOUL 0.9
+  local err; err=$(bash "$CORTEX/bin/cortex" scope --candidate clock-rule 2>&1 >/dev/null)
+  local want; want=$(sed -n 's/^validated-model: *//p' "$CORTEX/jev/RESULTS.md" 2>/dev/null | head -1)
+  if [ -n "$want" ]; then
+    ok "$(echo "$err" | grep -c 'answering model is jev-9.9.9')" "1" \
+       "J a model change warns exactly once per run, never once per request"
+  else
+    # no J0 result recorded yet: there is nothing to drift FROM, and it must be silent
+    ok "$(echo "$err" | grep -c 'answering model is')" "0" \
+       "J with no recorded J0 model there is nothing to warn about"
+  fi
+  jev_stop
+}
+
+t_jev_budget_refuses_to_start() {
+  local R="$TMP/j11"; jev_fixture "$R"; jev_stub "$TMP/j11stub"; jev_on
+  jevcfg '  budget:' '    max_requests_per_cycle: 1'
+  bash "$CORTEX/bin/cortex" config --check >/dev/null 2>&1
+  rm -f "$JEV_DIR/log"
+  local o; o=$(bash "$CORTEX/bin/cortex" scope --candidate clock-rule 2>&1)
+  ok "$(jev_calls)" "0" "J a census over budget refuses to START, rather than becoming a sample"
+  case "$o" in *"max_requests_per_cycle"*) pass "J the refusal names the ceiling it hit" ;;
+                *) fail "J the refusal names the ceiling it hit" "$o" ;; esac
+  case "$o" in *"injected into"*) pass "J and the deterministic half still prints" ;;
+                *) fail "J and the deterministic half still prints" "$o" ;; esac
+  # .env beats config.yaml: one run's override must not need a tracked-file edit
+  ok "$(JEV_MAX_REQUESTS_PER_CYCLE=500 bash "$CORTEX/bin/cortex" scope --candidate clock-rule --json 2>/dev/null | jq -r '.jev.answered')" \
+     "2" "J an env override beats config.yaml for one run"
+  jev_stop
+}
+
+t_jev_config_schema() {
+  local R="$TMP/j12"; make_repo "$R"; jev_off
+  # every new key needs its bound, the way every other key has one
+  jevcfg '  relevance_floor_typo: 0.5'
+  local o; o=$(bash "$CORTEX/bin/cortex" config --check 2>&1)
+  case "$o" in *"unknown key 'jev.relevance_floor_typo'"*) pass "J a typo in a jev key is named, not silently defaulted" ;;
+                *) fail "J a typo in a jev key is named, not silently defaulted" "$o" ;; esac
+  setcfg '  relevance_floor_typo: 0.5' '  confidence_floor: 4'
+  ok "$(bash "$CORTEX/bin/cortex" config --check >/dev/null 2>&1; echo $?)" "1" \
+     "J a jev threshold outside 0..1 is rejected"
+  setcfg '  confidence_floor: 4' '  timeout_s: 9999'
+  ok "$(bash "$CORTEX/bin/cortex" config --check >/dev/null 2>&1; echo $?)" "1" \
+     "J a jev timeout outside its range is rejected"
+  setcfg '  timeout_s: 9999' '  base_url: "ftp://nope"'
+  ok "$(bash "$CORTEX/bin/cortex" config --check >/dev/null 2>&1; echo $?)" "1" \
+     "J a jev base_url that is not http(s) is rejected"
+  setcfg '  base_url: "ftp://nope"' '  enabled: false'
+  ok "$(bash "$CORTEX/bin/cortex" config --check >/dev/null 2>&1; echo $?)" "0" \
+     "J a valid jev block compiles"
+  # `cortex config` prints the jev block AFTER compiling; the exit code is the
+  # whole point of the command and must survive anything printed after it
+  setcfg '  enabled: false' '  enabled: banana'
+  ok "$(bash "$CORTEX/bin/cortex" config >/dev/null 2>&1; echo $?)" "1" \
+     "J an invalid config still makes cortex config exit non-zero"
+  setcfg '  enabled: banana' '  enabled: false'
+  ok "$(bash "$CORTEX/bin/cortex" config 2>/dev/null | grep -cF 'jev.relevance_floor ')" "1" \
+     "J cortex config prints every jev value and where it came from"
+  ok "$(jq -r '.jev_enabled' .evolve/config.json)" "false" "J jev is OFF by default"
+}
+
+t_jev_key_never_reaches_a_sandbox() {
+  local R="$TMP/j13"; make_repo "$R"; jev_off
+  # harness_files is copied into BOTH arms: it is the one place a key must never be
+  addcfg '    - CLAUDE.md' '    - .env'
+  local o; o=$(bash "$CORTEX/bin/cortex" config --check 2>&1); local rc=$?
+  ok "$rc" "1" "J harness_files may not list a .env"
+  case "$o" in *"API key"*"sandbox"*) pass "J the refusal says why: it would copy the key into both arms" ;;
+                *) fail "J the refusal says why: it would copy the key into both arms" "$o" ;; esac
+  # and a fresh init gitignores both the key and the answer log
+  setcfg '    - .env' '    - CLAUDE.md'
+  bash "$CORTEX/bin/cortex" init "$R" >/dev/null 2>&1
+  ok "$(grep -cxF '.env' .gitignore)" "1" "J cortex init gitignores .env"
+  ok "$(grep -cxF '.evolve/jev/' .gitignore)" "1" "J cortex init gitignores the jev answer log"
+  bash "$CORTEX/bin/cortex" init "$R" >/dev/null 2>&1
+  ok "$(grep -cxF '.env' .gitignore)" "1" "J re-running init does not duplicate the line"
+}
+
+t_jev_journal_line_is_not_a_heading() {
+  local R="$TMP/j14"; jev_fixture "$R"; jev_stub "$TMP/j14stub"; jev_on
+  jev_ctl JEV_STUB_NOUL 0.9
+  bash "$CORTEX/bin/cortex" scope --candidate clock-rule >/dev/null 2>&1
+  local line; line=$(bash "$CORTEX/bin/cortex" jev journal --candidate clock-rule 2>/dev/null)
+  case "$line" in "jev: "*) pass "J the journal line starts with 'jev: '" ;;
+                  *) fail "J the journal line starts with 'jev: '" "$line" ;; esac
+  case "$line" in "## "*) fail "J the journal line must never start with '## '" "$line" ;;
+                  *) pass "J the journal line must never start with '## '" ;; esac
+  # write an entry carrying it, then record the cycle KEYLESSLY: the guard must
+  # count one heading, not two
+  jev_off
+  printf '\n## 2026-09-20  clock-rule\n\nkind: rule\n    %s\nDECISION: KILL\n' "$line" >> .evolve/journal.md
+  local o rc; o=$(bash "$CORTEX/bin/cortex" cycle KILL clock-rule 2>&1); rc=$?
+  ok "$rc" "0" "J a journal carrying a jev: line still records its cycle"
+  case "$o" in *"cycle recorded: KILL"*) pass "J the jev: line is not counted as a cycle heading" ;;
+                *) fail "J the jev: line is not counted as a cycle heading" "$o" ;; esac
+  jev_stop
+}
+
+t_jev_journal_survives_a_deleted_log() {
+  local R="$TMP/j15"; jev_fixture "$R"; jev_stub "$TMP/j15stub"; jev_on
+  bash "$CORTEX/bin/cortex" scope --candidate clock-rule >/dev/null 2>&1
+  rm -rf .evolve/jev                       # deleted mid-cycle
+  local o rc; o=$(bash "$CORTEX/bin/cortex" jev journal --candidate clock-rule 2>&1); rc=$?
+  ok "$rc" "3" "J a deleted jev log means 'nothing to say', not an error"
+  ok "$o" "" "J and it prints nothing for D5 to paste"
+  jev_stop
+}
+
+t_jev_log_records_the_answer_not_the_state() {
+  local R="$TMP/j16"; jev_fixture "$R"; jev_stub "$TMP/j16stub"; jev_on
+  jev_ctl JEV_STUB_NOUL 0.77
+  bash "$CORTEX/bin/cortex" scope --candidate clock-rule >/dev/null 2>&1
+  local f; f=$(ls .evolve/jev/*.jsonl 2>/dev/null | head -1)
+  ok "$([ -n "$f" ] && echo yes)" "yes" "J every call is logged"
+  ok "$(jq -r 'select(.site=="scope" and .summary != true) | .answers.relevant.noul' "$f" | head -1)" "0.77" \
+     "J the log records the probability that came back"
+  ok "$(jq -r 'select(.summary != true) | .model' "$f" | head -1)" "jev-1.13.0" \
+     "J the log records the model that ANSWERED, so a change cannot pass silently"
+  ok "$(grep -c 'test-key' "$f")" "0" "J the log never contains the API key"
+  ok "$(grep -c 'wall clock' "$f")" "0" "J the log never contains the state that was sent"
+  # clean keeps it; clean --runs takes it with the results it is about
+  bash "$CORTEX/bin/cortex" clean >/dev/null 2>&1
+  ok "$([ -d .evolve/jev ] && echo yes)" "yes" "J cortex clean leaves the jev log alone"
+  bash "$CORTEX/bin/cortex" clean --runs >/dev/null 2>&1
+  ok "$([ -d .evolve/jev ] && echo yes || echo no)" "no" "J cortex clean --runs removes it with the results"
+  jev_stop
+}
+
+t_jev_census_is_thread_safe() {
+  local R="$TMP/j23"; jev_fixture "$R"; jev_stub "$TMP/j23stub"; jev_on
+  local i
+  for i in 04 05 06 07 08 09 10 11; do mk_task "$i"; done
+  jev_ctl JEV_STUB_NOUL 0.9
+  bash "$CORTEX/bin/cortex" scope --candidate clock-rule >/dev/null 2>&1
+  local f; f=$(ls .evolve/jev/*.jsonl | head -1)
+  # 10 tasks fan out to 10 parallel requests: every line must be whole JSON
+  ok "$(jq -sr 'length' "$f" 2>/dev/null)" "11" "J a wide fan-out writes one intact log line per request, plus its summary"
+  ok "$(jq -sr '[.[] | select(.summary != true)] | length' "$f")" "10" "J and one per task"
+  ok "$(wc -l < "$f")" "11" "J no line is interleaved with another"
+  # and a failing fan-out warns once, not once per request
+  jev_ctl JEV_STUB_STATUS 401
+  local err; err=$(bash "$CORTEX/bin/cortex" scope --candidate clock-rule 2>&1 >/dev/null)
+  ok "$(echo "$err" | grep -c 'falling back')" "1" "J 10 failing calls print ONE warning, not ten"
+  jev_stop
+}
+
+# --- TEST_STRATEGY row 1 (L0) -----------------------------------------------
+t_jev_env_example_complete() {
+  local R="$TMP/j24"; make_repo "$R"; jev_off
+  # .env.example is the file people copy. A setting that exists in the client but
+  # not here is undiscoverable; one here that the client does not read is a lie.
+  local missing extra
+  missing=$(python3 - "$CORTEX" <<'P'
+import re, sys, os
+sys.path.insert(0, os.path.join(sys.argv[1], "bin"))
+import jev
+doc = set(re.findall(r'^\s*#?\s*(JEV_[A-Z0-9_]+)\s*=', open(os.path.join(sys.argv[1], ".env.example")).read(), re.M))
+known = {e for _n, _c, e, _t, _b in jev.FIELDS} | {"JEV_API_KEY", "JEV_ENV_FILE"}
+print(" ".join(sorted(known - doc)))
+P
+)
+  extra=$(python3 - "$CORTEX" <<'P'
+import re, sys, os
+sys.path.insert(0, os.path.join(sys.argv[1], "bin"))
+import jev
+doc = set(re.findall(r'^\s*#?\s*(JEV_[A-Z0-9_]+)\s*=', open(os.path.join(sys.argv[1], ".env.example")).read(), re.M))
+known = {e for _n, _c, e, _t, _b in jev.FIELDS} | {"JEV_API_KEY", "JEV_ENV_FILE"}
+print(" ".join(sorted(doc - known)))
+P
+)
+  ok "$missing" "" "J .env.example documents every setting bin/jev.py reads"
+  ok "$extra"   "" "J .env.example documents no setting bin/jev.py does not read"
+  # and the values it ships must actually compile
+  ok "$(grep -c '^JEV_BASE_URL=https://' "$CORTEX/.env.example")" "1" \
+     "J .env.example ships exactly one active JEV_BASE_URL"
+  ok "$(grep -c '^JEV_MODEL=' "$CORTEX/.env.example")" "1" \
+     "J .env.example ships exactly one active JEV_MODEL"
+}
+
+# --- TEST_STRATEGY row 2 (L3) -----------------------------------------------
+t_jev_contract() {
+  local out rc
+  out=$(python3 "$CORTEX/test/jev-contract.py" 2>&1); rc=$?
+  ok "$rc" "0" "J bin/jev.py and the stub both satisfy the published TypeSafe schema"
+  case "$out" in *"failed 0"*) pass "J the contract check reports no failures" ;;
+                  *) fail "J the contract check reports no failures" "$out" ;; esac
+}
+
+# --- TEST_STRATEGY row 3 (L1) + regression for B1 ---------------------------
+t_jev_themes_scoped() {
+  # B1: escape_project maps '/' and '-' to the same character, so a SIBLING repo
+  # (myproj-other) is indistinguishable from a sub-folder (myproj/other) by folder
+  # name alone. cortex themes sends transcript text to a third party, so a wrong
+  # match here is not a miscount — it is exfiltration of another project's work.
+  local R="$TMP/j25/myproj" SIB="$TMP/j25/myproj-other"
+  jev_fixture "$R"; mkdir -p "$SIB"
+  local TD="$TMP/j25/projects"
+  local MINE THEIRS
+  MINE=$(python3 -c "import re,sys; print(re.sub(r'[^A-Za-z0-9]','-',sys.argv[1]))" "$R")
+  THEIRS=$(python3 -c "import re,sys; print(re.sub(r'[^A-Za-z0-9]','-',sys.argv[1]))" "$SIB")
+  mkdir -p "$TD/$MINE" "$TD/$THEIRS"
+  printf '{"type":"user","cwd":"%s","message":{"role":"user","content":[{"type":"text","text":"MY-OWN-SECRET-WORK"}]}}\n' "$R"   > "$TD/$MINE/a.jsonl"
+  printf '{"type":"user","cwd":"%s","message":{"role":"user","content":[{"type":"text","text":"NEIGHBOUR-PRIVATE-DATA"}]}}\n' "$SIB" > "$TD/$THEIRS/b.jsonl"
+  setcfg 'transcripts_dir: ~/.claude/projects' "transcripts_dir: $TD"
+
+  jev_stub "$TMP/j25stub"; jev_on
+  jev_ctl JEV_STUB_LOG_STATE 1 JEV_STUB_CHOICE billing-helpers JEV_STUB_NOUL 0.9
+  bash "$CORTEX/bin/cortex" themes >/dev/null 2>&1
+  ok "$(grep -c 'MY-OWN-SECRET-WORK' "$JEV_DIR/log")" "1" \
+     "J themes sends THIS project's transcript"
+  ok "$(grep -c 'NEIGHBOUR-PRIVATE-DATA' "$JEV_DIR/log")" "0" \
+     "J themes NEVER sends a sibling project's transcript"
+  jev_stop
+}
+
+# --- regression for B6: the journal's documented `theme=` must be reachable ---
+t_jev_journal_carries_the_theme() {
+  local R="$TMP/j33"; jev_fixture "$R"; jev_stub "$TMP/j33stub"; jev_on
+  jev_ctl JEV_STUB_CHOICE billing-helpers JEV_STUB_NOUL 0.9
+  bash "$CORTEX/bin/cortex" themes >/dev/null 2>&1
+  bash "$CORTEX/bin/cortex" scope --candidate clock-rule >/dev/null 2>&1
+  local line; line=$(bash "$CORTEX/bin/cortex" jev journal --candidate clock-rule 2>/dev/null)
+  case "$line" in *"theme=billing-helpers"*) pass "J the journal line carries the theme the census chose" ;;
+                  *) fail "J the journal line carries the theme the census chose" "$line" ;; esac
+  case "$line" in *"scope "*) pass "J and the scope the candidate got, in the same line" ;;
+                  *) fail "J and the scope the candidate got, in the same line" "$line" ;; esac
+  case "$line" in "## "*) fail "J and it still never starts with '## '" "$line" ;;
+                  *) pass "J and it still never starts with '## '" ;; esac
+  jev_stop
+}
+
+# --- TEST_STRATEGY row 4 (L1) -----------------------------------------------
+t_jev_hook_sends_user_only() {
+  local R="$TMP/j26"; jev_fixture "$R"; jev_stub "$TMP/j26stub"; jev_on
+  local T="$TMP/j26/transcript.jsonl"; mkdir -p "$(dirname "$T")"
+  {
+    printf '{"type":"user","message":{"role":"user","content":[{"type":"text","text":"USER-SAID-THIS <system-reminder>REMINDER-TEXT</system-reminder>"}]}}\n'
+    printf '{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"ASSISTANT-SAID-THIS"}]}}\n'
+    printf '{"type":"user","isMeta":true,"message":{"role":"user","content":[{"type":"text","text":"META-TEXT"}]}}\n'
+  } > "$T"
+  jev_ctl JEV_STUB_LOG_STATE 1 JEV_STUB_NOUL 0.95
+  printf '{"transcript_path":"%s"}' "$T" | bash "$CORTEX/hooks/log-session.sh" >/dev/null 2>&1
+  ok "$(grep -c 'USER-SAID-THIS' "$JEV_DIR/log")"      "1" "J the hook sends what the user said"
+  ok "$(grep -c 'ASSISTANT-SAID-THIS' "$JEV_DIR/log")" "0" "J the hook NEVER sends the assistant's output"
+  ok "$(grep -c 'REMINDER-TEXT' "$JEV_DIR/log")"       "0" "J the hook strips system-reminder blocks"
+  ok "$(grep -c 'META-TEXT' "$JEV_DIR/log")"           "0" "J the hook skips meta rows"
+  jev_stop
+}
+
+# --- TEST_STRATEGY row 6 (L1) + regression for B2 ---------------------------
+t_jev_corpus_replay_identical() {
+  local R="$TMP/j27"; make_repo "$R"; jev_off
+  local SRC="$TMP/j27/src/.evolve"; mkdir -p "$SRC/runs" "$SRC/tasks/01" "$SRC/graveyard"
+  synth "$SRC/runs/20260101T000000-confirm.jsonl" 2 01 1 2
+  printf 'id: 01\ntitle: t\nbase_sha: deadbeef\n' > "$SRC/tasks/01/task.yaml"
+  echo "fix it" > "$SRC/tasks/01/prompt.txt"
+  local DEST="$TMP/j27/snap"
+  local a b
+  a=$(python3 "$CORTEX/jev/validate.py" --evolve "$SRC" --snapshot-only 2>&1 | head -1)
+  # the snapshot it just wrote must replay to the same corpus
+  b=$(python3 "$CORTEX/jev/validate.py" --corpus "$CORTEX/jev/corpus" --dry-run 2>&1 | head -1)
+  local c
+  c=$(python3 "$CORTEX/jev/validate.py" --evolve "$CORTEX/jev/corpus" --dry-run 2>&1 | head -1)
+  ok "$b" "$c" "J0 the committed snapshot replays to the identical corpus"
+  case "$b" in *"174 (candidate, task) rows"*) pass "J0 the snapshot still holds all 174 scored rows" ;;
+                *) fail "J0 the snapshot still holds all 174 scored rows" "$b" ;; esac
+}
+
+# --- regression for B2: --corpus must never destroy the committed snapshot ---
+t_jev_corpus_snapshot_not_destroyed() {
+  local R="$TMP/j28"; make_repo "$R"; jev_off
+  local OTHER="$TMP/j28/other/.evolve"; mkdir -p "$OTHER/runs" "$OTHER/tasks/01" "$OTHER/graveyard"
+  # build_corpus only counts rows that RECORD `visible` — synth writes none, so a
+  # synth file would make this exit 2 before reaching snapshot() and prove nothing
+  { printf '{"event":"start","phase":"confirm","mode":"add","k":2,"candidate":"clock-in-billing","candidate_kind":"rule","candidate_tier":"rule","model":"m"}\n'
+    printf '{"v":"cand","t":"01","r":1,"pass":1,"valid":1,"skills":[],"rules":["clock-in-billing"],"visible":["clock-in-billing"]}\n'
+    printf '{"event":"done"}\n'; } > "$OTHER/runs/20260101T000000-confirm.jsonl"
+  printf 'id: 01\ntitle: t\nbase_sha: deadbeef\n' > "$OTHER/tasks/01/task.yaml"
+  echo "fix the clock" > "$OTHER/tasks/01/prompt.txt"
+  local before after
+  before=$(find "$CORTEX/jev/corpus" -type f | wc -l)
+  python3 "$CORTEX/jev/validate.py" --corpus "$OTHER" --dry-run >/dev/null 2>&1
+  after=$(find "$CORTEX/jev/corpus" -type f | wc -l)
+  ok "$after" "$before" "J0 --corpus on another path does NOT rebuild the committed snapshot"
+  ok "$(python3 -c "
+import json,sys
+m=json.load(open(sys.argv[1]))
+print(m['rows'])" "$CORTEX/jev/corpus/MANIFEST.json" 2>/dev/null)" "174" \
+     "J0 and the committed manifest still names its own 174 rows"
+}
+
+# --- TEST_STRATEGY row 7 (L1) -----------------------------------------------
+t_jev_log_retention() {
+  local R="$TMP/j29"; jev_fixture "$R"; jev_stub "$TMP/j29stub"; jev_on
+  setcfg 'usage_days: 30' 'usage_days: 2'
+  jev_ctl JEV_STUB_NOUL 0.9
+  mkdir -p .evolve/jev
+  echo '{"t":"old"}' > .evolve/jev/2020-01-01.jsonl
+  touch -d "30 days ago" .evolve/jev/2020-01-01.jsonl
+  echo '{"t":"recent"}' > .evolve/jev/2026-09-19.jsonl
+  bash "$CORTEX/bin/cortex" scope --candidate clock-rule >/dev/null 2>&1
+  ok "$([ -f .evolve/jev/2020-01-01.jsonl ] && echo present || echo gone)" "gone" \
+     "J a jev log older than prune.usage_days is removed on the next write"
+  ok "$([ -f .evolve/jev/2026-09-19.jsonl ] && echo present || echo gone)" "present" \
+     "J a recent one is kept"
+  jev_stop
+}
+
+# --- TEST_STRATEGY row 5 (L4) -----------------------------------------------
+t_jev_key_absent_from_sandbox() {
+  local R="$TMP/j30"; make_repo "$R"; STUB="$TMP/j30stub"; LOG="$R/log"; jev_off
+  # The key must never reach a rollout. config validation already refuses a .env
+  # in harness_files; this asserts the other half — that an ORDINARY .env in the
+  # repo does not ride along into either arm's clone during a real sweep.
+  printf 'JEV_API_KEY=SECRET-KEY-MUST-NOT-LEAK\n' > .env
+  local LEAKS="$TMP/j30.leaks"; : > "$LEAKS"
+  stub "$STUB" "grep -rl 'SECRET-KEY-MUST-NOT-LEAK' . 2>/dev/null >> '$LEAKS'
+[ -f .env ] && echo \"dotenv-present:\$PWD\" >> '$LEAKS'
+sed -i 's/a - b/a + b/' src/calc.py 2>/dev/null
+exit 0"
+  mk_cand leaky
+  sweep --candidate leaky --phase confirm >/dev/null
+  ok "$(wc -l < "$LEAKS")" "0" "J no rollout in either arm can see the repo's .env or its key"
+  # POSITIVE CONTROL: the detector must actually detect. Without this the row
+  # passes just as happily when the stub never ran or the grep never matched.
+  ok "$(grep -rl 'SECRET-KEY-MUST-NOT-LEAK' . 2>/dev/null | wc -l)" "1" \
+     "J the same search DOES find the key in the real repo, so the check is live"
+  # the sweep itself must be unaffected
+  ok "$(score | jq -r '.rollouts')" "4" "J the sweep ran normally with a .env present"
+}
+
+# --- regression for B3: the census must not silently drop text --------------
+t_jev_chunk_drops_no_text() {
+  local R="$TMP/j31"; jev_fixture "$R"; jev_off
+  local TD="$TMP/j31/projects" MINE
+  MINE=$(python3 -c "import re,sys; print(re.sub(r'[^A-Za-z0-9]','-',sys.argv[1]))" "$R")
+  mkdir -p "$TD/$MINE"
+  setcfg 'transcripts_dir: ~/.claude/projects' "transcripts_dir: $TD"
+  # one turn far longer than a chunk, followed by a short one
+  python3 - "$TD/$MINE/a.jsonl" "$R" <<'P'
+import json, sys
+rows = [{"type": "user", "cwd": sys.argv[2],
+         "message": {"role": "user", "content": [{"type": "text", "text": "X" * 40000}]}},
+        {"type": "user", "cwd": sys.argv[2],
+         "message": {"role": "user", "content": [{"type": "text", "text": "TAIL-MARKER"}]}}]
+open(sys.argv[1], "w").write("\n".join(json.dumps(r) for r in rows) + "\n")
+P
+  local got
+  got=$(python3 - "$CORTEX" "$R" <<'P'
+import sys, os
+sys.path.insert(0, os.path.join(sys.argv[1], "bin"))
+os.chdir(sys.argv[2])
+import harness
+chunks = harness.transcript_chunks(sys.argv[2], 7)
+blob = "".join(c["text"] for c in chunks)
+print(blob.count("X"), "TAIL-MARKER" in blob)
+P
+)
+  ok "${got% *}" "40000" "J every character of an over-long turn reaches the census"
+  ok "${got#* }" "True"  "J and a turn after it is not lost"
+}
+
+# --- regression for B4: a timeout must be logged as a timeout ---------------
+t_jev_timeout_is_logged_as_timeout() {
+  local R="$TMP/j32"; jev_fixture "$R"; jev_stub "$TMP/j32stub"; jev_on
+  # A READ timeout: the stub accepts, then never answers. urllib raises
+  # socket.timeout, which IS TimeoutError.
+  jev_ctl JEV_STUB_HANG 1
+  JEV_TIMEOUT_S=2 bash "$CORTEX/bin/cortex" scope --candidate clock-rule >/dev/null 2>&1
+  local f; f=$(ls .evolve/jev/*.jsonl 2>/dev/null | head -1)
+  ok "$(jq -r 'select(.summary != true) | .outcome' "$f" | sort -u | head -1)" "timeout" \
+     "J a read that never answers is logged as 'timeout'"
+  jev_ctl JEV_STUB_HANG ""
+  jev_stop
+
+  # A CONNECT timeout is the one that was wrong: urllib wraps it in URLError, so
+  # `isinstance(ex, TimeoutError)` is False and it was logged as a plain fallback.
+  # 10.255.255.1 is non-routable, so the connect hangs until the budget expires.
+  rm -rf .evolve/jev
+  JEV_ENV_FILE=/dev/null JEV_ENABLED=1 JEV_API_KEY=k \
+    JEV_BASE_URL="http://10.255.255.1:81/v1/systemone" JEV_TIMEOUT_S=2 \
+    bash "$CORTEX/bin/cortex" scope --candidate clock-rule >/dev/null 2>&1
+  f=$(ls .evolve/jev/*.jsonl 2>/dev/null | head -1)
+  ok "$(jq -r 'select(.summary != true) | .outcome' "$f" | sort -u | head -1)" "timeout" \
+     "J a connect that never completes is logged as 'timeout', not 'fallback'"
+}
+
+t_jev_prune_rank_is_a_sort_order_only() {
+  local R="$TMP/j17"; jev_fixture "$R"; jev_stub "$TMP/j17stub"; jev_on
+  mk_live second-item
+  jev_ctl JEV_STUB_SCORE 1
+  bash "$CORTEX/bin/cortex" prune plan --items "billing-helpers second-item" >/dev/null 2>&1
+  local names_with; names_with=$(jq -r '[.items[].name] | join(" ")' .evolve/prune-plan.json)
+  ok "$(jq -r '[.items[] | select(.jev_rank != null)] | length' .evolve/prune-plan.json)" "2" \
+     "J prune plan records a jev_rank per item"
+  ok "$(jq -r '.k' .evolve/prune-plan.json)" "2" "J the plan format itself is unchanged"
+  bash "$CORTEX/bin/cortex" prune approve >/dev/null 2>&1
+  local first_on; first_on=$(bash "$CORTEX/bin/cortex" prune next --json 2>/dev/null | jq -r .name)
+  jev_off
+  local first_off names_off
+  first_off=$(bash "$CORTEX/bin/cortex" prune next --json 2>/dev/null | jq -r .name)
+  names_off=$(jq -r '[.items[].name] | join(" ")' .evolve/prune-plan.json)
+  ok "$names_off" "$names_with" "J the approved item list is unchanged by switching Jev off"
+  ok "$first_off" "$(jq -r '.items[] | select(.state=="pending") | .name' .evolve/prune-plan.json | head -1)" \
+     "J prune next without Jev runs today's order and ignores jev_rank"
+  ok "$(bash "$CORTEX/bin/cortex" prune next --json 2>/dev/null | jq -r '.jev_rank != null')" "true" \
+     "J the recorded rank survives the switch-off and is still readable"
+  jev_stop
+}
+
+t_jev_pre_integration_repo() {
+  local R="$TMP/j18"; make_repo "$R"; jev_off
+  # a repo as an older Cortex left it: no jev: key, old lessons, old journal
+  rm -rf .evolve/jev
+  printf '2026-01-02 | task 01 | old lesson | old fix\n' >> .evolve/lessons.md
+  printf '\n## 2026-01-02  old-thing\n\nDECISION: KEEP\n' >> .evolve/journal.md
+  ok "$(grep -c '^jev' .evolve/config.yaml)" "0" "J a repo that never enabled Jev has no jev: key in config.yaml"
+  ok "$(jq -r 'has("jev_enabled")' .evolve/config.json)" "true" "J but the compiled defaults are present, and off"
+  local c; for c in status skills usage; do
+    ok "$(bash "$CORTEX/bin/cortex" $c >/dev/null 2>&1; echo $?)" "0" "J pre-integration repo: cortex $c still exits 0"
+  done
+  ok "$(bash "$CORTEX/bin/cortex" themes >/dev/null 2>&1; echo $?)" "0" \
+     "J pre-integration repo: themes works on lessons written before Jev existed"
+  ok "$(bash "$CORTEX/bin/cortex" prune plan --items x >/dev/null 2>&1; echo $?)" "2" \
+     "J pre-integration repo: unchanged refusals are unchanged"
+}
+
+t_jev_doctor_reports_stale_commands() {
+  local R="$TMP/j19"; make_repo "$R"; jev_off
+  local o; o=$(bash "$CORTEX/bin/cortex" doctor 2>&1)
+  case "$o" in *"commands"*) fail "J doctor is quiet when the command files are current" "$o" ;;
+                *) pass "J doctor is quiet when the command files are current" ;; esac
+  # a user who customised /evolve keeps pre-Jev behaviour with no error anywhere:
+  # without this line that failure mode is invisible
+  echo "my own note" >> .claude/commands/evolve.md
+  o=$(bash "$CORTEX/bin/cortex" doctor 2>&1)
+  case "$o" in *"evolve.md is older than this Cortex (yours is customised)"*)
+       pass "J doctor names a customised command file and says the Jev steps are inactive" ;;
+     *) fail "J doctor names a customised command file and says the Jev steps are inactive" "$o" ;; esac
+  case "$o" in *"cortex init"*) pass "J doctor says how to fix it" ;;
+                *) fail "J doctor says how to fix it" "$o" ;; esac
+  ok "$(bash "$CORTEX/bin/cortex" doctor >/dev/null 2>&1; echo $?)" "0" \
+     "J a stale command file does not make the environment incomplete"
+}
+
+t_jev_doctor_and_status_report_the_state() {
+  local R="$TMP/j20"; make_repo "$R"; jev_stub "$TMP/j20stub"
+  export JEV_API_KEY=test-key JEV_ENABLED=0
+  local o; o=$(bash "$CORTEX/bin/cortex" doctor 2>&1)
+  case "$o" in *"set JEV_ENABLED=1"*) pass "J doctor tells a user with a key but the switch off exactly that" ;;
+                *) fail "J doctor tells a user with a key but the switch off exactly that" "$o" ;; esac
+  ok "$(jev_calls)" "0" "J doctor opens no socket while Jev is disabled"
+  jev_on
+  o=$(bash "$CORTEX/bin/cortex" doctor 2>&1)
+  case "$o" in *"answered in"*"jev-1.13.0"*) pass "J doctor reports the round-trip and the answering model" ;;
+                *) fail "J doctor reports the round-trip and the answering model" "$o" ;; esac
+  ok "$(bash "$CORTEX/bin/cortex" status 2>/dev/null | grep -c '^jev      enabled')" "1" \
+     "J status shows jev next to the pinned model"
+  jev_ctl JEV_STUB_STATUS 500
+  ok "$(bash "$CORTEX/bin/cortex" doctor >/dev/null 2>&1; echo $?)" "0" \
+     "J an unreachable endpoint never makes the environment incomplete"
+  jev_stop
+}
+
+t_jev_tier_escalates_below_the_floor() {
+  local R="$TMP/j21"; jev_fixture "$R"; jev_stub "$TMP/j21stub"; jev_on
+  jev_ctl JEV_STUB_CHOICE rule JEV_STUB_CONFIDENCE 0.95
+  local o rc; o=$(bash "$CORTEX/bin/cortex" jev tier --theme "reading the wall clock" 2>&1); rc=$?
+  ok "$rc" "0" "J a confident tier pick exits 0"
+  case "$o" in *"tier: rule"*) pass "J it names the layer it picked" ;;
+                *) fail "J it names the layer it picked" "$o" ;; esac
+  # an answer to a question we did not ask is not an answer: a label outside the
+  # criteria we offered must take the keyless path, not be acted on
+  jev_ctl JEV_STUB_CHOICE not-a-real-tier
+  o=$(bash "$CORTEX/bin/cortex" jev tier --theme "reading the wall clock" 2>&1); rc=$?
+  ok "$rc" "3" "J a tier outside the six layers is treated as no answer"
+  case "$o" in *"A4 table"*) pass "J and it falls back to deciding from the table" ;;
+                *) fail "J and it falls back to deciding from the table" "$o" ;; esac
+  jev_ctl JEV_STUB_CHOICE rule
+  jev_ctl JEV_STUB_CONFIDENCE 0.2
+  o=$(bash "$CORTEX/bin/cortex" jev tier --theme "reading the wall clock" 2>&1); rc=$?
+  ok "$rc" "3" "J below confidence_floor it exits 3 — escalate, do not act"
+  case "$o" in *ESCALATED*) pass "J and says the pick was escalated, not taken" ;;
+                *) fail "J and says the pick was escalated, not taken" "$o" ;; esac
+  jev_off
+  ok "$(bash "$CORTEX/bin/cortex" jev tier --theme x >/dev/null 2>&1; echo $?)" "3" \
+     "J with Jev off the tier question escalates, exactly as a low-confidence answer does"
+  jev_stop
+}
+
+t_jev_validate_needs_a_corpus() {
+  local R="$TMP/j22"; make_repo "$R"; jev_off
+  local o rc; o=$(python3 "$CORTEX/jev/validate.py" --evolve "$R/.evolve" 2>&1); rc=$?
+  ok "$rc" "2" "J0 on a repo with no sweep history exits 2"
+  case "$o" in *"no sweep history"*"--evolve"*) pass "J0 says what it needs and how to point it there" ;;
+                *) fail "J0 says what it needs and how to point it there" "$o" ;; esac
+  ok "$([ -f "$CORTEX/jev/RESULTS.md" ] || echo absent; echo "")" "$([ -f "$CORTEX/jev/RESULTS.md" ] || echo absent; echo "")" \
+     "J0 never invents a corpus"
+}
+
 ALL_TESTS=(t_git_isolation t_infra_not_capability t_timeout_is_a_real_failure \
          t_locking t_reset_is_verified t_no_fix_leaks_between_rollouts \
          t_budget_refused_up_front t_truncated_data_not_scorable t_harness_snapshot \
@@ -2104,6 +2888,22 @@ ALL_TESTS=(t_git_isolation t_infra_not_capability t_timeout_is_a_real_failure \
          t_cpus_per_rollout_and_quota t_timeout_under_load t_queue_broken_is_incomplete \
          t_score_planned_missing t_same_area_as_live_warns t_screen_never_decides_a_removal t_recheck_pairs_when_the_path_has_a_space t_uninformative_sweep_is_not_a_kill t_preflight_interrupted_reports t_preflight_busy_skip \
          t_never_passed_named t_preflight_check_needs_fix_tests t_fixpatch t_task_new t_preflight_runs_like_a_sweep \
+         t_jev_keyless_is_today t_jev_disabled_opens_no_socket t_jev_scope_states \
+         t_jev_scope_refuses_without_tasks t_jev_scope_replace t_jev_themes_census \
+         t_jev_hook_never_slow_never_noisy t_jev_http_errors_fall_back \
+         t_jev_429_is_retried_then_falls_back t_jev_model_drift_warns_once \
+         t_jev_budget_refuses_to_start t_jev_config_schema t_jev_key_never_reaches_a_sandbox \
+         t_jev_journal_line_is_not_a_heading t_jev_journal_survives_a_deleted_log \
+         t_jev_log_records_the_answer_not_the_state t_jev_census_is_thread_safe \
+         t_jev_env_example_complete t_jev_contract t_jev_themes_scoped \
+         t_jev_hook_sends_user_only t_jev_corpus_replay_identical \
+         t_jev_corpus_snapshot_not_destroyed t_jev_log_retention \
+         t_jev_key_absent_from_sandbox t_jev_chunk_drops_no_text \
+         t_jev_timeout_is_logged_as_timeout t_jev_journal_carries_the_theme \
+         t_jev_prune_rank_is_a_sort_order_only \
+         t_jev_pre_integration_repo t_jev_doctor_reports_stale_commands \
+         t_jev_doctor_and_status_report_the_state t_jev_tier_escalates_below_the_floor \
+         t_jev_validate_needs_a_corpus \
          t_screen_never_keeps t_dead_sweep_detected t_sweep_detach t_evolve_phase \
          t_two_repos_sweep_at_once t_one_name_one_idea t_transcripts_scoped)
 SELECTED=()

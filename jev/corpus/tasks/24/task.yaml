@@ -1,0 +1,5 @@
+id: 24
+title: fix: business days skip the whole weekend
+base_sha: 6a6a2f01b266268bf7a74a01d29a7b385da6848d
+timeout_s: 600
+harvested: 2026-09-20

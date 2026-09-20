@@ -1,0 +1,5 @@
+id: 16
+title: pluralize() should use plural for zero
+base_sha: 92ce73bae4258e07b513600c4644099294587581
+timeout_s: 600
+harvested: 2026-09-20

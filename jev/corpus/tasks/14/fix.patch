@@ -1,0 +1,17 @@
+diff --git a/shop/util/text.py b/shop/util/text.py
+index 8cdc03a..00cc2a0 100644
+--- a/shop/util/text.py
++++ b/shop/util/text.py
+@@ -1,9 +1,12 @@
+ """Text helpers for labels, slugs and messages."""
+ import re
++import unicodedata
+ 
+ 
+ def slugify(text: str) -> str:
+     """'Blue Mug (Large)' -> 'blue-mug-large'. Used for URLs and file names."""
++    text = unicodedata.normalize("NFKD", text)
++    text = "".join(c for c in text if not unicodedata.combining(c))
+     text = text.lower()
+     text = re.sub(r"[^a-z0-9]+", "-", text)
+     return text.strip("-")

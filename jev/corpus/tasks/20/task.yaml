@@ -1,0 +1,5 @@
+id: 20
+title: Add --limit option to shop list
+base_sha: b4afcad600f17b3462eeec48ba23220a601fdaab
+timeout_s: 600
+harvested: 2026-09-20

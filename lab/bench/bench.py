@@ -95,10 +95,43 @@ def cmd_prepare(_args):
     install_commit = git(REPO, "log", "--format=%H", "-1", "--", "CLAUDE.md", check=False)
     first = git(REPO, "log", "--reverse", "--format=%H", "--", "CLAUDE.md").splitlines()
     meta = {"prepared": datetime.now().isoformat(timespec="seconds"), "head": head,
-            "claude_md_install_commit": first[0] if first else install_commit, "tasks": tasks}
+            "claude_md_install_commit": first[0] if first else install_commit,
+            "provenance": provenance(), "tasks": tasks}
     TASKS.write_text(json.dumps(meta, indent=1))
     print(f"{len(tasks)} tasks: {sum(t['split'] == 'train' for t in tasks)} train, "
           f"{sum(t['split'] == 'holdout' for t in tasks)} holdout -> {TASKS}")
+
+
+# ------------------------------------------------------------- provenance --
+def provenance():
+    """Who produced the harness this benchmark is about to measure.
+
+    An arm IS a harness, and a harness proposed with a judge in the loop is a
+    different treatment from one proposed without — even though the two are
+    byte-identical in form, which is exactly why this has to be recorded rather
+    than inferred later from the files. `/evolve` may consult Jev when choosing
+    the theme, the tier and the scope; the gates never do. A benchmark that does
+    not say which it was cannot be compared with one that did.
+    """
+    jev = {"enabled": False, "model": None, "requests": 0, "answered": 0}
+    log = REPO / ".evolve" / "jev"
+    if log.is_dir():
+        for f in sorted(log.glob("*.jsonl")):
+            for line in f.read_text(errors="replace").splitlines():
+                try:
+                    r = json.loads(line)
+                except ValueError:
+                    continue
+                if not isinstance(r, dict) or r.get("summary"):
+                    continue
+                jev["enabled"] = True
+                jev["requests"] += 1
+                jev["answered"] += 1 if r.get("outcome") == "ok" else 0
+                jev["model"] = jev["model"] or r.get("model")
+    return {"jev": jev,
+            "cortex": shutil.which("cortex"),
+            "env_jev_enabled": os.environ.get("JEV_ENABLED"),
+            "env_jev_model": os.environ.get("JEV_MODEL")}
 
 
 # -------------------------------------------------------------------- arms --

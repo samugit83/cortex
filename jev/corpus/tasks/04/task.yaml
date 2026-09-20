@@ -1,0 +1,5 @@
+id: 04
+title: sort products by price by default in shop list
+base_sha: 556d19d4369426711a87ad792017a20f7952f765
+timeout_s: 600
+harvested: 2026-09-19

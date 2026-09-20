@@ -1,0 +1,62 @@
+diff --git a/docs/exporters.md b/docs/exporters.md
+index c845f6a..05a2e26 100644
+--- a/docs/exporters.md
++++ b/docs/exporters.md
+@@ -7,5 +7,6 @@ these formats.
+ |------|-----------|-------------|
+ | csv  | csv       | one row per order line, comma separated |
+ | json | json      | the orders as a JSON array, amounts as decimal strings |
++| xml  | xml       | the orders as an XML document |
+ 
+ Adding a format: see CONTRIBUTING.md, "Exporters".
+diff --git a/shop/plugins/registry.py b/shop/plugins/registry.py
+index 9771a69..63b628c 100644
+--- a/shop/plugins/registry.py
++++ b/shop/plugins/registry.py
+@@ -1,10 +1,12 @@
+ """Which export formats exist. A format that is not listed here does not exist."""
+ from .csv_export import CsvExporter
+ from .json_export import JsonExporter
++from .xml_export import XmlExporter
+ 
+ EXPORTERS = {
+     "csv": CsvExporter,
+     "json": JsonExporter,
++    "xml": XmlExporter,
+ }
+ 
+ 
+diff --git a/shop/plugins/xml_export.py b/shop/plugins/xml_export.py
+new file mode 100644
+index 0000000..811fa45
+--- /dev/null
++++ b/shop/plugins/xml_export.py
+@@ -0,0 +1,21 @@
++"""XML: the orders as an XML document with order and line elements."""
++import xml.etree.ElementTree as ET
++
++from .base import Exporter
++
++
++class XmlExporter(Exporter):
++    name = "xml"
++    extension = "xml"
++
++    def export(self, orders) -> str:
++        root = ET.Element("orders")
++        for o in orders:
++            order_elem = ET.SubElement(root, "order")
++            order_elem.set("id", o.id)
++            order_elem.set("total", str(o.total))
++            for l in o.lines:
++                line_elem = ET.SubElement(order_elem, "line")
++                line_elem.set("sku", l.sku)
++                line_elem.set("qty", str(l.qty))
++        return ET.tostring(root, encoding="unicode") + "\n"
+diff --git a/tests/golden/order.xml b/tests/golden/order.xml
+new file mode 100644
+index 0000000..0bf0ddd
+--- /dev/null
++++ b/tests/golden/order.xml
+@@ -0,0 +1 @@
++<orders><order id="A-1001" total="22.20"><line sku="MUG-001" qty="2" /><line sku="TEA-001" qty="1" /></order><order id="A-1002" total="39.00"><line sku="LMP-001" qty="1" /></order></orders>

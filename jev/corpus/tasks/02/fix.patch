@@ -1,0 +1,17 @@
+diff --git a/shop/billing/discount.py b/shop/billing/discount.py
+index 424ff66..5ce7b83 100644
+--- a/shop/billing/discount.py
++++ b/shop/billing/discount.py
+@@ -1,9 +1,9 @@
+ """Percentage discounts."""
+ from .money import Money
++from .rates import percent_of
+ 
+ 
+ def apply_discount(amount: Money, percent: str) -> Money:
+     """`amount` after a `percent` discount, the percentage as text ("10", "12.5")."""
+-    whole = int(percent.split(".")[0])
+-    off = amount.cents * whole // 100
+-    return Money(amount.cents - off)
++    off = percent_of(amount, percent)
++    return amount - off

@@ -1,0 +1,1 @@
+Our accountant's software imports XML. Please add an XML export format: `shop export orders.json --format xml`. The tests are already in tests/test_export_xml.py — they fail for now.

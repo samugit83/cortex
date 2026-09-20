@@ -1,0 +1,5 @@
+id: 15
+title: truncate() returns one char too many
+base_sha: b03da3b1af0a939efe73bf12271736c585b02a73
+timeout_s: 600
+harvested: 2026-09-20

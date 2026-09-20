@@ -1,0 +1,79 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 6e145ce..c1110f2 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -5,6 +5,7 @@ All notable changes users can see. Format: [Keep a Changelog](https://keepachang
+ ## [Unreleased]
+ 
+ ### Added
++- `shop export --format tsv` for exporting orders as tab-separated values (handles commas in customer names).
+ - `shop export --format markdown` for exporting orders as a markdown table.
+ - `shop report` now includes a TOTAL row at the bottom showing total items and total amount.
+ 
+diff --git a/docs/exporters.md b/docs/exporters.md
+index 5377195..8c53516 100644
+--- a/docs/exporters.md
++++ b/docs/exporters.md
+@@ -8,6 +8,7 @@ these formats.
+ | csv  | csv       | one row per order line, comma separated |
+ | json | json      | the orders as a JSON array, amounts as decimal strings |
+ | markdown | md | a table with one row per order line |
++| tsv  | tsv       | one row per order line, tab separated |
+ | xml  | xml       | the orders as an XML document |
+ 
+ Adding a format: see CONTRIBUTING.md, "Exporters".
+diff --git a/shop/plugins/registry.py b/shop/plugins/registry.py
+index de1ac01..8cf1257 100644
+--- a/shop/plugins/registry.py
++++ b/shop/plugins/registry.py
+@@ -2,12 +2,14 @@
+ from .csv_export import CsvExporter
+ from .json_export import JsonExporter
+ from .markdown_export import MarkdownExporter
++from .tsv_export import TsvExporter
+ from .xml_export import XmlExporter
+ 
+ EXPORTERS = {
+     "csv": CsvExporter,
+     "json": JsonExporter,
+     "markdown": MarkdownExporter,
++    "tsv": TsvExporter,
+     "xml": XmlExporter,
+ }
+ 
+diff --git a/shop/plugins/tsv_export.py b/shop/plugins/tsv_export.py
+new file mode 100644
+index 0000000..ceba534
+--- /dev/null
++++ b/shop/plugins/tsv_export.py
+@@ -0,0 +1,20 @@
++"""TSV: one row per order line, tab-separated."""
++import csv
++import io
++
++from .base import Exporter
++
++
++class TsvExporter(Exporter):
++    name = "tsv"
++    extension = "tsv"
++
++    def export(self, orders) -> str:
++        buf = io.StringIO()
++        w = csv.writer(buf, delimiter="\t", lineterminator="\n")
++        w.writerow(["order", "date", "customer", "sku", "qty", "unit_price", "line_total"])
++        for o in orders:
++            for line in o.lines:
++                w.writerow([o.id, o.date.isoformat(), o.customer, line.sku, line.qty,
++                            str(line.unit_price), str(line.total)])
++        return buf.getvalue()
+diff --git a/tests/golden/order.tsv b/tests/golden/order.tsv
+new file mode 100644
+index 0000000..58d0d68
+--- /dev/null
++++ b/tests/golden/order.tsv
+@@ -0,0 +1,4 @@
++order	date	customer	sku	qty	unit_price	line_total
++A-1001	2026-09-02	Rossi SRL	MUG-001	2	8.50	17.00
++A-1001	2026-09-02	Rossi SRL	TEA-001	1	5.20	5.20
++A-1002	2026-09-05	Studio Verde	LMP-001	1	39.00	39.00

@@ -1,0 +1,1 @@
+'0 left' looks like a bug to customers. Product wants 'Out of stock' in both `shop show` and `shop list` when stock is zero. QA added tests/test_show_out_of_stock.py. Please implement it.

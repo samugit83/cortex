@@ -126,6 +126,16 @@ cortex prune plan
   cortex prune plan --items "<a> <b>" --why "<a>=overlaps <x>" --why "<b>=biggest always-on (310 chars)"
   ```
 
+**The `DOUBT` column, when it appears.** With Jev on, the plan scores each item
+0–4 on "how likely is removing this to cost nothing?" and lists the most doubted
+first. It is a **sort order only** — every removal is still decided by its sweep,
+and an item with no score simply keeps its place. With Jev off the column is
+absent and the items run in the order above; a plan built with Jev on and executed
+after a switch-off runs the same approved items, in the order printed here.
+
+It matters most on a `MODEL UPGRADE` pass, where the plan holds every skill and
+rule and there is otherwise no principled order at all.
+
 The plan targets each item at the tasks where it can actually load — for a
 path-gated skill or a rule, the tasks whose files match its `paths`; for an
 always-on skill, the tasks where it loaded in past sweeps — so a removal costs
@@ -266,8 +276,17 @@ the items load (from `cortex usage`) — **before** anything runs:
 
 ```bash
 cortex skills --candidate <merged> --replace "<a> <b>" --tasks "<ids>"
+cortex scope --candidate <merged> --replace "<a> <b>"
 cortex prune estimate --tasks "<ids>"
 ```
+
+`cortex scope` is the narrowing question seen from the other side: it reports the
+new item and the live ones it would replace next to each other, so you can see
+whether the narrowing actually narrows. `cortex usage`'s `narrowing candidate:`
+hint says *where the use is*, from your real sessions; `cortex scope` adds the
+denominator that hint cannot compute — *how many of the tasks it is injected into
+are about it at all*. With Jev off it prints the deterministic half and
+`relevance: unavailable`, and Step 5 proceeds on the usage hint alone, as before.
 
 Ask the user to approve that one swap, and stop. On **yes**, dry-run and launch —
 same rules as Step 3:

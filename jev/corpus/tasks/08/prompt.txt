@@ -1,0 +1,1 @@
+Excel users keep breaking our CSV on commas in customer names. Please add a `tsv` export format (tab separated). Tests are in tests/test_export_tsv.py.

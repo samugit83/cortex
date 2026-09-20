@@ -1,0 +1,5 @@
+id: 03
+title: fix convert() to handle decimal exchange rates
+base_sha: 4f75953d31c599ec988f840255d73eb0b4b52f0a
+timeout_s: 600
+harvested: 2026-09-19

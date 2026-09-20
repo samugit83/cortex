@@ -1,0 +1,74 @@
+diff --git a/docs/exporters.md b/docs/exporters.md
+index 8c53516..8930f6a 100644
+--- a/docs/exporters.md
++++ b/docs/exporters.md
+@@ -8,6 +8,7 @@ these formats.
+ | csv  | csv       | one row per order line, comma separated |
+ | json | json      | the orders as a JSON array, amounts as decimal strings |
+ | markdown | md | a table with one row per order line |
++| ndjson | ndjson | one JSON object per order line (newline-delimited JSON) |
+ | tsv  | tsv       | one row per order line, tab separated |
+ | xml  | xml       | the orders as an XML document |
+ 
+diff --git a/shop/plugins/ndjson_export.py b/shop/plugins/ndjson_export.py
+new file mode 100644
+index 0000000..58139d6
+--- /dev/null
++++ b/shop/plugins/ndjson_export.py
+@@ -0,0 +1,27 @@
++"""NDJSON: one JSON object per order line."""
++import json
++
++from .base import Exporter
++
++
++class NdjsonExporter(Exporter):
++    name = "ndjson"
++    extension = "ndjson"
++
++    def export(self, orders) -> str:
++        lines = []
++        for o in orders:
++            for line in o.lines:
++                obj = {
++                    "order": o.id,
++                    "date": o.date.isoformat(),
++                    "customer": o.customer,
++                    "status": o.status,
++                    "sku": line.sku,
++                    "name": line.name,
++                    "qty": line.qty,
++                    "unit_price": str(line.unit_price),
++                    "total": str(line.total),
++                }
++                lines.append(json.dumps(obj, ensure_ascii=False))
++        return "\n".join(lines) + "\n" if lines else ""
+diff --git a/shop/plugins/registry.py b/shop/plugins/registry.py
+index 8cf1257..a3a926b 100644
+--- a/shop/plugins/registry.py
++++ b/shop/plugins/registry.py
+@@ -2,6 +2,7 @@
+ from .csv_export import CsvExporter
+ from .json_export import JsonExporter
+ from .markdown_export import MarkdownExporter
++from .ndjson_export import NdjsonExporter
+ from .tsv_export import TsvExporter
+ from .xml_export import XmlExporter
+ 
+@@ -9,6 +10,7 @@ EXPORTERS = {
+     "csv": CsvExporter,
+     "json": JsonExporter,
+     "markdown": MarkdownExporter,
++    "ndjson": NdjsonExporter,
+     "tsv": TsvExporter,
+     "xml": XmlExporter,
+ }
+diff --git a/tests/golden/order.ndjson b/tests/golden/order.ndjson
+new file mode 100644
+index 0000000..76f08ad
+--- /dev/null
++++ b/tests/golden/order.ndjson
+@@ -0,0 +1,3 @@
++{"order": "A-1001", "date": "2026-09-02", "customer": "Rossi SRL", "status": "paid", "sku": "MUG-001", "name": "Ceramic mug", "qty": 2, "unit_price": "8.50", "total": "17.00"}
++{"order": "A-1001", "date": "2026-09-02", "customer": "Rossi SRL", "status": "paid", "sku": "TEA-001", "name": "Green tea 100g", "qty": 1, "unit_price": "5.20", "total": "5.20"}
++{"order": "A-1002", "date": "2026-09-05", "customer": "Studio Verde", "status": "shipped", "sku": "LMP-001", "name": "Desk lamp", "qty": 1, "unit_price": "39.00", "total": "39.00"}

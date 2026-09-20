@@ -1,0 +1,1 @@
+Invoices need a due date. Please add due_date(issued=None, days=30) to shop/billing/invoice.py: 30 days after the issue date, and when no issue date is given, 30 days from today. The tests are in tests/test_due_date.py.

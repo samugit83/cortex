@@ -1,0 +1,1 @@
+An empty cart says '0 item'. pluralize() should use the plural for zero. QA added tests/test_pluralize_zero.py — please fix it.

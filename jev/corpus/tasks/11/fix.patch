@@ -1,0 +1,37 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index c1110f2..a925192 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -8,6 +8,7 @@ All notable changes users can see. Format: [Keep a Changelog](https://keepachang
+ - `shop export --format tsv` for exporting orders as tab-separated values (handles commas in customer names).
+ - `shop export --format markdown` for exporting orders as a markdown table.
+ - `shop report` now includes a TOTAL row at the bottom showing total items and total amount.
++- Invoice due date calculation: `due_date(issued=None, days=30)` returns a date 30 days after the issue date (or today if no issue date is given).
+ 
+ ### Changed
+ - `shop list` sorts products by price (cheapest first) by default; use `--sort name` to sort by name.
+diff --git a/shop/billing/invoice.py b/shop/billing/invoice.py
+index d62e3f8..f87f588 100644
+--- a/shop/billing/invoice.py
++++ b/shop/billing/invoice.py
+@@ -2,7 +2,9 @@
+ from __future__ import annotations
+ 
+ from dataclasses import dataclass, field
++from datetime import date, timedelta
+ 
++from .. import clock
+ from .discount import apply_discount
+ from .money import Money
+ from .tax import tax_for
+@@ -51,3 +53,10 @@ def build_invoice(cart, products, tax_rate: str = "22", discount_pct: str = "0")
+         p = by_sku[sku]
+         lines.append(InvoiceLine(sku, p.name, qty, p.price))
+     return Invoice(lines, tax_rate, discount_pct)
++
++
++def due_date(issued: date | None = None, days: int = 30) -> date:
++    """Calculate invoice due date: `days` after issue date, or today if not issued."""
++    if issued is None:
++        issued = clock.today()
++    return issued + timedelta(days=days)

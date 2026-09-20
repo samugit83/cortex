@@ -430,6 +430,127 @@ cortex doctor
 ```
 
 Needs `git`, `jq`, `claude`, `timeout`. All four are required by `sweep.sh`.
+It also reports whether Jev is reachable and whether this repo's command files
+are current — see section 11.
+
+---
+
+## 11. Jev
+
+Jev is optional. **Every row below leaves Cortex behaving exactly as it does with
+no key at all**, and none of them can change a verdict: the gates, `cortex score`,
+`check.sh` and preflight contain no Jev code path. Full contract in
+[`JEV.md`](JEV.md).
+
+### `relevance: unavailable`
+
+Not an error. `cortex scope` printed its deterministic half (`injected into N of
+M tasks`) and could not compute the semantic half. The reason is in the
+parentheses:
+
+| It says | Meaning |
+|---|---|
+| `(jev disabled)` | `JEV_ENABLED` is 0, or no `.env` sets it. The built-in default is off |
+| `(no key)` | the switch is on but `JEV_API_KEY` is empty |
+| `(invalid key)` | a 401. Three causes, indistinguishable from the status alone: the key is wrong; the key is for the **other route** (a `vck_` gateway key sent to `api.typesafe.ai`, or the reverse); or the TypeSafe account is **waitlisted** — TypeSafe is invite-only and an unprovisioned key is rejected exactly like a bad one. Check `cortex config` for the effective `jev.base_url` before assuming a typo |
+| `(refused — …)` | a 403. On TypeSafe direct: no key was sent at all. On AI Gateway: usually `customer_verification_required` — it needs a credit card on file before routing anything, even though Jev is free. Add one at [vercel.com/account/ai](https://vercel.com/account/ai) |
+| `(malformed request)` | a 422. A bug — please report it with the `.evolve/jev/` line |
+| `(rate limited)` | a 429 that outlived its retries |
+| `(overloaded)` | a 529 |
+| `(timeout)` / `(unreachable …)` | network. `jev.timeout_s` bounds it |
+| `(… max_requests_per_cycle …)` | the census refused to start rather than become a sample. Raise the budget or narrow the question |
+
+Exit code is 0 in every case, and A5 continues.
+
+### "Which endpoint should my key go to?"
+
+Two routes, the same model, the same request and response format:
+
+| Key from | `JEV_BASE_URL` | `JEV_MODEL` |
+|---|---|---|
+| Vercel AI Gateway (`vck_…`) | `https://ai-gateway.vercel.sh/typesafe/v1/systemone` | `typesafe-ai/jev` |
+| TypeSafe console | `https://api.typesafe.ai/v1/systemone` | `jev-latest` |
+
+Crossing them gives `401 invalid key`, which reads exactly like a typo. Check
+with `cortex config` — it prints the effective value and where it came from.
+
+Two quick probes that cost nothing:
+
+```bash
+# is the key good at all? (no model call, no billing)
+curl -sS -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $JEV_API_KEY" \
+  https://ai-gateway.vercel.sh/typesafe/v1/models      # 200 = a good gateway key
+
+# can it actually route a request?
+cortex jev doctor
+```
+
+### "I set a key and nothing happened"
+
+A key alone does not turn Jev on: the default is `enabled: false`. Put
+`JEV_ENABLED=1` in your `.env`. `cortex doctor` says so explicitly when it finds a
+key with the switch off:
+
+```
+jev        off — jev.enabled is false (a key is present — set JEV_ENABLED=1 in .env)
+```
+
+### "The Jev steps do nothing" / `cortex scope: unknown command`
+
+Your repo's command files predate this Cortex, so `/evolve` is still running the
+old A3/A4/A5. `cortex doctor` names it:
+
+```
+commands   evolve.md is older than this Cortex (yours is customised) — Jev steps inactive
+           run: cortex init /path/to/repo
+```
+
+Re-run `cortex init` in **every** repo after upgrading Cortex. If you edited a
+command file, `init` keeps your copy as `<name>.md.bak-<timestamp>` and installs
+the new one — merge your edits back from the `.bak`.
+
+### "I turned Jev off and my old `.evolve/` still works"
+
+It does, by design. Jev writes one optional `jev:` line in `.evolve/journal.md`
+(prose to every keyless reader), an optional `jev_rank` field in
+`.evolve/prune-plan.json` (ignored when absent), and `.evolve/jev/*.jsonl` (a new
+directory nothing requires). Skills, rules, tasks, results and baselines have no
+Jev in them at all — a skill promoted with Jev on is byte-identical in form to
+one promoted without it.
+
+### "I turned it on mid-cycle"
+
+Also fine, in both directions. No Jev code runs inside a sweep, so a verdict can
+never be affected. Every Jev contribution is written at the moment it is made and
+is optional to every later reader: if A3 ran with Jev and D5 without, D5 simply
+writes a journal entry with no `jev:` line. A `/prune` plan built with Jev and
+executed after a switch-off runs the same approved items, in the order it printed.
+
+### `jev: answering model is X, J0 validated Y`
+
+The `jev-latest` alias moved. Jev's calibration was validated against a specific
+version, so this warns once per run and keeps going — a stale calibration
+degrades a hint, never a verdict. Either re-validate:
+
+```bash
+python3 jev/validate.py --corpus jev/corpus
+```
+
+or pin the old version with `JEV_MODEL=jev-1.13.0` in your `.env`.
+
+### The session-end hook got slow or noisy
+
+That outranks the feature. Lower `JEV_TIMEOUT_S` (the hook takes the smaller of
+that and its own 5-second ceiling), raise `JEV_HARVEST_THRESHOLD` to make it
+nudge less, or set `JEV_ENABLED=0` to return it to `git status | wc -l`. A hung
+endpoint already falls back to that line on its own.
+
+### Is my key about to end up in a rollout?
+
+No. `.env` is gitignored, and `make_sandbox()` clones the repo, so an untracked
+file cannot follow it. The one path that could is
+`environment.harness_files`, which copies arbitrary repo paths into **both**
+arms — and `cortex config --check` refuses a `.env` there by name.
 
 ---
 
@@ -449,15 +570,19 @@ is still going.
 ## 9b. Running the test suite
 
 ```bash
-./test/run-tests.sh              # every assertion (487 at the time of writing), ~5 min
+./test/run-tests.sh              # every assertion (642 at the time of writing), ~5 min
 ./test/run-tests.sh -j auto      # the same, 8 test functions at a time: ~45 s
 ./test/run-tests.sh locking      # just one group
 CORTEX_TEST_ROLLOUTS=4 CORTEX_TEST_PREFLIGHT=4 ./test/run-tests.sh -j auto
                                  # every sweep and preflight inside the tests 4 at a time
 ```
 
-No API calls — rollouts are driven by a stub agent each test controls. If you
-change anything in `bin/`, run this first. The tests pin `measurement.parallel` to
+No API calls — rollouts are driven by a stub agent each test controls, and Jev's
+call sites by `test/jev-stub.py`. `test/jev-contract.py` additionally checks both
+of them against the published TypeSafe schema vendored at `test/jev-openapi.json`,
+so the stub cannot drift into answering in a shape the real API never sends. The suite sets `JEV_ENV_FILE=/dev/null` so it
+cannot read your own key or your own settings. If you change anything in `bin/`,
+run this first. The tests pin `measurement.parallel` to
 1 so each sees one fixed order; the last line runs them all again in parallel.
 
 ---

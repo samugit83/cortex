@@ -39,6 +39,7 @@ It is small and practical on purpose: built for what one person can actually run
 - [Configuration reference](#configuration-reference)
 - [Every file in this repo](#every-file-in-this-repo)
 - [What it costs](#what-it-costs)
+- [Jev, the optional judge](docs/JEV.md) — what it is asked, what leaves your machine, and what runs when it is off
 
 **When things go wrong**
 - [Troubleshooting](#troubleshooting) — and [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for the full list
@@ -61,6 +62,8 @@ These words are easy to confuse, and one pair trips up everyone.
 | **cycle** | one complete `/evolve`: propose → sweep → verdict → journal. Weekly. |
 | **harness** | everything around the model: skills, rules, `CLAUDE.md`, tools. What Cortex evolves. |
 | **sandbox** | the clone of your repo where rollouts happen. Never your working copy. |
+| **System One** | a model that answers *typed* questions about some state — a probability for a yes/no, a labelled choice with its confidence, a score against a rubric — instead of generating text. It never chooses its own next action. |
+| **Jev** | TypeSafe's System One model — reachable directly or through Vercel's AI Gateway, which serves the same wire format — that Cortex can use to **propose**: which theme recurs, which tier a change belongs in, how much of the suite a candidate is actually about. It is a **judge**, so it is banned from the verdict path by construction — `cortex score`, the six gates, `check.sh` and preflight contain no Jev code, and a test asserts it. Optional: Cortex runs fully without a key. See [docs/JEV.md](docs/JEV.md). |
 
 ### The pair that confuses everyone
 
@@ -165,17 +168,83 @@ which creates:
   state.json          cycle counter for the barren-streak guard, and the model of the last /prune pass
   prune-plan.json     the current /prune plan: items, tasks, estimate, what you approved, what was decided
   runs/               one results file per sweep
+  jev/                one line per Jev request, if you enable it (gitignored; absent otherwise)
 .claude/commands/     /harvest  /evolve  /prune
 .claude/rules/        path-scoped rules (empty to start)
 CLAUDE.md             only if the repo had none anywhere Claude Code looks for one:
                       a minimal root file explaining the tiers. An existing one is never touched.
 ```
 
-**Upgrading Cortex later** is the same command: re-run `cortex init`. Cortex
-records a fingerprint of each command it installs (`.claude/commands/.cortex-installed`),
-so it can tell your edits from an older version: an unedited copy is simply
-updated, and one you edited is kept as `.claude/commands/<name>.md.bak-<timestamp>`
-before the new one is installed. Missing `.gitignore` lines are added too.
+**Upgrading Cortex later** is the same command: re-run `cortex init`, **in every
+repo you use it in**. Cortex records a fingerprint of each command it installs
+(`.claude/commands/.cortex-installed`), so it can tell your edits from an older
+version: an unedited copy is simply updated, and one you edited is kept as
+`.claude/commands/<name>.md.bak-<timestamp>` before the new one is installed.
+Missing `.gitignore` lines are added too.
+
+That "in every repo" is load-bearing now. The command files are where most new
+behaviour lives, so a repo running last month's `evolve.md` silently runs last
+month's `/evolve` — no error, nothing missing, just steps that never happen.
+`cortex doctor` names it:
+
+```
+commands   evolve.md is older than this Cortex (yours is customised) — Jev steps inactive
+           run: cortex init /path/to/repo
+```
+
+If you customised a command file, your copy is kept and **your pre-upgrade
+behaviour continues** — merge your edits back from the `.bak` when you are ready.
+
+### Optional: Jev
+
+Cortex is complete without this. [Jev](docs/JEV.md) is a calibrated judge that
+helps the *proposal* layer decide what to try — never what the result is. The
+gates, `cortex score`, `check.sh` and preflight contain no Jev code at all.
+
+**Getting a key — two routes, same model, same wire format.** Vercel's AI Gateway
+serves TypeSafe's own request and response shapes verbatim, so Cortex needs no
+adapter for either: only `JEV_BASE_URL` and `JEV_MODEL` differ.
+
+| | Vercel AI Gateway | TypeSafe direct |
+|---|---|---|
+| Key from | [vercel.com/ai-gateway/models/jev](https://vercel.com/ai-gateway/models/jev) → **Get API key** | [console.typesafe.ai/keys](https://console.typesafe.ai/keys) |
+| Who can | any Vercel account | **invite only** — waitlist at typesafe.ai |
+| `JEV_BASE_URL` | `…vercel.sh/typesafe/v1/systemone` | `…api.typesafe.ai/v1/systemone` |
+| `JEV_MODEL` | `typesafe-ai/jev` | `jev-latest` |
+| Catch | needs a **credit card on file** before it routes anything, even though Jev is free | a waitlisted key is rejected `401`, exactly like a wrong one |
+
+`.env.example` ships the Vercel route, because it is the one most people can use
+today. **A key from one route never works against the other's URL** — it comes
+back `401 invalid key`, which reads exactly like a typo, so check the URL first.
+
+```bash
+cp $CORTEX_HOME/.env.example $CORTEX_HOME/.env   # then paste your key, and JEV_ENABLED=1
+cortex doctor                                     # key · endpoint · round-trip · model id
+```
+
+The key is resolved from the environment, then `$CORTEX_HOME/.env` (or
+`JEV_ENV_FILE`), then `<repo>/.env`. **Put it in `$CORTEX_HOME/.env`**: Cortex is
+one binary on `PATH` that operates on any repo, so the key is a property of your
+machine rather than of a project, and keeping it there keeps it out of every
+project the tool touches. `cortex init` gitignores `.env` and `.evolve/jev/` in
+any repo it sets up, and `cortex config --check` refuses a `.env` in
+`environment.harness_files` — that list is copied into both rollout sandboxes,
+which is the one place a secret must never appear.
+
+Two things worth knowing before you turn it on:
+
+- **A key alone does nothing.** The default is `enabled: false`; `JEV_ENABLED=1`
+  in your `.env` is the switch. `cortex doctor` says so when it finds a key with
+  the switch off.
+- **The Stop hook starts making a network call.** It is one request, ~200 ms and
+  ~$0.0002, and it replaces `git status | wc -l` with the two questions
+  `/harvest` Step 1 actually asks. It falls back to the old line the moment
+  anything is slow, refused or absent. If you would rather it did not, leave
+  `JEV_ENABLED=0` — everything else works the same.
+
+What leaves your machine, in each call, is listed exhaustively in
+[docs/JEV.md](docs/JEV.md#what-leaves-your-machine-in-one-list). With Jev off,
+nothing does.
 
 ---
 
@@ -318,6 +387,27 @@ skills — only now with extra machinery and more confidence than you have earne
 
 A verifier is a command that exits `0` or non-zero. A test. A build. A `curl`. A
 CTF flag. Not an opinion, not an LLM judge, not your impression of the session.
+
+**And Cortex ships a judge, so this needs saying precisely.** [Jev](docs/JEV.md)
+is an optional calibrated model Cortex can consult in the **proposal** layer —
+which theme recurs, which tier a change belongs in, how much of the task suite a
+candidate is actually about. It is barred from the **fitness** layer, and not by
+good intentions:
+
+| | |
+|---|---|
+| It may change | *which* candidate, theme or ordering is produced |
+| It may never change | the format of what is written, or **whether a candidate is kept** |
+
+`bin/score.sh`, `bin/preflight.sh` and `bin/sweep.sh` contain no reference to it —
+no import, no field, no flag — and a test in `test/run-tests.sh` asserts the string
+`jev` appears in none of them. No Jev call runs inside a rollout sandbox, where it
+would become part of the harness under test. It is off by default, every call site
+has a defined keyless path, and turning it on cannot turn a KILL into a KEEP.
+
+The line is worth drawing this hard because it is the only line that matters: a
+wrong proposal costs one cycle and the gates kill it, while a wrong fitness value
+corrupts every decision downstream and nothing catches it.
 
 > **⇒ So a task without `check.sh` is not a task.** `cortex preflight` proves
 > each one still *discriminates* — fails on the broken state, passes on the
@@ -625,14 +715,36 @@ Everything about `web/` never entered context, because Claude never touched `web
 | a moment ("before reporting done", "before committing") tied to no area | always-on skill | it is not tied to a place |
 | something an agent breaks while doing something **else** | root `CLAUDE.md` | it must be there before the agent knows it needs it |
 
-**A skill is only *offered*; a rule is *injected*.** The model invokes a skill when
-its description names **the task it is doing**, and rarely when it names a **side duty**
-of that task. In the lab, with Haiku 4.5: *"When implementing a new exporter plugin…"*
-was invoked in 5 of 6 rollouts where it was visible; *"Before finishing changes to
-shop/ code, verify CHANGELOG.md was updated"* in 1 of 18; the rule on `shop/billing/**`
-loaded in 9 of 9. So a side duty tied to an area (a changelog line, a docs row, a
-registry entry, a house helper) belongs in a rule on that area whenever the fixes edit
-an existing file there; a skill's description names the task, never the duty.
+**A skill is only *offered*; a rule is *injected*.** Measured over 486 recorded
+rollouts in the lab (Haiku 4.5), counting only the runs where the item was actually
+visible:
+
+| Tier | Runs | Visible | Fired | **Fired given visible** |
+|---|---|---|---|---|
+| rule | 410 | 62.9% | 62.9% | **100.0%** |
+| path-gated skill | 66 | 72.7% | 19.7% | **27.1%** |
+| always-on skill | 10 | 100% | 0% | **0.0%** |
+
+And firing is not noise: of 173 `(item, task)` cells with two or more repeat runs,
+**88.4% were unanimous** — always fired, or never fired.
+
+Read that table twice, because it cuts both ways. **A rule that is visible always
+fires**, which is the whole argument for a rule — and it is also exactly what makes
+an over-scoped rule the most destructive object in the system. It fires in every
+task it reaches, including all the ones it is not about, and each of those is a
+chance to break something gate 3 will charge you for. In the same recorded data,
+three candidates that were injected into tasks they were not about cost **694
+rollouts and $77.70** and landed nothing. Breadth is not the danger; **irrelevant**
+breadth is, and [`cortex scope`](#the-three-commands) is what measures it before
+you pay for a sweep.
+
+Within a tier, a skill is invoked when its description names **the task the agent
+is doing**, and rarely when it names a **side duty** of that task (*"When
+implementing a new exporter plugin…"* was invoked in 5 of 6 visible rollouts;
+*"Before finishing changes to shop/ code, verify CHANGELOG.md was updated"* in 1 of
+18). So a side duty tied to an area (a changelog line, a docs row, a registry entry,
+a house helper) belongs in a rule on that area whenever the fixes edit an existing
+file there; a skill's description names the task, never the duty.
 
 `/evolve` picks the tier from the files the failing tasks' fixes touched
 (`fix.patch`), and derives the globs from them. `/prune` moves always-on skills
@@ -722,6 +834,15 @@ things. `/prune` uses the same ruler to remove things. **Without `/harvest` the
 other two have nothing to measure with**, which is why the advice is always to
 run only `/harvest` for the first two weeks.
 
+**All three work with [Jev](docs/JEV.md) on or off.** With a key, a calibrated
+judge helps *propose* — which theme recurs, which tier fits, how much of the suite
+a candidate is actually about. Without one, every step has a defined keyless
+behaviour and Cortex does what it has always done. The artifacts are interchangeable
+in both directions, including mid-cycle: a skill promoted with Jev on is
+byte-identical in form to one promoted without it, and no gate, score or check
+contains any Jev code at all. The contract is in [docs/JEV.md](docs/JEV.md); every
+row of it is a test, not a promise.
+
 ---
 
 # `/harvest` — save what just happened
@@ -785,6 +906,30 @@ worse than no suite, because it produces numbers, and numbers get believed.
 
 **`nothing to harvest` should be your most common outcome.** That is the command
 working correctly, not failing.
+
+### The sensor that reminds you to run it
+
+Capture rate is the bottleneck of the whole system — without `/harvest` the other
+two commands have nothing to measure with — and the thing standing between you and
+a captured session is *remembering*. The optional Stop hook
+(`hooks/log-session.sh`, registered by `install.sh`) is the reminder. It logs one
+line per session and nudges when the session plausibly produced something.
+
+| | What it asks | What it costs |
+|---|---|---|
+| **without Jev** | `git status --porcelain \| wc -l` — did any file change? | nothing |
+| **with Jev** | the two questions above, of the working tree and the last few things **you** said | ~200 ms, ~$0.0002 |
+
+The hook's design rule is that it runs at the end of **every** session, so if it
+is ever slow or noisy you disable it within a week and Cortex loses its sensor.
+That rule outranks the feature in every direction: below
+`jev.harvest.noul_threshold` the hook stays **silent** even with a dirty tree, and
+a call that is disabled, refused, slow or absent falls straight back to the
+`git status` line, inside a five-second ceiling. What it sends is listed in
+[docs/JEV.md](docs/JEV.md#fixed-and-corrected--the-stop-hooks-filter); with Jev
+off it sends nothing, because it makes no call.
+
+Either way the hook only ever *prompts*. Step 1 is still yours to answer.
 
 ---
 
@@ -1544,6 +1689,37 @@ tail -60 .evolve/journal.md      # what past cycles concluded
 plus the failing tasks from A2, and the last `lookback_days` of this project's
 transcripts under `transcripts_dir`.
 
+Then it counts, rather than remembers:
+
+```bash
+cortex themes
+```
+
+```
+themes  source: census  ·  42 lesson(s), 128 transcript chunk(s)  ·  jev-1.13.0
+  COUNT  THEME                WHERE
+      7  verify-before-done   lessons 5 (02 04 09); transcripts 2   <- clears min_theme_occurrences
+      3  exporters            lessons 3 (11 12 13)
+      2  new                  lessons 2
+  min_theme_occurrences = 3
+```
+
+Read its `source:` line, because the two sources are not the same amount of
+evidence:
+
+- **`source: census`** — every lesson line and every transcript chunk of the
+  window was classified and counted, so `min_theme_occurrences` means what it
+  says. One lab run's transcript folder is **21 MB**; no model reads that whole
+  at any price, so until now "recurs three times" was a model's impression of a
+  sample. This is arithmetic.
+- **`source: areas (jev off)`** — the free half, which was already sitting in the
+  repository unused: every lesson line carries a `task NN` id (`/harvest` Step 3)
+  and every task's `notes.md` carries an `area:` line (`/harvest` Step 4), so the
+  lessons that named a task can be grouped and counted for nothing. It is a
+  **floor**, not a census, and A3 then reads the transcripts as a sample exactly
+  as it always did. Keyless A3 is therefore today's A3 **plus** a free table,
+  never less.
+
 The graveyard matters more than it looks. Each `/evolve` runs in a **fresh
 session with no memory of last week**. Without reading what was already tried and
 killed, it would repropose the same dead idea every Tuesday and pay for it again.
@@ -1606,6 +1782,15 @@ flowchart TD
 Claude must state its reasoning: *"Skill. A hook would be stronger — it cannot be
 ignored — but a hook cannot decide which test to run for a given task."*
 
+The table above is now backed by [measured firing rates](#how-skills-load-tiers-and-routing)
+rather than two anecdotes, which is a change that needs no key and no model.
+With a key, `cortex jev tier` offers a second opinion on the same question, gated
+on `jev.confidence_floor`: below the floor it exits 3 and Claude decides from the
+table, which is what a keyless run does anyway. It is a safe place to ask, because
+a wrong pick is killed by the gates — the verifier is intact either way. And if
+the answer is `rule`, A4 runs `cortex scope` on the draft `paths` **in the same
+turn**, because a rule fires in every task it reaches.
+
 Only skills and rules get A/B tested; a hook is deterministic, so there is
 nothing to compare. **A cycle can finish without producing a skill at all**, and
 that is a correct outcome.
@@ -1649,6 +1834,43 @@ Before any sweep, `cortex skills --candidate <name> --tasks "<ids>"` checks it
 for free — including **reachability**: if no task in the sweep reads (rule) or
 reads-or-writes (skill) a file matching its `paths`, it could never load, and the
 check refuses rather than spend rollouts measuring nothing.
+
+Then `cortex scope` asks the other half of that question — not *can* it load, but
+**how much of what it will load into is it actually about**:
+
+```
+$ cortex scope --candidate shop-clock-usage
+scope: shop-clock-usage  (rule, paths: shop/**)
+  injected into      25 of 25 tasks   (predicted from paths)
+  about its subject   4  (11 12 13 22)
+  irrelevant         21  (01 02 03 04 05 06 08 09 10 14 ...)
+  relevance          16%   <- below floor 0.35
+
+  WARNING: this rule will be injected into 21 tasks it is not about.
+  Every one is a chance to break something gate 3 will charge you for.
+  Consider: paths: "shop/billing/**" — every task it IS about works there,
+            and 18 of the irrelevant ones do not.
+  It is advisory: nothing here blocks the sweep, and no gate reads it.
+```
+
+That is the exact shape of the most expensive failure in the recorded history:
+one house rule, four attempts, 694 rollouts, $77.70, nothing landed, every one
+killed by gate 3 for breaking things it was never meant to touch. All three
+attempts scored ≤20% here **before their sweeps ran**, and all three items that
+were kept scored 100%.
+
+The free version of this check does not work. Cortex can already compute
+*breadth* — what fraction of the suite the glob reaches — for nothing, and it
+cannot discriminate: 100% breadth appears in both the kept group and the
+regression-killed group. The quantity that separates them is the *ratio of
+relevant to total* injections, and its numerator is the one thing here that
+needs a judge.
+
+With Jev off it prints the deterministic half and `relevance: unavailable`, exits
+0, and A5 continues — that line is not an error. For a **skill** it also predicts,
+per task, whether an agent would invoke it from its description alone; that is
+thin evidence (3 skill candidates in the corpus) and a reason to reword a
+description, never a reason to skip a screen.
 
 Four rules:
 
@@ -2081,6 +2303,21 @@ What each hint is for:
 | `no use, no task` | not test it: the verdict could only be UNMEASURED, and it stays |
 | `narrowing candidate: N% … in <folder>` | propose the Step 5 narrowing: the same skill, gated to that folder |
 
+`cortex usage` is free and needs no key, and it stays that way. `cortex scope
+--replace <item>` is its other half, and Step 5 runs both: `usage` says *where
+your real use is*, from your sessions; `scope` adds the denominator it cannot
+compute — *how many of the tasks it is injected into are about it at all*. With
+Jev off, `scope` prints its deterministic half and Step 5 proceeds on the usage
+hint alone, as before.
+
+**The `DOUBT` column.** With Jev on, `cortex prune plan` also scores each item
+0–4 on "how likely is removing this to cost nothing?" and lists the most doubted
+first. It is a **sort order only**: every removal is still decided by its own
+sweep, an item with no score keeps its place, and a plan built with Jev on and
+executed after a switch-off runs the same approved items in the order it printed.
+It matters most on a `MODEL UPGRADE` pass, where the plan holds every skill and
+rule and there is otherwise no principled order at all.
+
 ## What a pass costs
 
 Each item is measured **only on the tasks where it can load**, not on the
@@ -2271,6 +2508,12 @@ cortex score .evolve/runs/20260917T160509-confirm.jsonl
 
 **Read them in that order.** `scorable: false` means stop — the other two fields
 are computed from data that cannot support a decision.
+
+**No Jev field appears here, by design, and none ever will.** `bin/score.sh` gains
+no import, no field and no flag from the [Jev integration](docs/JEV.md) — turning
+Jev on cannot change a KEEP into a KILL. The test suite asserts that the string
+`jev` does not appear in `score.sh`, `preflight.sh` or `sweep.sh` at all, because
+a boundary nobody checks is a boundary that moves.
 
 ### Every field
 
@@ -2869,13 +3112,22 @@ Cortex/
 ├── README.md                  this file
 ├── install.sh                 symlinks cortex into ~/.local/bin
 │
+├── .env.example               committed: every Jev setting, documented. Copy to .env
+│                                   (gitignored) and paste your key. Optional —
+│                                   Cortex runs fully without one
+│
 ├── bin/
-│   ├── cortex                 CLI: init, config, cycle, status, baseline, skills, promote,
-│   │                               bury, restore, preflight, sweep, score, clean, doctor
+│   ├── cortex                 CLI: init, config, cycle, status, baseline, skills, scope,
+│   │                               themes, promote, bury, restore, preflight, sweep,
+│   │                               score, clean, doctor, jev
 │   ├── harness.py             the routing layer: validates skills + rules, what a
 │   │                               rollout loaded and cost, reachability, harness
-│   │                               hash, the usage report, the /prune plan, and
-│   │                               how many run at once (parallel auto sizing)
+│   │                               hash, the usage report, the /prune plan, the
+│   │                               scope report, the theme census, and how many
+│   │                               run at once (parallel auto sizing)
+│   ├── jev.py                 the Jev client and the question library. STDLIB ONLY,
+│   │                               never raises, never blocks, never on a verdict path.
+│   │                               Every question Cortex asks lives here
 │   ├── compile-config.py      config.yaml -> config.json, with validation
 │   ├── preflight.sh           proves every task still discriminates (0 tokens), N at once
 │   ├── sweep.sh               runs base-vs-candidate rollouts in isolated clones, N at once
@@ -2897,8 +3149,25 @@ Cortex/
 │   ├── precondition.sh        optional environment gate
 │   └── notes.md
 │
+├── jev/                       the evidence, and the gate — Cortex-repo only, never
+│   │                               installed into a user's repo
+│   ├── README.md              what this directory is for
+│   ├── corpus.py              builds the (candidate, task) firing corpus from sweep history
+│   ├── evidence.py            reproduces the analysis with NO key: the baseline Jev must beat
+│   ├── EVIDENCE.txt           its recorded output on lab run R1
+│   ├── validate.py            J0: Jev vs that baseline, on real calls. The gate
+│   ├── RESULTS.md             written by validate.py; its first lines carry the model
+│   │                               id bin/jev.py reads back on every call
+│   └── corpus/                a COMMITTED snapshot of the rows J0 scored, so
+│                                   `cortex clean --runs` cannot destroy the evidence
+│
 ├── test/
-│   └── run-tests.sh           one test per known failure mode; no API calls
+│   ├── run-tests.sh           one test per known failure mode; no API calls
+│   ├── jev-stub.py            a stub System One server the suite drives, so Jev's
+│   │                               call sites break no rule of run-tests.sh
+│   ├── jev-contract.py        both of them against the published TypeSafe schema:
+│   │                               the only check that catches the stub drifting
+│   └── jev-openapi.json       that schema, vendored so the check needs no network
 │
 ├── diagram/
 │   ├── index.html             a one-page visual overview of the three commands
@@ -2910,6 +3179,9 @@ Cortex/
 ├── docs/
 │   ├── THEORY.md              the design rationale: each principle, the file that
 │   │                               implements it, its limits, and where each idea comes from
+│   ├── JEV.md                 the optional judge: what runs when it is off, why the
+│   │                               artifacts are interchangeable, every question verbatim,
+│   │                               and exactly what leaves your machine
 │   └── TROUBLESHOOTING.md     every failure mode and its fix
 │
 └── paper/
@@ -2926,8 +3198,15 @@ Cortex/
 | `bin/preflight.sh` | 0 | quarantines tasks that no longer discriminate |
 | `bin/sweep.sh` | **all of them** | the rollouts (add or replace), and what each one loaded — skills invoked, skills made visible, rules triggered by a Read; run in background, after a `--dry-run` |
 | `bin/score.sh` | 0 | arithmetic on the results, and the verdict |
+| `bin/jev.py` | ~$0.25/cycle | the optional judge, in the proposal layer only: `scope`, `themes`, `tier`, the hook filter, the `/prune` ordering. Never imported by `score.sh`, `preflight.sh` or `sweep.sh` |
 
-Only `sweep.sh` costs money, and it runs headless with no agent supervising it.
+Only `sweep.sh` costs real money, and it runs headless with no agent supervising
+it. `bin/jev.py` costs cents and is optional; with no key it makes no call.
+
+Two directories a user's repo also gains, neither of them committed:
+`.evolve/jev/<UTC-date>.jsonl` (one line per Jev request — the answer, its
+probability, the model that answered; never the state that was sent, never the
+key) and `.env` if you keep a per-repo key. `cortex init` gitignores both.
 
 ---
 
@@ -3325,6 +3604,51 @@ a result. Raise it after re-verifying on a newer CLI; never lower it blindly.
 
 ---
 
+### `jev:` — the optional judge
+
+**`cortex init` does not write this block, and you should not add it unless you
+need to.** The defaults live in the compiler's schema only, so a repo that never
+turns Jev on never gains a `jev:` key — which also means downgrading to an older
+Cortex stays silent, instead of warning `unknown key` once per key, every run,
+forever. Everything here can be set in `.env` instead, which is where it belongs.
+
+```yaml
+jev:
+  enabled: false              # master switch; false = Cortex behaves exactly as it does today
+  model: "jev-latest"
+  base_url: "https://api.typesafe.ai/v1/systemone"   # or …vercel.sh/typesafe/v1/systemone
+  timeout_s: 10               # one call, retries and backoff included
+  confidence_floor: 0.7       # below this, a Choice is escalated to Claude instead of acted on
+  retry:
+    attempts: 3               # 429 and 529 only; honours Retry-After
+    backoff_s: 1.0            # doubled per attempt, capped by timeout_s
+  budget:
+    max_requests_per_cycle: 2000    # a census over this refuses to START
+    max_input_mtok_per_cycle: 12    # the same, in input MTok
+    max_rps: 15                     # an order of magnitude under the published 1200/min
+  scope:
+    relevance_floor: 0.35     # cortex scope warns below this; it NEVER kills a candidate
+  harvest:
+    noul_threshold: 0.6       # the session-end hook stays silent below this
+```
+
+**Precedence, because two systems now carry the same values:** the environment
+beats `$CORTEX_HOME/.env` (or `JEV_ENV_FILE`), which beats `<repo>/.env`, which
+beats `config.yaml`, which beats the built-in default. The reason is that a
+`.env` is per-machine and gitignored while `config.yaml` is committed, so a key
+or a one-run override must never require editing a tracked file. `cortex config`
+prints the effective value **and its source** for every key above, and
+`cortex doctor` reports whether the endpoint answers and which model id answered.
+
+Every key is validated with its range, like every other key: a threshold outside
+0–1, a `timeout_s` outside 1–120, a non-http `base_url` and a misspelled name are
+each rejected or named rather than silently reverted to a default.
+
+Full contract — what runs when it is off, what leaves your machine, and every
+question verbatim — in [docs/JEV.md](docs/JEV.md).
+
+---
+
 ### The whole file at a glance
 
 | Setting | Default | Changes what |
@@ -3354,6 +3678,17 @@ a result. Raise it after re-verifying on a newer CLI; never lower it blindly.
 | `prune.max_items` | 3 | the most items a routine `/prune` pass may test (a model change tests all) |
 | `baseline.model` | `""` | which model the numbers are about |
 | `baseline.max_age_days` | 30 | when the number to beat is re-measured |
+| `jev.enabled` | **false** | whether the optional judge is consulted at all |
+| `jev.model` | `jev-latest` | which System One model answers (`typesafe-ai/jev` through AI Gateway); pin a version to freeze J0's numbers |
+| `jev.base_url` | TypeSafe's endpoint | which of the two routes to Jev is used; `.env` is where this belongs |
+| `jev.timeout_s` | 10 | how long one Jev call may take before it falls back |
+| `jev.confidence_floor` | 0.7 | when a tier pick is escalated to Claude instead of acted on |
+| `jev.retry.attempts` / `backoff_s` | 3 / 1.0 | how hard a 429 or 529 is retried |
+| `jev.budget.max_requests_per_cycle` | 2000 | when a census refuses to start rather than become a sample |
+| `jev.budget.max_input_mtok_per_cycle` | 12 | the same ceiling, in input tokens |
+| `jev.budget.max_rps` | 15 | how fast a census may go |
+| `jev.scope.relevance_floor` | 0.35 | when `cortex scope` warns (it never blocks) |
+| `jev.harvest.noul_threshold` | 0.6 | when the session-end hook speaks |
 | `environment.sandbox_root` | `/tmp/cortex-evolve` | where clones live |
 | `environment.permission_mode` | `acceptEdits` | whether rollouts can stall |
 | `environment.harness_files` | `[CLAUDE.md]` | what counts as part of the harness |
@@ -3422,10 +3757,36 @@ die on 8 rollouts instead of 38 — that is most of your budget, saved by defaul
 where that item can load. The plan prints the total — rollouts, time, tokens,
 cost, measured from your own history — and waits for your approval.
 
+### What Jev adds, and what it is expected to save
+
+Jev is charged per input token; output tokens are free. Per `/evolve` cycle, with
+`jev.enabled: true`:
+
+| Call | When | Rough cost |
+|---|---|---|
+| `cortex themes` (the census) | once per cycle | **~$0.25** at ~6 MTok of transcripts |
+| `cortex scope` | once per candidate | ~$0.002 |
+| `cortex jev tier` | once per cycle | negligible |
+| the Stop hook | once per **session** | ~$0.0002 |
+| `cortex prune plan` | once per pass | negligible |
+
+So roughly **$0.25 a cycle**, against ~$3 of rollouts — about 8%, and bounded:
+`jev.budget.max_requests_per_cycle` (2000) and `max_input_mtok_per_cycle` (12)
+make a census that would exceed either **refuse to start** rather than quietly
+become a sample again.
+
+Against that: in the recorded lab run, three candidates that were injected into
+tasks they were not about cost **694 rollouts and $77.70** across four cycles and
+landed nothing. `cortex scope` flags all three before the first rollout runs. That
+is the trade the number above is asking you to make — and with `jev.enabled:
+false` you make neither, and Cortex costs exactly what the rest of this section
+says.
+
 ### Turning it down
 
 | Lever | Effect |
 |---|---|
+| `jev.enabled: false` | removes the ~$0.25/cycle, and every Jev call, entirely |
 | `k.confirm: 3 -> 2` | 30 -> 20 rollouts. **Also set `regression_tolerance: 0.5`** — at k=2 one run is 0.5, and `cortex config` will warn you if you forget. |
 | fewer tasks | linear in task count |
 | run fortnightly | halves the monthly spend |
@@ -3522,6 +3883,28 @@ task from. `blocked` means the item needs more rollouts than
 Either your tasks don't discriminate (check preflight), or your skills folder is
 already good, or the model already does what you're proposing. After two
 consecutive cycles with no KEEP, `/evolve` stops and tells you. Believe it.
+
+### `relevance: unavailable`, and other Jev states
+
+Never an error, and never a reason a cycle stops. Every one of these leaves
+Cortex behaving exactly as it does with no key at all:
+
+| You see | What happened | What Cortex did |
+|---|---|---|
+| `relevance: unavailable (jev disabled)` | the master switch is off (the default) | printed the deterministic half, exit 0 |
+| `relevance: unavailable (no key)` | switch on, `JEV_API_KEY` empty | the same |
+| `relevance: unavailable (invalid key)` | a 401 — wrong key, **wrong route for that key**, or a waitlisted TypeSafe account | one warning, then the same. Not retried |
+| `relevance: unavailable (refused — …credit card…)` | a 403 from AI Gateway | the same. Add a card at [vercel.com/account/ai](https://vercel.com/account/ai) |
+| `relevance: unavailable (rate limited)` | a 429 that outlived its retries | retried honouring `Retry-After`, then the same |
+| `relevance: unavailable (timeout)` | slow or unreachable endpoint | the same, inside `jev.timeout_s` |
+| `refused to start — … max_requests_per_cycle …` | a census would exceed its budget | refused rather than silently sampling |
+| `jev: answering model is X, J0 validated Y` | `jev-latest` moved | warned once, kept going. Re-run `jev/validate.py` or pin `JEV_MODEL` |
+| the Jev steps do nothing at all | this repo's command files predate this Cortex | `cortex doctor` names it: re-run `cortex init` |
+
+Full list, including "I turned it on mid-cycle" and "I turned it off and my old
+`.evolve/` still works", in
+[docs/TROUBLESHOOTING.md §11](docs/TROUBLESHOOTING.md) and
+[docs/JEV.md](docs/JEV.md).
 
 ---
 

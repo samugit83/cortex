@@ -1,0 +1,1 @@
+Prices over a thousand are hard to read: the standing desk shows as €1249.00. Product wants a thousands separator (€1,249.00) everywhere. QA added tests/test_money_display.py. Please implement it.

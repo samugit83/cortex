@@ -1,0 +1,15 @@
+diff --git a/shop/util/text.py b/shop/util/text.py
+index 40066cc..0833e1a 100644
+--- a/shop/util/text.py
++++ b/shop/util/text.py
+@@ -20,8 +20,8 @@ def truncate(text: str, width: int, ellipsis: str = "…") -> str:
+ 
+ 
+ def pluralize(count: int, noun: str, plural: str | None = None) -> str:
+-    """'1 item', '3 items'."""
+-    word = (plural or noun + "s") if count > 1 else noun
++    """'1 item', '0 items', '3 items'."""
++    word = (plural or noun + "s") if count != 1 else noun
+     return f"{count} {word}"
+ 
+ 

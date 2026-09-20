@@ -98,6 +98,16 @@ to working:
 Most sessions produce nothing. That is the filter working: a few trustworthy
 tasks are better than many that fail for random reasons.
 
+**A judge may propose; it may never score.** Cortex can call a calibrated
+judgement model (Jev) to help decide *what to try*: which theme recurs, which
+tier a change belongs in, how much of the task suite a candidate is actually
+about. Nothing it says reaches `cortex score`, the gates, `check.sh` or
+preflight, and no Jev code runs inside a rollout sandbox, where it would become
+part of the harness under test. The ruler stays a command that exits `0` or
+non-zero. §12 is the argument for why that line is defensible rather than
+convenient, and [`JEV.md`](JEV.md) is the audit: every question, verbatim, with
+exactly what state each one sends.
+
 ---
 
 ## 3. Compare against a live control, not against a memory
@@ -366,6 +376,14 @@ response to that is to spend nothing.
   consequence is that Cortex cannot learn by comparing an agent's passing and
   failing runs of the same task. Its signals are failures and *your*
   corrections.
+- **A count, not a recollection.** "Recurs three times" was, until recently, a
+  model's impression of a folder it could not read whole — one run's transcripts
+  are 21 MB. `cortex themes` classifies every lesson line and every transcript
+  chunk and then *counts in a shell script*, so `min_theme_occurrences` means
+  what it says. Without a key it still counts, over the lessons that named a
+  task, grouped by the `area:` line `/harvest` already writes; that is a floor
+  rather than a census, and the command says which one you are reading. The
+  deterministic half of this had been sitting in the repository unused.
 
 ---
 
@@ -418,6 +436,67 @@ evolution are plausible here but have **not** been measured:
   checker.
 
 Treat both as hypotheses.
+
+---
+
+## 12. A judge you can use without trusting it
+
+§2 bans an LLM judge from the ruler. This section is why a calibrated judge in
+the *proposal* layer is not a hole in that ban.
+
+**The two layers are not the same job.** A proposal is a guess about what to
+measure; a fitness value is the measurement. A wrong proposal costs a cycle and
+is killed by the gates. A wrong fitness value corrupts every decision downstream
+and nothing catches it. The rule that follows is not "never use a model" but
+**never let a model near the quantity the gates compare** — and that is a line
+you can check mechanically: `bin/score.sh`, `bin/preflight.sh` and `bin/sweep.sh`
+contain no reference to Jev, and a test asserts it.
+
+**But a free check would be better, so first prove one will not do.** The
+expensive failure in Cortex's own recorded history is an *over-scoped* item: a
+rule injected into tasks it is not about, where each irrelevant injection is a
+chance to break something gate 3 then charges for. Over 984 rollouts, three such
+candidates cost 694 rollouts and $77.70 and landed nothing.
+
+The obvious free check is **breadth**: what fraction of the suite the glob
+reaches. `reachable_tasks()` computes it already, for nothing. It does not work:
+
+```
+KEPT              breadth: 25%, 33%, 100%
+BURIED-regression breadth: 52%, 100%, 100%     <- 100% appears in both
+```
+
+One item reaches 100% of the tasks it was swept on and is live and healthy.
+Another reaches 100% and destroyed the protected set. Breadth cannot tell them
+apart. What separates them is the ratio of *relevant* to total injections —
+
+```
+KEPT              relevance: 100%, 100%, 100%
+BURIED-regression relevance:   8%,  16%,  20%
+```
+
+— and the numerator of that ratio requires judging what a task is *about*. That
+is the only quantity in the system that needs a model, and it is the argument
+for allowing one: not that a judge is convenient, but that a deterministic check
+was tried and measurably cannot do it.
+
+**Then make the judge falsifiable.** A calibrated model returns a probability,
+which means it can be scored against recorded outcomes like anything else.
+`jev/validate.py` does exactly that on Cortex's own corpus and refuses to pass
+below 90% agreement, a preserved separation, and monotonic calibration; its
+output records the model id it measured, and the client warns when a later
+answer comes from a different one. A judge you can re-score after every model
+change is a judge you do not have to trust.
+
+**Finally, make it optional in a way a test can check.** Every call site has a
+defined keyless behaviour, every artifact stays readable in both modes, and the
+suite asserts each row of that contract rather than asking the reader to believe
+it. A judge that cannot be switched off is a dependency; one that can is an
+accelerator. The difference is not a promise — it is `test/run-tests.sh`.
+
+The honest limit: the separation above is n=6 candidates, three of them the same
+theme, all measured on one model. It is a strong lead, not a law, and
+`jev/RESULTS.md` records the sample size next to the claim.
 
 ---
 

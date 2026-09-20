@@ -1,0 +1,27 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index da919f3..e995ea0 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -4,6 +4,9 @@ All notable changes users can see. Format: [Keep a Changelog](https://keepachang
+ 
+ ## [Unreleased]
+ 
++### Changed
++- `shop list` sorts products by price (cheapest first) by default; use `--sort name` to sort by name.
++
+ ## [0.9.0] - 2026-08-28
+ 
+ ### Added
+diff --git a/shop/cli.py b/shop/cli.py
+index 896bab6..3e3779b 100644
+--- a/shop/cli.py
++++ b/shop/cli.py
+@@ -75,7 +75,7 @@ def build_parser() -> argparse.ArgumentParser:
+     sub = parser.add_subparsers(dest="command", required=True)
+ 
+     p = sub.add_parser("list", help="list the products")
+-    p.add_argument("--sort", choices=["name", "price"], default="name")
++    p.add_argument("--sort", choices=["name", "price"], default="price")
+     p.set_defaults(func=cmd_list)
+ 
+     p = sub.add_parser("show", help="show one product")

@@ -1,0 +1,1 @@
+We want to e-mail order tables. Please add an `html` export format (a <table>, one row per order line). The tests are in tests/test_export_html.py.

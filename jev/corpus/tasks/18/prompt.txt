@@ -1,0 +1,1 @@
+A 0.3 kg parcel is charged only the base fee, and 1.25 kg is charged like 1 kg — shipping_cost() drops the decimals of the weight. It should be pro rata. QA added tests/test_shipping_weights.py. Please fix it.

@@ -53,6 +53,54 @@ commit; the test that exposes each one arrives in that session.
 - Nothing is hand-tuned in the lab repo during the run: no task is edited by hand, and no
   skill is written by anyone but `/evolve`.
 
+## Jev: a judge in the proposal layer, and why the lab keeps it off
+
+Cortex can consult **Jev**, a calibrated judgement model, when it decides *what to
+try*: which theme recurs, which tier a change belongs in, how much of the task suite
+a candidate is actually about. It never touches the decision: `cortex score`, the six
+gates, `check.sh` and preflight contain no Jev code at all, and Cortex's test suite
+asserts that the string does not appear in any of them.
+
+For this lab that distinction is not a detail, it is the whole reason Jev is a
+**treatment rather than tooling**:
+
+| | |
+|---|---|
+| It changes | *which* candidate gets proposed |
+| It cannot change | whether that candidate is kept |
+
+So a run with Jev on and a run with Jev off are testing different things, and:
+
+- **Every run that produces a primary number uses `--jev off`.** That is the default.
+  The development run D0 had no Jev at all — it did not exist yet — so any Jev-on run
+  is not comparable with it and cannot test "D0 replicates".
+- **`--jev on` refuses to start unless `JEV_MODEL` is pinned to an exact version.**
+  `jev-latest` is an alias on someone else's server: freezing Cortex's git tag does
+  not freeze it, and a run whose judge moved underneath it is not replayable.
+  `autopilot` enforces this before it spends a token.
+- The choice, the model id and the endpoint go into `lab/state/autopilot.json` under
+  `manifest`, and `roundcheck N` prints a **FINDING** if the judge changed mid-round
+  or if an alias answered.
+
+### Scoring the judge without paying for it
+
+`bin/scope-replay` asks whether `cortex scope` would have predicted what the sweeps
+later decided — on runs that have already happened, with **no new rollouts**:
+
+```bash
+bin/scope-replay --evolve /path/to/run/.evolve --out lab/results
+```
+
+It clones the run (the source is never written to), reconstructs each candidate from
+`.claude/` or the graveyard, runs `cortex scope --json` against that run's own task
+suite, and joins the prediction with the recorded fate and cost. With Jev off it
+still reports **breadth** — the free deterministic alternative — which is the thing
+any prediction has to beat.
+
+On D0 it reproduces the result that motivated the feature: breadth **overlaps**
+(kept 19%/50%/96% against regression-buried 12%/12%/46%/58%/96%), so what a glob
+reaches cannot tell a healthy item from a destructive one.
+
 ## Rule or skill?
 
 What `/evolve` can create, and how Claude Code loads each one:

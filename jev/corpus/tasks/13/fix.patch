@@ -1,0 +1,44 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index a925192..dad5c66 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -9,6 +9,7 @@ All notable changes users can see. Format: [Keep a Changelog](https://keepachang
+ - `shop export --format markdown` for exporting orders as a markdown table.
+ - `shop report` now includes a TOTAL row at the bottom showing total items and total amount.
+ - Invoice due date calculation: `due_date(issued=None, days=30)` returns a date 30 days after the issue date (or today if no issue date is given).
++- `archive_old_orders(orders, days=90, today=None)` separates recent orders from those older than the specified threshold, returning `(recent, archived)`.
+ 
+ ### Changed
+ - `shop list` sorts products by price (cheapest first) by default; use `--sort name` to sort by name.
+diff --git a/shop/orders.py b/shop/orders.py
+index 4add72c..bb28134 100644
+--- a/shop/orders.py
++++ b/shop/orders.py
+@@ -5,6 +5,7 @@ import json
+ from dataclasses import dataclass, field
+ from datetime import date
+ 
++from . import clock
+ from .billing.money import Money
+ 
+ 
+@@ -51,3 +52,19 @@ def order_from_dict(d: dict) -> Order:
+ def load_orders(path) -> list[Order]:
+     with open(path, encoding="utf-8") as fh:
+         return [order_from_dict(d) for d in json.load(fh)]
++
++
++def archive_old_orders(orders: list[Order], days: int = 90, today: date | None = None) -> tuple[list[Order], list[Order]]:
++    if today is None:
++        today = clock.today()
++
++    recent = []
++    archived = []
++
++    for order in orders:
++        if (today - order.date).days <= days:
++            recent.append(order)
++        else:
++            archived.append(order)
++
++    return recent, archived

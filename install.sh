@@ -38,4 +38,14 @@ Add to ~/.claude/settings.json (or the project's .claude/settings.json):
 
 That path is already filled in above. The hook is optional — /harvest works
 without it; the hook only adds a one-line session record and a nudge.
+
+Optional — Jev, a calibrated judge for the PROPOSAL layer only (never the
+verdict: the gates and cortex score contain no model of any kind).
+
+  cp $HERE/.env.example $HERE/.env     # then paste your key, and JEV_ENABLED=1
+  cortex doctor                        # key, endpoint, round-trip, model id
+
+Cortex is complete without it. Note that with Jev enabled the Stop hook above
+makes one network call per session (~200 ms) instead of counting changed files.
+See docs/JEV.md for exactly what each call sends.
 NEXT

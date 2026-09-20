@@ -14,7 +14,13 @@ do not spend more than a minute.
 
 ## Step 1 — FILTER (do this first, bail fast)
 
-Most sessions are worth nothing. Check exactly two things:
+Most sessions are worth nothing. Check exactly two things.
+
+(If the Stop hook is installed and Jev is on, it has already asked these two
+questions at the end of the last session and printed its answer with a
+probability beside it. That is a prompt to run `/harvest`, not a replacement for
+this step: answer both yourself from what you can see. When the hook says nothing,
+that is also not an answer — check anyway.)
 
 - **A.** Did something go from broken to working? A failing test went green, a
   build started passing, a service came up, an endpoint started answering.

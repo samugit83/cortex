@@ -45,6 +45,23 @@ SCHEMA = [
     ("cache_dirs",               "environment.cache_dirs",            list,  ["__pycache__", ".pytest_cache"], "build caches purged between states"),
     ("rollout_env",              "environment.rollout_env",           dict,  {"PYTHONDONTWRITEBYTECODE": "1"}, "env vars set for every rollout"),
     ("min_claude_version",       "environment.min_claude_version",    str,   "2.1.276", "oldest CLI whose skill/rule loading was verified"),
+    # jev: the PROPOSAL-layer accelerator. `cortex init` never writes this block into
+    # config.yaml — the defaults live here only, so a repo that never turns Jev on
+    # never gains a `jev:` key, and a downgrade to an older Cortex stays silent
+    # instead of warning `unknown key` once per key, every run, forever.
+    # .env overrides every one of these at run time; `cortex config` prints the source.
+    ("jev_enabled",              "jev.enabled",                       bool,  False, "master switch; false = Cortex behaves exactly as it does today"),
+    ("jev_model",                "jev.model",                         str,   "jev-latest", "System One model or alias; pin a version to freeze J0's numbers"),
+    ("jev_base_url",             "jev.base_url",                      str,   "https://api.typesafe.ai/v1/systemone", "the System One endpoint; Vercel AI Gateway serves the same shapes at https://ai-gateway.vercel.sh/typesafe/v1/systemone"),
+    ("jev_timeout_s",            "jev.timeout_s",                     int,   10, "seconds one Jev call may take, retries included, before it falls back"),
+    ("jev_confidence_floor",     "jev.confidence_floor",              float, 0.7, "below this confidence a Choice is escalated to Claude instead of acted on"),
+    ("jev_retry_attempts",       "jev.retry.attempts",                int,   3, "429/529 attempts, honouring Retry-After; everything else falls back at once"),
+    ("jev_retry_backoff_s",      "jev.retry.backoff_s",               float, 1.0, "first backoff, doubled per attempt, capped by timeout_s"),
+    ("jev_max_requests_per_cycle", "jev.budget.max_requests_per_cycle", int, 2000, "a census over this many requests refuses to start"),
+    ("jev_max_input_mtok_per_cycle", "jev.budget.max_input_mtok_per_cycle", float, 12.0, "a census over this many input MTok refuses to start"),
+    ("jev_max_rps",              "jev.budget.max_rps",                int,   15, "requests per second, kept an order of magnitude under the published ceiling"),
+    ("jev_relevance_floor",      "jev.scope.relevance_floor",         float, 0.35, "cortex scope warns below this relevance; it NEVER kills a candidate"),
+    ("jev_harvest_threshold",    "jev.harvest.noul_threshold",        float, 0.6, "the session-end hook stays silent below this probability"),
 ]
 
 def minimal_yaml(text):
@@ -184,6 +201,13 @@ def main():
         parts = f.replace("\\", "/").split("/")
         if f.startswith("/") or f.startswith("~") or ".." in parts:
             errors.append(f"environment.harness_files: {f!r} must be a path inside the repository")
+        elif os.path.normpath(f) == ".env" or os.path.basename(os.path.normpath(f)) == ".env":
+            # harness_files is copied into BOTH rollout sandboxes, which is the one
+            # place JEV_API_KEY must never appear. make_sandbox() clones the repo, so
+            # an untracked .env cannot follow it — but this list copies arbitrary
+            # repo paths, and would.
+            errors.append(f"environment.harness_files: {f!r} is a .env — it would copy your API key "
+                          "into both rollout sandboxes, where no secret may ever appear")
         elif (os.path.normpath(f) + "/").startswith((".claude/skills/", ".claude/rules/")):
             errors.append(f"environment.harness_files: {f!r} is under .claude/skills or .claude/rules, "
                           "which the sweep manages itself — listing it would undo --replace")
@@ -199,6 +223,28 @@ def main():
         errors.append("prune.max_items must be >= 1 (a model change always tests every item anyway)")
     if out["always_on_budget_chars"] < 0:
         errors.append("collection.always_on_budget_chars must be >= 0")
+
+    # jev: a typo in a key name silently reverts that setting to its default, so
+    # every one of these needs its bound the way every other key has one.
+    for key, path in (("jev_confidence_floor", "jev.confidence_floor"),
+                      ("jev_relevance_floor", "jev.scope.relevance_floor"),
+                      ("jev_harvest_threshold", "jev.harvest.noul_threshold")):
+        if not 0 <= out[key] <= 1:
+            errors.append(f"{path} must be between 0 and 1")
+    if not 1 <= out["jev_timeout_s"] <= 120:
+        errors.append("jev.timeout_s must be between 1 and 120 (no Jev call may sit on a blocking path)")
+    if not 1 <= out["jev_retry_attempts"] <= 10:
+        errors.append("jev.retry.attempts must be between 1 and 10")
+    if not 0 <= out["jev_retry_backoff_s"] <= 60:
+        errors.append("jev.retry.backoff_s must be between 0 and 60")
+    if out["jev_max_requests_per_cycle"] < 1:
+        errors.append("jev.budget.max_requests_per_cycle must be >= 1")
+    if out["jev_max_input_mtok_per_cycle"] <= 0:
+        errors.append("jev.budget.max_input_mtok_per_cycle must be > 0")
+    if not 1 <= out["jev_max_rps"] <= 1200:
+        errors.append("jev.budget.max_rps must be between 1 and 1200 (the published ceiling)")
+    if not out["jev_base_url"].startswith(("http://", "https://")):
+        errors.append(f"jev.base_url: {out['jev_base_url']!r} is not an http(s) URL")
 
     if out["k_confirm"] < 1 or out["k_screen"] < 1:
         errors.append("measurement.k.screen and .confirm must be >= 1")

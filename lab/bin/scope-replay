@@ -1,0 +1,310 @@
+#!/usr/bin/env python3
+"""scope-replay — score `cortex scope` against what the sweeps actually decided.
+
+  scope-replay [--evolve <repo>/.evolve] [--out <dir>] [--floor 0.35] [--keep-work]
+
+The lab already knows each candidate's fate: the graveyard says why it was buried,
+`.claude/` says what survived, and `.evolve/runs/*.jsonl` says what it cost. Cortex
+now also has `cortex scope`, which claims to predict — BEFORE a sweep is paid for —
+that a candidate is about to be injected into tasks it is not about.
+
+This replays that claim against the record. Zero new rollouts; the only cost is the
+Jev calls, and with Jev off it still reports the deterministic half (breadth), which
+is the alternative the prediction has to beat.
+
+It answers H16: does pre-sweep relevance separate KEPT from BURIED-on-regression,
+where glob breadth demonstrably does not?
+
+READ-ONLY on the run being scored. It never plants a candidate in the source repo:
+it clones to a scratch directory (under $TMPDIR), reconstructs each candidate there
+from the graveyard or from `.claude/`, and runs `cortex scope` in the clone. The
+source is never opened for writing, and the tool refuses to start if `--evolve`
+points inside the clone.
+
+Outputs
+  <out>/scope-replay.jsonl   one row per candidate: prediction beside fate
+  <out>/SCOPE-REPLAY.md      the separation, and the counterfactual saving
+"""
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+CORTEX = Path(__file__).resolve().parents[2]
+RELEVANT_P = 0.5
+
+
+def sh(cmd, cwd=None, env=None):
+    return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True,
+                          env=env or os.environ)
+
+
+def read(p, limit=200000):
+    try:
+        return Path(p).read_text(encoding="utf-8", errors="replace")[:limit]
+    except OSError:
+        return ""
+
+
+# --------------------------------------------------------------- the record --
+def sweeps(runs):
+    for f in sorted(Path(runs).glob("*.jsonl")) if Path(runs).is_dir() else []:
+        hdr, rows = None, []
+        for line in read(f, 50_000_000).splitlines():
+            try:
+                r = json.loads(line)
+            except ValueError:
+                continue
+            if r.get("event") == "start":
+                hdr = r
+            elif r.get("v"):
+                rows.append(r)
+        if hdr:
+            yield f.name, hdr, rows
+
+
+def spend(runs):
+    """{candidate: {sweeps, rollouts, cost}} — what each one actually cost."""
+    out = {}
+    for _f, h, rows in sweeps(runs):
+        name = h.get("candidate")
+        if not name:
+            continue
+        d = out.setdefault(name, {"sweeps": 0, "rollouts": 0, "cost": 0.0, "phases": []})
+        d["sweeps"] += 1
+        d["rollouts"] += len(rows)
+        d["cost"] += sum(r.get("cost_usd") or 0 for r in rows)
+        d["phases"].append(h.get("phase"))
+    return out
+
+
+def live_path(evolve, name):
+    repo = Path(evolve).parent
+    for p in (repo / ".claude" / "skills" / name / "SKILL.md",
+              repo / ".claude" / "rules" / f"{name}.md"):
+        if p.is_file():
+            return p
+    return None
+
+
+def fate(evolve, name):
+    """KEPT | BURIED-regression | BURIED-gate5, the reason, and a note.
+
+    LIVE WINS. A name can be both buried and live: `/evolve` may bury a first
+    attempt and later promote a second one under the same name — D0 did exactly
+    that with `check-changelog-on-shop-edits` (v1 died on gate 5, the next one is
+    one of the three kept items). Reading the graveyard alone calls that item
+    BURIED and inverts the very thing this tool is scoring.
+    """
+    b = Path(evolve) / "graveyard" / name / "BURIED.md"
+    if live_path(evolve, name) is not None:
+        return "KEPT", "", ("an earlier attempt under this name is in the graveyard; "
+                            "cost and sweeps below cover both" if b.is_file() else "")
+    if not b.is_file():
+        return "UNRESOLVED", "", "neither live nor buried: its text is not recoverable"
+    text = read(b)
+    why = next((l[4:].strip() for l in text.splitlines() if l.startswith("why:")), "")
+    gate5 = any(k in text.lower() for k in
+                ("gate5", "never invoked", "never loaded", "did not trigger"))
+    return ("BURIED-gate5" if gate5 else "BURIED-regression"), why, ""
+
+
+def candidate_source(evolve, name):
+    """The text to score. -> (path, kind).
+
+    The LIVE copy first: when a name is both live and buried, the live one is the
+    version that survived, and scoring the buried draft would predict the fate of
+    a candidate that no longer exists.
+    """
+    lp = live_path(evolve, name)
+    if lp is not None:
+        return lp, ("skill" if lp.name == "SKILL.md" else "rule")
+    g = Path(evolve) / "graveyard" / name
+    for fn, kind in (("SKILL.md", "skill"), ("RULE.md", "rule")):
+        if (g / fn).is_file():
+            return g / fn, kind
+    c = Path(evolve) / "candidate" / name
+    for fn, kind in (("SKILL.md", "skill"), ("RULE.md", "rule")):
+        if (c / fn).is_file():
+            return c / fn, kind
+    return None, None
+
+
+# ------------------------------------------------------------- the prediction --
+def plant(work, name, src, kind):
+    """Put one candidate where `cortex scope` reads candidates from — in the CLONE."""
+    d = Path(work) / ".evolve" / "candidate" / name
+    shutil.rmtree(d, ignore_errors=True)
+    d.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(src, d / ("SKILL.md" if kind == "skill" else "RULE.md"))
+    return d
+
+
+def scope(work, name, env):
+    r = sh(["cortex", "scope", "--candidate", name, "--json"], cwd=work, env=env)
+    if r.returncode != 0:
+        return None, (r.stderr or r.stdout).strip()[-200:]
+    try:
+        return json.loads(r.stdout), ""
+    except ValueError:
+        return None, "unparseable --json"
+
+
+def breadth(evolve, rep):
+    """The free deterministic alternative: what fraction of the suite the glob reaches."""
+    inj, suite = rep["scope"]["injected"], rep["scope"]["suite"]
+    return (inj / suite) if suite else None
+
+
+# ------------------------------------------------------------------- report --
+def separates(rows, key):
+    kept = [r[key] for r in rows if r["fate"] == "KEPT" and r.get(key) is not None]
+    bad = [r[key] for r in rows if r["fate"] == "BURIED-regression" and r.get(key) is not None]
+    if not kept or not bad:
+        return None, kept, bad
+    return min(kept) > max(bad), kept, bad
+
+
+def main(argv):
+    evolve = out = None
+    floor, keep_work = 0.35, False
+    i = 0
+    while i < len(argv):
+        if argv[i] == "--evolve" and i + 1 < len(argv):
+            evolve = argv[i + 1]; i += 2
+        elif argv[i] == "--out" and i + 1 < len(argv):
+            out = argv[i + 1]; i += 2
+        elif argv[i] == "--floor" and i + 1 < len(argv):
+            floor = float(argv[i + 1]); i += 2
+        elif argv[i] == "--keep-work":
+            keep_work = True; i += 1
+        else:
+            print(__doc__.strip(), file=sys.stderr)
+            return 2
+    evolve = Path(evolve or os.environ.get("LAB_EVOLVE")
+                  or "/home/samuele/Progetti didattici/cortex-lab/.evolve").resolve()
+    if not (evolve / "runs").is_dir():
+        print(f"scope-replay: no sweep history under {evolve}/runs", file=sys.stderr)
+        return 2
+    out = Path(out or (CORTEX / "lab" / "results")).resolve()
+    out.mkdir(parents=True, exist_ok=True)
+    repo = evolve.parent
+
+    money = spend(evolve / "runs")
+    names = sorted(money)
+    if not names:
+        print("scope-replay: no candidate was ever swept here", file=sys.stderr)
+        return 2
+
+    work = Path(tempfile.mkdtemp(prefix="scope-replay-"))
+    clone = work / "repo"
+    print(f"scope-replay: {len(names)} candidate(s) from {evolve}")
+    print(f"              clone -> {clone}  (the source is never written to)")
+    r = sh(["git", "clone", "--quiet", "--no-hardlinks", str(repo), str(clone)])
+    if r.returncode != 0:
+        print(f"scope-replay: cannot clone {repo}: {r.stderr.strip()[-200:]}", file=sys.stderr)
+        return 2
+    # the clone needs the run's .evolve (tasks, config) but not its candidates
+    shutil.rmtree(clone / ".evolve", ignore_errors=True)
+    shutil.copytree(evolve, clone / ".evolve", dirs_exist_ok=True)
+    shutil.rmtree(clone / ".evolve" / "candidate", ignore_errors=True)
+    (clone / ".evolve" / "candidate").mkdir(parents=True, exist_ok=True)
+
+    env = dict(os.environ, JEV_ENV_FILE=os.environ.get("JEV_ENV_FILE", ""))
+    env.pop("JEV_ENV_FILE") if not env["JEV_ENV_FILE"] else None
+    env["PATH"] = f"{CORTEX / 'bin'}:{env.get('PATH','')}"
+    env.setdefault("JEV_ENABLED", "0")
+
+    rows, jev_on = [], False
+    for name in names:
+        src, kind = candidate_source(evolve, name)
+        f, why, note = fate(evolve, name)
+        row = {"candidate": name, "kind": kind, "fate": f, "why": why[:160], "note": note,
+               "sweeps": money[name]["sweeps"], "rollouts": money[name]["rollouts"],
+               "cost_usd": round(money[name]["cost"], 2),
+               "relevance": None, "breadth": None, "injected": None, "suite": None,
+               "below_floor": None, "jev": None, "error": None}
+        if src is None:
+            row["error"] = note or "no text found live, in the graveyard or in candidate/"
+            rows.append(row); continue
+        plant(clone, name, src, kind)
+        rep, err = scope(clone, name, env)
+        if rep is None:
+            row["error"] = err
+            rows.append(row); continue
+        sc = rep["scope"]
+        row.update(injected=sc["injected"], suite=sc["suite"],
+                   relevance=sc["relevance"], below_floor=sc["below_floor"],
+                   breadth=breadth(evolve, rep), jev=rep["jev"]["model"])
+        if sc["always_on"]:
+            row["error"] = "always-on: scope does not apply"
+        jev_on = jev_on or bool(rep["jev"]["model"])
+        rows.append(row)
+
+    (out / "scope-replay.jsonl").write_text(
+        "".join(json.dumps(r, sort_keys=True) + "\n" for r in rows))
+
+    rel_ok, rel_kept, rel_bad = separates(rows, "relevance")
+    br_ok, br_kept, br_bad = separates(rows, "breadth")
+    flagged = [r for r in rows if r.get("below_floor") and r["fate"] != "KEPT"]
+    missed = [r for r in rows if r.get("below_floor") and r["fate"] == "KEPT"]
+    saved = sum(r["rollouts"] for r in flagged), sum(r["cost_usd"] for r in flagged)
+
+    L = ["# scope-replay — does pre-sweep relevance predict the verdict?", "",
+         f"_source: `{evolve}` · {len(rows)} candidate(s) · "
+         f"judge: {'on' if jev_on else 'OFF (deterministic half only)'}_", "",
+         "`cortex scope` runs before a sweep is paid for. Every number below was",
+         "computed from the candidate's own text and the run's task suite — never",
+         "from the verdict — and is then compared with what the sweep decided.", "",
+         "| candidate | kind | inj/suite | relevance | breadth | fate | rollouts | cost |",
+         "|---|---|---|---|---|---|---|---|"]
+    for r in sorted(rows, key=lambda r: (r["relevance"] is None, r["relevance"] or 0)):
+        rel = f"{r['relevance']:.0%}" if r["relevance"] is not None else "—"
+        br = f"{r['breadth']:.0%}" if r["breadth"] is not None else "—"
+        inj = f"{r['injected']}/{r['suite']}" if r["injected"] is not None else "—"
+        L.append(f"| `{r['candidate']}` | {r['kind'] or '?'} | {inj} | {rel} | {br} | "
+                 f"{r['fate']} | {r['rollouts']} | ${r['cost_usd']:.2f} |")
+        if r.get("note") or r.get("error"):
+            L.append(f"| | | | | | _{r.get('note') or r['error']}_ | | |")
+    L += ["", "## Separation", ""]
+    for label, ok, kept, bad in (("relevance (needs a judge)", rel_ok, rel_kept, rel_bad),
+                                 ("breadth (free, deterministic)", br_ok, br_kept, br_bad)):
+        if ok is None:
+            L.append(f"- **{label}**: not enough of both groups to say")
+            continue
+        L += [f"- **{label}**",
+              f"  - KEPT: {[f'{x:.0%}' for x in sorted(kept)]}",
+              f"  - BURIED-regression: {[f'{x:.0%}' for x in sorted(bad)]}",
+              f"  - lowest KEPT {min(kept):.0%} vs highest BURIED {max(bad):.0%} → "
+              + ("**separates cleanly**" if ok else "**overlaps: cannot discriminate**")]
+    L += ["", "## Counterfactual", "",
+          f"At floor {floor}, `cortex scope` flags **{len(flagged)}** candidate(s) that",
+          f"the sweeps went on to bury: **{saved[0]} rollouts, ${saved[1]:.2f}**.",
+          "",
+          f"It also flags **{len(missed)}** candidate(s) that were KEPT"
+          + (f" (`{'`, `'.join(r['candidate'] for r in missed)}`) — these are the",
+             "false alarms, and they are the cost of acting on the warning."
+             )[0] if missed else " — no false alarms.", ""]
+    if missed:
+        L += [f"  false alarms: `{'`, `'.join(r['candidate'] for r in missed)}`", ""]
+    L += ["**This is advisory in Cortex and advisory here.** The warning never blocked",
+          "a sweep, and no number above changed a verdict. It is scored, not obeyed.", ""]
+    (out / "SCOPE-REPLAY.md").write_text("\n".join(L))
+
+    print(f"  relevance separates: {rel_ok}   breadth separates: {br_ok}")
+    print(f"  flagged {len(flagged)} later-buried candidate(s): "
+          f"{saved[0]} rollouts, ${saved[1]:.2f}; {len(missed)} false alarm(s)")
+    print(f"  written: {out / 'SCOPE-REPLAY.md'}")
+    if not keep_work:
+        shutil.rmtree(work, ignore_errors=True)
+    else:
+        print(f"  work kept: {work}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

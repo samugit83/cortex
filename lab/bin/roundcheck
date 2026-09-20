@@ -3,7 +3,8 @@
 
 Sessions (corrections, harvested task, lesson, cost), harvest quality (does each
 task's check tell a house-rule fix from a rule-breaking one), preflight, the
-sweeps /evolve ran (verdict, gains, firing, cost), the routing table, lessons.
+sweeps /evolve ran (verdict, gains, firing, cost), the routing table, lessons,
+and whether the judge state held still for the whole round.
 """
 import json
 import re
@@ -23,6 +24,53 @@ S, REPO = L.S, L.REPO
 
 def sh(cmd, cwd=REPO):
     return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, shell=isinstance(cmd, str))
+
+
+def jev_section(r):
+    """Did the proposal layer's judge stay the same thing all round?
+
+    Cortex may consult Jev when choosing a theme, a tier or a scope. It never
+    touches the gates, so it cannot change a verdict — but it does change which
+    candidate was proposed, and a round whose judge moved half way through is a
+    round with two treatments in it. `jev-latest` is an alias on someone else's
+    server, so this is not hypothetical: the check is cheap and the alternative
+    is finding out afterwards.
+    """
+    out = ["## Jev (the proposal layer's judge)", ""]
+    d = REPO / ".evolve" / "jev"
+    rows = []
+    if d.is_dir():
+        for f in sorted(d.glob("*.jsonl")):
+            for line in f.read_text(errors="replace").splitlines():
+                try:
+                    rows.append(json.loads(line))
+                except ValueError:
+                    pass
+    if not rows:
+        out += ["Off for this round: no call was made, so every candidate below was",
+                "proposed by Claude alone. This is the setting the primary runs use.", ""]
+        return out
+    models = sorted({x.get("model") for x in rows if x.get("model")})
+    asked = [x for x in rows if not x.get("summary")]
+    ok = sum(1 for x in asked if x.get("outcome") == "ok")
+    sites = {}
+    for x in asked:
+        sites[x.get("site")] = sites.get(x.get("site"), 0) + 1
+    out += [f"- requests: **{len(asked)}**, answered {ok}, fell back {len(asked) - ok}",
+            f"- call sites: {', '.join(f'{k} {v}' for k, v in sorted(sites.items())) or '—'}",
+            f"- answering model(s): {', '.join(models) or '—'}", ""]
+    if len(models) > 1:
+        out += [f"**FINDING: the judge changed mid-round** ({' -> '.join(models)}).",
+                "Two treatments in one round. Do not pool it with the others; re-run it",
+                "with `JEV_MODEL` pinned to one exact version.", ""]
+    elif models and models[0] in ("jev-latest", "jev-preview"):
+        out += ["**FINDING: an alias answered, not a version.** The alias moves when a",
+                "release ships, so this round is not replayable. Pin `JEV_MODEL`.", ""]
+    else:
+        out += ["The judge was one pinned version for the whole round.", ""]
+    out += ["No number in this file comes from it: the gates, `cortex score`, `check.sh`",
+            "and preflight contain no Jev code at all.", ""]
+    return out
 
 
 def main():
@@ -87,6 +135,7 @@ def main():
                 if "FINDING" in l and f"round {r}" in l or any(f"FINDING {sid}" in l for sid in S.ROUNDS[r])] \
         if (L.STATE.parent / "autopilot.log").exists() else []
     out += ["## Autopilot findings", ""] + ([f"- {l}" for l in findings] or ["- none"]) + [""]
+    out += [""] + jev_section(r)
     print("\n".join(out))
 
 

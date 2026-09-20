@@ -1,0 +1,1 @@
+A customer who cancelled after 10 of 30 days paid €9.99 and got €6.69 back instead of €6.66: prorated_refund() rounds the daily rate first. QA added tests/test_refund_proration.py. Can you fix it?

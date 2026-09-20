@@ -1,0 +1,1 @@
+Our US partners misread 02/09/2026 in `shop report`. Product wants ISO dates (2026-09-02) there. QA added tests/test_report_iso_dates.py. Please change it.

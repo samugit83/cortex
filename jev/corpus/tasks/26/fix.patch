@@ -1,0 +1,10 @@
+diff --git a/shop/billing/pricing.py b/shop/billing/pricing.py
+index 0fa5681..37ddccd 100644
+--- a/shop/billing/pricing.py
++++ b/shop/billing/pricing.py
+@@ -4,4 +4,4 @@ from .money import Money
+ 
+ def price_per_kg(pack_price: Money, pack_grams: int) -> Money:
+     """Price per kilogram of a pack, for the shelf label."""
+-    return Money(pack_price.cents // pack_grams * 1000)
++    return Money((pack_price.cents * 1000 + pack_grams // 2) // pack_grams)

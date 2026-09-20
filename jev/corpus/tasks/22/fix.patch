@@ -1,0 +1,40 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 500d969..c33458a 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -11,6 +11,7 @@ All notable changes users can see. Format: [Keep a Changelog](https://keepachang
+ - `shop report` now includes a TOTAL row at the bottom showing total items and total amount.
+ - Invoice due date calculation: `due_date(issued=None, days=30)` returns a date 30 days after the issue date (or today if no issue date is given).
+ - `archive_old_orders(orders, days=90, today=None)` separates recent orders from those older than the specified threshold, returning `(recent, archived)`.
++- `new_arrivals(products, days=30, today=None)` returns products added in the last `days` days.
+ 
+ ### Changed
+ - `shop list` sorts products by price (cheapest first) by default; use `--sort name` to sort by name.
+diff --git a/shop/catalog.py b/shop/catalog.py
+index 3e14372..6bab771 100644
+--- a/shop/catalog.py
++++ b/shop/catalog.py
+@@ -3,9 +3,10 @@ from __future__ import annotations
+ 
+ import json
+ from dataclasses import dataclass
+-from datetime import date
++from datetime import date, timedelta
+ from pathlib import Path
+ 
++from . import clock
+ from .billing.money import Money
+ 
+ DEFAULT_CATALOG = Path(__file__).resolve().parent.parent / "data" / "catalog.json"
+@@ -66,3 +67,11 @@ def paginate(items: list, page: int, per_page: int = 10) -> list:
+     """Page `page` of `items`; pages are numbered from 1."""
+     start = page * per_page
+     return items[start:start + per_page]
++
++
++def new_arrivals(products: list[Product], days: int = 30, today: date | None = None) -> list[Product]:
++    """Products added in the last `days` days."""
++    if today is None:
++        today = clock.today()
++    cutoff = today - timedelta(days=days)
++    return [p for p in products if p.added > cutoff]

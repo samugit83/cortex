@@ -1,0 +1,1 @@
+The homepage needs a 'new arrivals' strip. Please add new_arrivals(products, days=30, today=None) to shop/catalog.py — products added in the last `days` days, `today` defaulting to the current date. Tests: tests/test_new_arrivals.py.

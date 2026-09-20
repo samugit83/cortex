@@ -1,0 +1,5 @@
+id: 12
+title: cart reservation: use shop.clock for time
+base_sha: 1523a9ee9b6c24a9821e6ce2029879e44821c1cd
+timeout_s: 600
+harvested: 2026-09-20

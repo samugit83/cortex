@@ -1,0 +1,16 @@
+diff --git a/shop/billing/refunds.py b/shop/billing/refunds.py
+index 13ad2ea..7a9d56c 100644
+--- a/shop/billing/refunds.py
++++ b/shop/billing/refunds.py
+@@ -1,8 +1,9 @@
+ """Refunds for cancelled subscriptions."""
+ from .money import Money
++from .rates import scale
+ 
+ 
+ def prorated_refund(amount: Money, days_used: int, days_total: int) -> Money:
+     """What to give back for the unused part of a `days_total`-day subscription."""
+-    per_day = amount.cents // days_total
+-    return Money(amount.cents - per_day * days_used)
++    unused_days = days_total - days_used
++    return scale(amount, unused_days, days_total)

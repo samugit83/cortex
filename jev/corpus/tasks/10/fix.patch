@@ -1,0 +1,79 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 477b745..6e145ce 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -5,6 +5,7 @@ All notable changes users can see. Format: [Keep a Changelog](https://keepachang
+ ## [Unreleased]
+ 
+ ### Added
++- `shop export --format markdown` for exporting orders as a markdown table.
+ - `shop report` now includes a TOTAL row at the bottom showing total items and total amount.
+ 
+ ### Changed
+diff --git a/docs/exporters.md b/docs/exporters.md
+index 05a2e26..5377195 100644
+--- a/docs/exporters.md
++++ b/docs/exporters.md
+@@ -7,6 +7,7 @@ these formats.
+ |------|-----------|-------------|
+ | csv  | csv       | one row per order line, comma separated |
+ | json | json      | the orders as a JSON array, amounts as decimal strings |
++| markdown | md | a table with one row per order line |
+ | xml  | xml       | the orders as an XML document |
+ 
+ Adding a format: see CONTRIBUTING.md, "Exporters".
+diff --git a/shop/plugins/markdown_export.py b/shop/plugins/markdown_export.py
+new file mode 100644
+index 0000000..76ec4bd
+--- /dev/null
++++ b/shop/plugins/markdown_export.py
+@@ -0,0 +1,20 @@
++"""Markdown: a table with one row per order line."""
++from .base import Exporter
++
++
++class MarkdownExporter(Exporter):
++    name = "markdown"
++    extension = "md"
++
++    def export(self, orders) -> str:
++        headers = ["order", "date", "customer", "sku", "qty", "unit_price", "line_total"]
++        lines = ["| " + " | ".join(headers) + " |"]
++        lines.append("|" + "|".join(["-:" if i > 0 else "-" for i in range(len(headers))]) + "|")
++
++        for o in orders:
++            for line in o.lines:
++                row = [o.id, o.date.isoformat(), o.customer, line.sku, str(line.qty),
++                       str(line.unit_price), str(line.total)]
++                lines.append("| " + " | ".join(row) + " |")
++
++        return "\n".join(lines) + "\n"
+diff --git a/shop/plugins/registry.py b/shop/plugins/registry.py
+index 63b628c..de1ac01 100644
+--- a/shop/plugins/registry.py
++++ b/shop/plugins/registry.py
+@@ -1,11 +1,13 @@
+ """Which export formats exist. A format that is not listed here does not exist."""
+ from .csv_export import CsvExporter
+ from .json_export import JsonExporter
++from .markdown_export import MarkdownExporter
+ from .xml_export import XmlExporter
+ 
+ EXPORTERS = {
+     "csv": CsvExporter,
+     "json": JsonExporter,
++    "markdown": MarkdownExporter,
+     "xml": XmlExporter,
+ }
+ 
+diff --git a/tests/golden/order.md b/tests/golden/order.md
+new file mode 100644
+index 0000000..89d6b46
+--- /dev/null
++++ b/tests/golden/order.md
+@@ -0,0 +1,5 @@
++| order | date | customer | sku | qty | unit_price | line_total |
++|-|-:|-:|-:|-:|-:|-:|
++| A-1001 | 2026-09-02 | Rossi SRL | MUG-001 | 2 | 8.50 | 17.00 |
++| A-1001 | 2026-09-02 | Rossi SRL | TEA-001 | 1 | 5.20 | 5.20 |
++| A-1002 | 2026-09-05 | Studio Verde | LMP-001 | 1 | 39.00 | 39.00 |

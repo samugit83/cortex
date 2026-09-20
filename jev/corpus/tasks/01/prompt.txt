@@ -1,0 +1,3 @@
+CI has been red since QA added tests/test_tax_rates.py: tax_for() gives the wrong tax
+for fractional rates like 8.25%, and it doesn't round the way the tests expect. Can you
+fix it?

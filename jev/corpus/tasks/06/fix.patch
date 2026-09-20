@@ -1,0 +1,34 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index f94a2d2..477b745 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -4,6 +4,9 @@ All notable changes users can see. Format: [Keep a Changelog](https://keepachang
+ 
+ ## [Unreleased]
+ 
++### Added
++- `shop report` now includes a TOTAL row at the bottom showing total items and total amount.
++
+ ### Changed
+ - `shop list` sorts products by price (cheapest first) by default; use `--sort name` to sort by name.
+ - Prices over €1,000 now show with thousands separators (e.g. €1,249.00).
+diff --git a/shop/report.py b/shop/report.py
+index f0e04e7..669095a 100644
+--- a/shop/report.py
++++ b/shop/report.py
+@@ -5,6 +5,14 @@ from .util.dates import format_date
+ 
+ def sales_report(orders) -> str:
+     """One row per order, oldest first: date, order, customer, items, total."""
++    sorted_orders = sorted(orders, key=lambda o: (o.date, o.id))
+     rows = [[format_date(o.date), o.id, o.customer, str(o.item_count), format_money(o.total)]
+-            for o in sorted(orders, key=lambda o: (o.date, o.id))]
++            for o in sorted_orders]
++
++    if sorted_orders:
++        total_items = sum(o.item_count for o in sorted_orders)
++        total_amount = sum(o.total.cents for o in sorted_orders)
++        from .billing.money import Money
++        rows.append(["TOTAL", "", "", str(total_items), format_money(Money(total_amount))])
++
+     return format_table(["Date", "Order", "Customer", "Items", "Total"], rows)

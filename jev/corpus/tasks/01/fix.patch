@@ -1,0 +1,15 @@
+diff --git a/shop/billing/tax.py b/shop/billing/tax.py
+index 57d2c27..d5d246f 100644
+--- a/shop/billing/tax.py
++++ b/shop/billing/tax.py
+@@ -1,8 +1,8 @@
+ """Sales tax."""
+ from .money import Money
++from .rates import percent_of
+ 
+ 
+ def tax_for(amount: Money, rate: str) -> Money:
+     """Tax due on `amount` at `rate` percent, the rate as text ("22", "8.25")."""
+-    whole = int(rate.split(".")[0])
+-    return Money(amount.cents * whole // 100)
++    return percent_of(amount, rate)

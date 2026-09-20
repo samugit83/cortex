@@ -48,6 +48,12 @@ Subcommands (all read-only except where noted):
                                   over N days, and which tasks can measure it.
                                   ADVISORY: it decides what /prune tests and on
                                   which tasks — never what gets deleted
+  scope [--candidate N] [--replace "A B"] [--tasks "01 02"] [--json]
+                                  before a sweep: which tasks a candidate would be
+                                  injected into, and how many are about its subject.
+                                  ADVISORY: it warns, it never blocks, no gate reads it
+  themes [--json] [--days N]      which problem recurs most, counted over every
+                                  lesson (and, with Jev, every transcript)
   prune plan|approve|cancel|next|record|finish|status|estimate
                                   the /prune pass: a plan with a cost estimate
                                   that runs only after the user approves it
@@ -1357,21 +1363,62 @@ def _ts(ev):
         return None
 
 
-def session_files(repo, tdir, cutoff):
+def _session_cwd(path, rows=40):
+    """The working directory a session recorded, or None. Claude Code writes `cwd`
+    on its rows; an old transcript that carries none cannot be placed this way."""
+    try:
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            for _ in range(rows):
+                line = fh.readline()
+                if not line:
+                    break
+                try:
+                    r = json.loads(line)
+                except ValueError:
+                    continue
+                if isinstance(r, dict) and isinstance(r.get("cwd"), str) and r["cwd"]:
+                    return r["cwd"]
+    except OSError:
+        pass
+    return None
+
+
+def session_files(repo, tdir, cutoff, strict=False):
     """This repo's transcripts (sessions started in it or in a sub-folder).
-    Rollouts run in the sandbox, a different folder, so they never count."""
+    Rollouts run in the sandbox, a different folder, so they never count.
+
+    The folder name alone cannot decide this. `escape_project` replaces every
+    non-alphanumeric character with '-', so '/' and '-' become the same thing and
+    `<repo>-other` — a SIBLING project — is indistinguishable from `<repo>/other`,
+    a sub-folder. An exact name match is unambiguous. A prefix match is not, and is
+    confirmed against the `cwd` the session itself recorded.
+
+    `strict` additionally drops a prefix match that carries no cwd at all. That is
+    the setting for anything that leaves this machine: `cortex themes` sends
+    transcript text to a third party, where a wrong match is not a miscount but
+    another project's private work handed to an API.
+    """
     if not os.path.isdir(tdir):
         return []
     prefixes = {escape_project(repo), escape_project(os.path.realpath(repo))}
     out = []
     for d in sorted(os.listdir(tdir)):
-        if not any(d == p or d.startswith(p + "-") for p in prefixes):
+        exact = d in prefixes
+        if not exact and not any(d.startswith(p + "-") for p in prefixes):
             continue
         full = os.path.join(tdir, d)
         for f in sorted(os.listdir(full)) if os.path.isdir(full) else []:
             p = os.path.join(full, f)
-            if f.endswith(".jsonl") and os.path.isfile(p) and os.path.getmtime(p) >= cutoff:
-                out.append(p)
+            if not (f.endswith(".jsonl") and os.path.isfile(p) and os.path.getmtime(p) >= cutoff):
+                continue
+            if not exact:
+                cwd = _session_cwd(p)
+                if cwd is None:
+                    if strict:
+                        continue
+                elif not within(cwd, repo):
+                    continue
+            out.append(p)
     return out
 
 
@@ -1834,6 +1881,661 @@ def cmd_usage(argv):
     return 0
 
 
+# --------------------------------------------------------------------- jev --
+# bin/jev.py is imported on first use only. Every command below has a keyless
+# path, so harness.py must keep working when jev.py is absent, unreadable or off.
+_JEV = None
+
+
+def jevmod():
+    global _JEV
+    if _JEV is None:
+        here = os.path.dirname(os.path.abspath(__file__))
+        if here not in sys.path:
+            sys.path.insert(0, here)
+        try:
+            import jev as _m
+            _JEV = _m
+        except Exception:                       # noqa: BLE001 - never fail on the accelerator
+            _JEV = False
+    return _JEV or None
+
+
+RELEVANT_P = 0.5          # a Noul is the probability of yes; 0.5 is its own midpoint
+TRANSCRIPT_CHUNK_CHARS = 12000   # ~3k tokens: 2000 requests then covers ~24 MB of turns
+
+
+def _read_text(path, limit=8000):
+    try:
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            return fh.read(limit)
+    except OSError:
+        return ""
+
+
+# ------------------------------------------------------------------- scope --
+# J1. The pre-sweep injection report, and the prize of the whole integration: on
+# run R1, 694 rollouts and $77.70 went to three candidates that were injected into
+# tasks they were not about, and every one of them was visible as such BEFORE its
+# sweep started.
+#
+# The free deterministic version is breadth — what fraction of the suite the glob
+# reaches — and it does not work: 100% breadth appears in both the kept group and
+# the regression-buried group, so it cannot tell `use-billing-helpers` (100%
+# breadth, live and healthy) from `shop-clock-usage` (100% breadth, broke the
+# protected set). The discriminating quantity is the RATIO of relevant to total
+# injections, and its numerator needs a judge.
+#
+# It prints, the author decides, and the gates still rule. It never blocks a sweep
+# and never kills a candidate — the same category as the DEAD glob warning.
+
+def task_title(repo, tid):
+    try:
+        with open(os.path.join(repo, ".evolve", "tasks", tid, "task.yaml"), encoding="utf-8") as fh:
+            for line in fh:
+                if line.startswith("title:"):
+                    return line.split(":", 1)[1].strip().strip("'\"")
+    except OSError:
+        pass
+    return ""
+
+
+def task_state(repo, tid):
+    """Exactly what a scope call sends about one task, and nothing else: its title,
+    its prompt, and the notes /harvest wrote. -> (state, thin).
+
+    A task with no notes.md falls back to prompt.txt alone and is reported as thin,
+    rather than being silently judged on less evidence than its neighbours.
+    """
+    d = os.path.join(repo, ".evolve", "tasks", tid)
+    prompt = _read_text(os.path.join(d, "prompt.txt")).strip()
+    notes = _read_text(os.path.join(d, "notes.md"), 4000).strip()
+    state = {"task": tid, "title": task_title(repo, tid), "prompt": prompt}
+    if notes:
+        state["notes"] = notes
+    return state, not notes
+
+
+def item_subject(it):
+    """What the candidate is ABOUT, in the words its author used. For a skill the
+    description is the line that decides whether it is ever invoked; for a rule the
+    body is the whole of it."""
+    s = {"name": it.name.replace("-", " ")}
+    if it.description.strip():
+        s["description"] = it.description.strip()[:1000]
+    body = it.body.strip()
+    if body:
+        s["says"] = body[:2000]
+    return s
+
+
+def recorded_visible(repo, name):
+    """Tasks where a past sweep RECORDED this item in a rollout's visible set.
+    A row whose `visible` is missing predates that field, and must never be read as
+    'was not visible' — that would count an unknown as a no."""
+    out = set()
+    runs = os.path.join(repo, ".evolve", "runs")
+    for f in sorted(os.listdir(runs)) if os.path.isdir(runs) else []:
+        if not f.endswith(".jsonl"):
+            continue
+        try:
+            fh = open(os.path.join(runs, f), encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        with fh:
+            for line in fh:
+                try:
+                    r = json.loads(line)
+                except ValueError:
+                    continue
+                if not isinstance(r, dict) or r.get("valid") != 1:
+                    continue
+                vis = r.get("visible")
+                if vis is None:
+                    continue
+                if name in vis:
+                    out.add(str(r.get("t")))
+    return out
+
+
+def _item_files(tasks, it, tid):
+    files = list(tasks.tree(tasks.sha(tid)))
+    if it.kind == "skill":
+        files += tasks.patch_paths(tid)[1]
+    return files
+
+
+def narrower_paths(repo, it, ids, injected, relevant, irrelevant):
+    """A narrower glob worth considering, or None. Deterministic; a suggestion the
+    author applies or ignores, never something this command applies itself.
+
+    The glob is the deepest directory shared by the files the fixes touch in the
+    tasks the item IS about. It is judged by where the WORK is — which tasks' fixes
+    touch a file it matches — and not by `reachable_tasks`, because a rule loads
+    when any matching file in the tree is read, so in a repo where every task
+    shares one base tree, narrowing a glob does not change what it reaches while
+    still changing enormously what it is injected *for*.
+    """
+    if not relevant or not irrelevant or not it.patterns:
+        return None
+    tasks = Tasks(repo)
+
+    def touched(t):
+        before, after = tasks.patch_paths(t)
+        return before + after if it.kind == "skill" else before
+
+    matched = [f for t in relevant for f in touched(t) if it.globs.match(f)]
+    dirs = [os.path.dirname(f) for f in matched if os.path.dirname(f)]
+    if not dirs:
+        return None
+    try:
+        common = dirs[0] if len(set(dirs)) == 1 else os.path.commonpath(dirs)
+    except ValueError:
+        return None
+    if not common:
+        return None
+    pat = common.rstrip("/") + "/**"
+    if pat in it.patterns:
+        return None
+    g = Globs([pat])
+    if g.error:
+        return None
+    works_there = [t for t in ids if g.any_of(touched(t))]
+    if any(t not in works_there for t in relevant):
+        return None                        # it would stop covering what it is for
+    drops = [t for t in irrelevant if t not in works_there]
+    if not drops:
+        return None                        # no irrelevant task stops matching: no gain
+    return {"paths": pat, "covers": list(relevant), "drops": drops,
+            "works_there": works_there}
+
+
+def scope_one(repo, it, ids, jm, cfg, role="candidate"):
+    """One item's report. Never raises; the Jev half is always optional."""
+    rep = {"name": it.name, "kind": it.kind, "tier": it.tier, "role": role,
+           "paths": list(it.patterns), "always_on": not it.patterns, "suite": len(ids),
+           "injected": [], "exposure": "", "relevant": [], "irrelevant": [],
+           "unanswered": [], "thin": [], "relevance": None,
+           "floor": cfg.relevance_floor if cfg else None, "below_floor": False,
+           "would_fire": None, "suggest": None, "per_task": [],
+           "jev": {"answered": 0, "fell_back": 0, "model": None,
+                   "reason": cfg.off_reason if cfg else "jev unavailable"}}
+    if not it.patterns:
+        # An always-on skill or a path-less rule is injected everywhere by
+        # definition. That is not a warning and not an error: scope does not apply.
+        return rep
+    recorded = sorted(recorded_visible(repo, it.name) & set(ids))
+    if recorded:
+        rep["injected"], rep["exposure"] = recorded, "recorded in past sweeps"
+    else:
+        rep["injected"] = reachable_tasks(repo, it, ids)
+        rep["exposure"] = "predicted from paths (no sweep history yet)"
+
+    if jm is None or cfg is None or not cfg.on or not rep["injected"]:
+        return rep
+
+    subject = item_subject(it)
+    jobs = []
+    for t in rep["injected"]:
+        state, thin = task_state(repo, t)
+        if thin:
+            rep["thin"].append(t)
+        q = {"relevant": jm.q_relevant(subject)}
+        if it.kind == "skill":
+            # J5, folded in here so it shares the request, the budget and the log.
+            # A visible rule fires 100% of the time, so for a rule there is nothing
+            # to predict and the question is not asked at all.
+            q["would_fire"] = jm.q_would_fire(it.name, it.description)
+        jobs.append({"key": t, "state": state, "questions": q,
+                     "meta": {"candidate": it.name, "task": t, "role": role}})
+
+    answers, census = jm.ask_many(cfg, jobs, site="scope", repo=repo)
+    rep["jev"] = {"answered": census.answered, "fell_back": census.fell_back,
+                  "model": census.model or None,
+                  "reason": census.refused or (next(iter(census.reasons), "") if census.reasons else "")}
+    fires = []
+    for t in rep["injected"]:
+        a = answers.get(t)
+        p = a.noul("relevant") if a is not None else None
+        f = a.noul("would_fire") if a is not None else None
+        rep["per_task"].append({"task": t, "relevant": None if p is None else p >= RELEVANT_P,
+                                "p": p, "would_fire": f, "thin": t in rep["thin"],
+                                "answered": p is not None})
+        if p is None:
+            rep["unanswered"].append(t)
+            continue
+        (rep["relevant"] if p >= RELEVANT_P else rep["irrelevant"]).append(t)
+        if f is not None:
+            fires.append((t, f))
+    answered = len(rep["relevant"]) + len(rep["irrelevant"])
+    if answered:
+        # The ratio is over the answers we GOT. An unanswered task is never counted
+        # as irrelevant: that would turn a rate limit into a scope problem.
+        rep["relevance"] = round(len(rep["relevant"]) / answered, 4)
+        rep["below_floor"] = rep["relevance"] < (cfg.relevance_floor if cfg else 0)
+        rep["suggest"] = narrower_paths(repo, it, ids, rep["injected"], rep["relevant"],
+                                        rep["irrelevant"])
+    if fires:
+        rep["would_fire"] = {"predicted": [t for t, f in fires if f >= RELEVANT_P],
+                             "answered": len(fires)}
+    jm.log_summary(repo, cfg, "scope",
+                   {"candidate": it.name, "role": role, "relevance": rep["relevance"],
+                    "relevant": len(rep["relevant"]), "injected": len(rep["injected"]),
+                    "below_floor": rep["below_floor"]}, model=census.model)
+    return rep
+
+
+def _ids(lst, cap=10):
+    return " ".join(lst) if len(lst) <= cap else " ".join(lst[:cap]) + " ..."
+
+
+def print_scope(rep):
+    paths = ", ".join(rep["paths"]) if rep["paths"] else "none"
+    role = "" if rep["role"] == "candidate" else f"   [{rep['role']}]"
+    print(f"scope: {rep['name']}  ({rep['tier']}, paths: {paths}){role}")
+    if rep["always_on"]:
+        print(f"  {rep['name']} is always-on — it is injected everywhere by definition; "
+              "scope does not apply")
+        return
+    print(f"  injected into     {len(rep['injected']):>3} of {rep['suite']} tasks"
+          f"   ({rep['exposure']})")
+    if rep["injected"] and rep["relevance"] is None:
+        why = rep["jev"]["reason"] or "no answer"
+        print(f"  relevance         unavailable ({why})")
+        print("  the deterministic half above is exact; only the semantic half is missing")
+        return
+    if not rep["injected"]:
+        print("  relevance         n/a — no task in the suite matches its paths "
+              "(`cortex skills` calls this `could never load`)")
+        return
+    print(f"  about its subject {len(rep['relevant']):>3}  ({_ids(rep['relevant'])})")
+    print(f"  irrelevant        {len(rep['irrelevant']):>3}  ({_ids(rep['irrelevant'])})")
+    pct = int(round(rep["relevance"] * 100))
+    tail = f"   <- below floor {rep['floor']}" if rep["below_floor"] else ""
+    if rep["unanswered"]:
+        print(f"  relevance        {pct:>3}%   ({len(rep['relevant'])} of "
+              f"{len(rep['relevant']) + len(rep['irrelevant'])} answered; "
+              f"{len(rep['unanswered'])} unanswered){tail}")
+    else:
+        print(f"  relevance        {pct:>3}%{tail}")
+    if rep["thin"]:
+        print(f"  thin state        {len(rep['thin'])}  ({_ids(rep['thin'])}) "
+              "— no notes.md, judged on prompt.txt alone")
+    if rep["would_fire"] is not None:
+        wf = rep["would_fire"]
+        print(f"  would fire in     {len(wf['predicted']):>3} of {wf['answered']} "
+              f"({_ids(wf['predicted'])})   — predicted, advisory")
+    if rep["below_floor"]:
+        n = len(rep["irrelevant"])
+        kind = "rule" if rep["kind"] == "rule" else "skill"
+        print("")
+        print(f"  WARNING: this {kind} will be injected into {n} task{'s' if n != 1 else ''} "
+              "it is not about.")
+        print("  Every one is a chance to break something gate 3 will charge you for.")
+        if rep["suggest"]:
+            sg = rep["suggest"]
+            print(f"  Consider: paths: \"{sg['paths']}\" — every task it IS about works there "
+                  f"({_ids(sg['covers'])}),")
+            n = len(sg["drops"])
+            print(f"            and {n} of the irrelevant ones "
+                  f"{'do' if n != 1 else 'does'} not ({_ids(sg['drops'])}).")
+        print("  It is advisory: nothing here blocks the sweep, and no gate reads it.")
+
+
+def cmd_scope(argv):
+    repo = repo_root()
+    cand, replace, tasks_arg, as_json = None, [], None, "--json" in argv
+    i = 0
+    while i < len(argv):
+        a = argv[i]
+        if a == "--candidate" and i + 1 < len(argv):
+            cand = argv[i + 1]; i += 2
+        elif a == "--replace" and i + 1 < len(argv):
+            replace = argv[i + 1].split(); i += 2
+        elif a == "--tasks" and i + 1 < len(argv):
+            tasks_arg = argv[i + 1]; i += 2
+        elif a == "--json":
+            i += 1
+        else:
+            die(f"scope: bad argument {a!r} (use --candidate N, --replace \"a b\", "
+                "--tasks \"01 02\", --json)", 2)
+    if not cand and not replace:
+        die("usage: cortex scope [--candidate <name>] [--replace \"<a> [b]\"] "
+            "[--tasks \"01 02\"] [--json]", 2)
+
+    valid = valid_task_ids(repo)
+    ids = [t for t in Tasks(repo).ids(tasks_arg) if t in set(valid)] if tasks_arg else valid
+    if not ids:
+        die("scope: no valid tasks — run cortex preflight", 2)
+
+    jm = jevmod()
+    cfg = jm.resolve(repo) if jm else None
+    reports = []
+    if cand:
+        it, err = load_candidate(repo, cand)
+        if not it:
+            die(f"scope: {err[0]}", 2)
+        reports.append(scope_one(repo, it, ids, jm, cfg, role="candidate"))
+    if replace:
+        live = {x.name: x for x in load_live(repo)[0]}
+        for name in replace:
+            if name not in live:
+                die(f"scope: no live top-level skill or rule called '{name}'", 2)
+            reports.append(scope_one(repo, live[name], ids, jm, cfg, role="live (replaced)"))
+
+    if as_json:
+        one = reports[0]
+        out = {"scope": {"name": one["name"], "injected": len(one["injected"]),
+                         "relevant": len(one["relevant"]), "irrelevant": len(one["irrelevant"]),
+                         "unanswered": len(one["unanswered"]), "relevance": one["relevance"],
+                         "floor": one["floor"], "below_floor": one["below_floor"],
+                         "always_on": one["always_on"], "exposure": one["exposure"],
+                         "suite": one["suite"], "suggest": one["suggest"]},
+               "per_task": one["per_task"],
+               "jev": dict(one["jev"], fell_back=bool(one["jev"]["fell_back"])),
+               "items": reports}
+        print(json.dumps(out, sort_keys=True))
+        return 0
+    for n, rep in enumerate(reports):
+        if n:
+            print("")
+        print_scope(rep)
+    return 0
+
+
+# ------------------------------------------------------------------ themes --
+# J3. Today /evolve A3 reads `tail -40 lessons.md` and a SAMPLE of transcripts —
+# run R1's transcript folder alone is 21 MB, which no model reads whole at any
+# price. So `min_theme_occurrences >= 3` is a model's recollection of what it
+# skimmed, not a count.
+#
+# With Jev this is a census: one Choice per lesson line, one Noul + Choice per
+# transcript chunk, then counting in a shell script.
+#
+# WITHOUT Jev it still helps, because the deterministic half is already sitting in
+# the repo unused: every lesson line carries a `task NN` id (/harvest Step 3) and
+# every task's notes.md carries an `area:` line (/harvest Step 4). So keyless,
+# this groups lessons by area and counts them — today's A3 plus a free table,
+# never less than today.
+
+LESSON_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})\s*\|\s*([^|]*?)\s*\|\s*(.*)$")
+TASK_REF = re.compile(r"task\s+([A-Za-z0-9._-]+)")
+
+
+def lesson_rows(repo):
+    """The lessons file, parsed. J3 only READS it: the format is frozen, and a
+    lessons file written years before Jev existed counts the same way."""
+    rows = []
+    path = os.path.join(repo, ".evolve", "lessons.md")
+    try:
+        fh = open(path, encoding="utf-8", errors="replace")
+    except OSError:
+        return rows
+    with fh:
+        for n, line in enumerate(fh, 1):
+            m = LESSON_RE.match(line.strip())
+            if not m:
+                continue
+            ref = TASK_REF.search(m.group(2))
+            rows.append({"n": n, "date": m.group(1), "task": ref.group(1) if ref else None,
+                         "text": m.group(3).strip()})
+    return rows
+
+
+def task_areas(repo):
+    """{task id: [area, ...]} from each task's notes.md `area:` line, written by
+    /harvest Step 4 from `cortex harness touching`."""
+    out = {}
+    tdir = os.path.join(repo, ".evolve", "tasks")
+    for t in sorted(os.listdir(tdir)) if os.path.isdir(tdir) else []:
+        if t == "_broken" or not os.path.isdir(os.path.join(tdir, t)):
+            continue
+        m = re.search(r"^area:\s*(.+)$", _read_text(os.path.join(tdir, t, "notes.md"), 4000), re.M)
+        if not m:
+            continue
+        areas = [a.strip() for a in m.group(1).split(",") if a.strip() and a.strip() != "none"]
+        if areas:
+            out[t] = areas
+    return out
+
+
+def _buried_why(repo, name):
+    m = re.search(r"^why:\s*(.+)$",
+                  _read_text(os.path.join(repo, ".evolve", "graveyard", name, "BURIED.md"), 2000), re.M)
+    return (m.group(1).strip() if m else "")[:200]
+
+
+def theme_criteria(repo, cap=24):
+    """The choices a lesson is sorted into: what is live, what is already buried,
+    and the areas /harvest recorded. `new` is added by the question itself."""
+    crit, rank = {}, {}
+    for it in load_live(repo)[0]:
+        where = ", ".join(it.patterns) if it.patterns else "every turn"
+        crit[it.name] = f"the live {it.kind} on {where}: {it.trigger}"[:300]
+        rank[it.name] = 0
+    areas = task_areas(repo)
+    freq = {}
+    for lst in areas.values():
+        for a in lst:
+            freq[a] = freq.get(a, 0) + 1
+    for a, n in sorted(freq.items(), key=lambda kv: (-kv[1], kv[0])):
+        if a not in crit:
+            crit[a] = f"the area '{a}', named by {n} task(s)"
+            rank[a] = 1
+    gy = os.path.join(repo, ".evolve", "graveyard")
+    for d in sorted(os.listdir(gy)) if os.path.isdir(gy) else []:
+        if d in crit or not os.path.isdir(os.path.join(gy, d)):
+            continue
+        crit[d] = f"an idea already tried and buried: {_buried_why(repo, d) or 'no reason recorded'}"[:300]
+        rank[d] = 2
+    if len(crit) > cap:
+        keep = sorted(crit, key=lambda k: (rank.get(k, 9), k))[:cap]
+        crit = {k: crit[k] for k in keep}
+    return crit
+
+
+def _user_text(row):
+    """The user's own words in one transcript row. Only the user's: a correction is
+    something the user said, and sending the assistant's output back would multiply
+    what leaves this machine for nothing."""
+    if not isinstance(row, dict) or row.get("type") != "user" or row.get("isMeta"):
+        return ""
+    msg = row.get("message")
+    if isinstance(msg, str):
+        return msg
+    if not isinstance(msg, dict):
+        return ""
+    c = msg.get("content")
+    if isinstance(c, str):
+        return c
+    out = []
+    for b in c if isinstance(c, list) else []:
+        if isinstance(b, dict) and b.get("type") == "text" and isinstance(b.get("text"), str):
+            out.append(b["text"])
+    return "\n".join(out)
+
+
+SYSTEM_BLOCK = re.compile(r"<system-reminder>.*?</system-reminder>", re.S)
+
+
+def transcript_chunks(repo, days, cap=TRANSCRIPT_CHUNK_CHARS):
+    """-> [{"session","text"}]. This project's user turns only, in chunks that fit
+    the request budget."""
+    cfg = load_config(repo)
+    tdir = os.path.expanduser(cfg.get("transcripts_dir") or "~/.claude/projects")
+    cutoff = time.time() - max(1, days) * 86400
+    chunks = []
+    # `strict`: this is the one path that sends transcript text off the machine.
+    for path in session_files(repo, tdir, cutoff, strict=True):
+        buf, name = [], os.path.basename(path)
+        size = 0
+        try:
+            fh = open(path, encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        with fh:
+            for line in fh:
+                try:
+                    row = json.loads(line)
+                except ValueError:
+                    continue
+                text = SYSTEM_BLOCK.sub("", _user_text(row)).strip()
+                if not text:
+                    continue
+                # A turn longer than one chunk is SPLIT, never truncated. Flushing
+                # after appending and then cutting to `cap` silently discarded the
+                # tail of every long turn — and a census that drops the longest
+                # things anyone said is not a census, it is a sample with a claim.
+                pieces = [text[i:i + cap] for i in range(0, len(text), cap)]
+                for piece in pieces:
+                    if buf and size + len(piece) + 1 > cap:
+                        chunks.append({"session": name, "text": "\n".join(buf)})
+                        buf, size = [], 0
+                    buf.append(piece)
+                    size += len(piece) + 1
+        if buf:
+            chunks.append({"session": name, "text": "\n".join(buf)})
+    return chunks
+
+
+def cmd_themes(argv):
+    repo = repo_root()
+    cfg_json = load_config(repo)
+    as_json = "--json" in argv
+    days = int(cfg_json.get("lookback_days", 7))
+    if "--days" in argv:
+        i = argv.index("--days")
+        if i + 1 >= len(argv) or not argv[i + 1].isdigit() or int(argv[i + 1]) < 1:
+            die("themes: --days needs a positive whole number", 2)
+        days = int(argv[i + 1])
+    minocc = int(cfg_json.get("min_theme_occurrences", 3))
+    for a in argv:
+        if a not in ("--json", "--days") and not a.isdigit():
+            die(f"themes: bad argument {a!r} (use --json, --days N)", 2)
+
+    lessons = lesson_rows(repo)
+    areas = task_areas(repo)
+    jm = jevmod()
+    cfg = jm.resolve(repo) if jm else None
+    counts, where, note = {}, {}, ""
+
+    def bump(theme, kind, ref):
+        counts[theme] = counts.get(theme, 0) + 1
+        where.setdefault(theme, {"lessons": [], "transcripts": 0})
+        if kind == "lesson":
+            where[theme]["lessons"].append(ref)
+        else:
+            where[theme]["transcripts"] += 1
+
+    source = "areas (jev off)"
+    jinfo = {"answered": 0, "fell_back": 0, "model": None,
+             "reason": cfg.off_reason if cfg else "jev unavailable"}
+    chunks = []
+    if jm is not None and cfg is not None and cfg.on:
+        crit = theme_criteria(repo)
+        if crit:
+            chunks = transcript_chunks(repo, days)
+            jobs = [{"key": f"lesson:{r['n']}", "state": {"lesson": r["text"], "task": r["task"]},
+                     "questions": {"area": jm.q_theme(crit)},
+                     "meta": {"lesson": r["n"]}} for r in lessons]
+            jobs += [{"key": f"chunk:{i}", "state": {"session_excerpt": c["text"]},
+                      "questions": {"correction": jm.Q_CORRECTION, "area": jm.q_theme(crit)},
+                      "meta": {"session": c["session"]}} for i, c in enumerate(chunks)]
+            answers, census = jm.ask_many(cfg, jobs, site="themes", repo=repo)
+            jinfo = {"answered": census.answered, "fell_back": census.fell_back,
+                     "model": census.model or None,
+                     "reason": census.refused or (next(iter(census.reasons), "") if census.reasons else "")}
+            if census.answered:
+                source = "census"
+                # `allowed` matters: a label outside the criteria we offered is an
+                # answer to a question we did not ask, and counting it would invent
+                # a theme that has no definition anywhere.
+                allowed = set(crit) | {"new"}
+                for r in lessons:
+                    a = answers.get(f"lesson:{r['n']}")
+                    choice, conf, _ = a.choice("area", allowed=allowed) if a else (None, 0.0, {})
+                    bump(choice or "(unclassified)", "lesson", r["task"] or f"line {r['n']}")
+                for i, c in enumerate(chunks):
+                    a = answers.get(f"chunk:{i}")
+                    if a is None or (a.noul("correction") or 0.0) < RELEVANT_P:
+                        continue
+                    choice, conf, _ = a.choice("area", allowed=allowed)
+                    if choice:
+                        bump(choice, "transcript", c["session"])
+            elif census.refused:
+                note = census.refused
+
+    if source != "census":
+        # keyless: group the lessons that named a task by that task's `area:` line.
+        # The two buckets below are deliberately separate and neither ever clears
+        # the bar: "no task was harvested" and "the task touched nobody's area" are
+        # different gaps, and merging them would hide which one you have.
+        for r in lessons:
+            if not r["task"]:
+                bump("(no task)", "lesson", f"line {r['n']}")
+                continue
+            for a in areas.get(r["task"], []) or ["(no area)"]:
+                bump(a, "lesson", r["task"])
+        note = note or ("counts cover only lessons that named a task, so they are a FLOOR: "
+                        "read the transcripts `cortex harness transcripts` lists, as before")
+
+    # D5's journal line documents a `theme=` field (plan 3.6). It can only exist
+    # if the census records what it concluded, by name, where read_log can find it
+    # a turn or a day later — the conversation does not survive that gap.
+    if source == "census" and counts:
+        top = max(counts, key=lambda k: (counts[k], k))
+        jm.log_summary(repo, cfg, "themes",
+                       {"theme": top, "theme_count": counts[top],
+                        "clears": counts[top] >= minocc,
+                        "lessons": len(lessons), "chunks": len(chunks)},
+                       model=jinfo["model"] or "")
+
+    rows = sorted(({"name": k, "count": v, "lessons": where[k]["lessons"],
+                    "transcripts": where[k]["transcripts"],
+                    "clears": v >= minocc and k not in ("(no area)", "(no task)", "(unclassified)")}
+                   for k, v in counts.items()),
+                  key=lambda r: (-r["count"], r["name"]))
+    with_task = sum(1 for r in lessons if r["task"])
+    out = {"source": source, "min_occurrences": minocc, "themes": rows,
+           "lessons": {"total": len(lessons), "with_task": with_task},
+           "transcripts": {"chunks": len(chunks), "days": days},
+           "note": note, "jev": dict(jinfo, fell_back=bool(jinfo["fell_back"]))}
+    if as_json:
+        print(json.dumps(out, sort_keys=True))
+        return 0
+
+    head = f"themes  source: {source}  ·  {len(lessons)} lesson(s)"
+    if source == "census":
+        head += f", {len(chunks)} transcript chunk(s)"
+        if jinfo["model"]:
+            head += f"  ·  {jinfo['model']}"
+    else:
+        head += f", {with_task} naming a task"
+    print(head)
+    if not rows:
+        print("  (nothing to count yet — /harvest writes the lessons /evolve reads)")
+        if note:
+            print(f"  note: {note}")
+        return 0
+    w = max([len(r["name"]) for r in rows] + [5])
+    print(f"  {'COUNT':>5}  {'THEME':<{w}}  WHERE")
+    for r in rows:
+        bits = []
+        if r["lessons"]:
+            bits.append(f"lessons {len(r['lessons'])} ({_ids(sorted(set(r['lessons'])), 8)})")
+        if r["transcripts"]:
+            bits.append(f"transcripts {r['transcripts']}")
+        mark = "  <- clears min_theme_occurrences" if r["clears"] else ""
+        print(f"  {r['count']:>5}  {r['name']:<{w}}  {'; '.join(bits)}{mark}")
+    print(f"  min_theme_occurrences = {minocc}")
+    if jinfo["fell_back"]:
+        print(f"  {jinfo['fell_back']} call(s) fell back ({jinfo['reason']}) — the counts "
+              "cover what was answered")
+    if note:
+        print(f"  note: {note}")
+    return 0
+
+
 # -------------------------------------------------------------------- prune --
 def _plan_path(repo):
     return os.path.join(repo, ".evolve", "prune-plan.json")
@@ -1983,12 +2685,82 @@ def build_plan(repo, names, whys):
             else:
                 total += row["rollouts"]
         rows.append(row)
+    jev = jev_rank_plan(repo, rows, addressable)
     plan = {"version": 1, "created": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "status": "proposed", "mode": "model-upgrade" if upgrade else "routine",
             "mode_reason": why_mode, "model": cfg.get("model") or "", "k": k,
             "max_items": None if upgrade else max_items, "items": rows,
             "estimate": plan_estimate(repo, total)}
+    if jev:
+        plan["jev"] = jev
     return plan
+
+
+def jev_rank_plan(repo, rows, items):
+    """J6. One Score per item — "how likely is removing this to cost nothing?" —
+    in a single fan-out, merged with the existing `cortex usage` hints as a SORT
+    ORDER ONLY. The sweep still decides every removal: nothing here deletes
+    anything, and an item with no rank simply keeps today's position.
+
+    It matters most on a MODEL UPGRADE pass, where the plan holds every skill and
+    rule and there is currently no principled order at all.
+
+    `jev_rank` is an OPTIONAL FIELD, not a new plan format: `cortex prune next`
+    falls back to today's order when it is absent, so a pass planned with Jev on
+    and executed after a switch-off still runs the same approved items.
+    """
+    jm = jevmod()
+    if jm is None:
+        return None
+    cfg = jm.resolve(repo)
+    if not cfg.on:
+        return None
+    runnable = [r for r in rows if r["state"] == "pending" and r["name"] in items]
+    if not runnable:
+        return None
+    jobs = []
+    for r in runnable:
+        it = items[r["name"]]
+        state = {"name": it.name, "kind": it.kind, "tier": it.tier,
+                 "loaded_on_every_turn": it.tier in ("always", "rule-always"),
+                 "paths": list(it.patterns) or None,
+                 "tasks_that_can_measure_it": r["tasks"] or None,
+                 "description": it.description or None,
+                 "says": it.body.strip()[:3000] or None}
+        jobs.append({"key": r["name"],
+                     "state": {k: v for k, v in state.items() if v is not None},
+                     "questions": {"removable": jm.q_removable()},
+                     "meta": {"item": r["name"]}})
+    answers, census = jm.ask_many(cfg, jobs, site="prune", repo=repo)
+    ranked = 0
+    for r in runnable:
+        a = answers.get(r["name"])
+        if a is None:
+            continue
+        sc, conf, legend = a.score("removable")
+        if sc is None:
+            continue
+        r["jev_rank"] = round(sc, 3)
+        r["jev_confidence"] = round(conf, 3)
+        ranked += 1
+    return {"ranked": ranked, "of": len(runnable), "model": census.model or None,
+            "fell_back": census.fell_back, "reason": census.refused or ""}
+
+
+def plan_order(rows, use_jev):
+    """The order `cortex prune next` walks the items in.
+
+    With Jev on and every runnable item ranked, most-doubted first. Otherwise
+    today's order, exactly: a plan built with Jev and executed without it runs the
+    same items, and `jev_rank` is simply ignored.
+    """
+    runnable = [r for r in rows if r["state"] in ("pending", "running", "decided")]
+    if not use_jev or not runnable or any(r.get("jev_rank") is None for r in runnable):
+        return rows
+    order = {id(r): i for i, r in enumerate(rows)}
+    return sorted(rows, key=lambda r: (-(r.get("jev_rank") or 0)
+                                       if r["state"] in ("pending", "running", "decided")
+                                       else 0, order[id(r)]))
 
 
 def item_sweep(repo, name, since_iso):
@@ -2030,22 +2802,34 @@ def print_plan(plan):
         print(f"            note: {plan['mode_reason']}")
     rows = plan["items"]
     w = max([len(r["name"]) for r in rows] + [4])
-    print(f"  #  {'ITEM':<{w}}  {'TIER':<11} {'STATE':<9} {'ROLLOUTS':>8}  TASKS")
+    ranked = any(r.get("jev_rank") is not None for r in rows)
+    doubt = f" {'DOUBT':>5}" if ranked else ""
+    print(f"  #  {'ITEM':<{w}}  {'TIER':<11} {'STATE':<9} {'ROLLOUTS':>8}{doubt}  TASKS")
     i = 0
-    for r in rows:
+    for r in plan_order(rows, ranked):
         runs = r["state"] in ("pending", "running", "decided")
         i += 1 if runs else 0
         num = str(i) if runs else "-"
         tasks = " ".join(r["tasks"]) if r["tasks"] else "—"
         state = r["state"] if r["state"] != "decided" else (r.get("verdict") or "decided")
+        d = ""
+        if ranked:
+            d = f" {r['jev_rank']:>5.2f}" if r.get("jev_rank") is not None else f" {'-':>5}"
         print(f"  {num:<2} {r['name']:<{w}}  {r['tier']:<11} {state:<9} "
-              f"{r['rollouts'] if runs else '—':>8}  {tasks}")
+              f"{r['rollouts'] if runs else '—':>8}{d}  {tasks}")
         for extra in (r.get("why"), r.get("note")):
             if extra:
                 print(f"     {'':<{w}}  ↳ {extra}")
     tested = [r for r in rows if r["state"] in ("pending", "running", "decided")]
     print(f"\n  will test {len(tested)} item(s) · {_est_line(plan['estimate'])}")
     print(f"  estimate basis: {plan['estimate']['basis']}")
+    if ranked:
+        j = plan.get("jev") or {}
+        print(f"  DOUBT: how likely removing it is to cost nothing, 0-4 — most doubted first. "
+              f"A sort order only; the sweep still decides every removal.")
+        print(f"         {j.get('ranked', '?')} of {j.get('of', '?')} item(s) ranked"
+              + (f" by {j['model']}" if j.get("model") else "")
+              + ". Without Jev the items run in the order above.")
     st = plan["status"]
     if st == "proposed":
         print("\n  status: PROPOSED — nothing runs until you approve.  Approve: cortex prune approve   "
@@ -2122,14 +2906,17 @@ def cmd_prune(argv):
         if plan["status"] != "approved":
             die(f"the plan is {plan['status']}: nothing runs until the user approves it "
                 "(cortex prune approve)", 1)
-        for r in plan["items"]:
+        jm = jevmod()
+        use_jev = bool(jm and jm.resolve(repo).on)
+        for r in plan_order(plan["items"], use_jev):
             if r["state"] in ("pending", "running"):
                 cmd = (f"cortex sweep --replace {r['name']} --tasks \"{' '.join(r['tasks'])}\" "
                        "--phase confirm")
                 sweep = item_sweep(repo, r["name"], plan.get("approved"))
                 if "--json" in rest:
                     print(json.dumps({"name": r["name"], "kind": r["kind"], "tasks": r["tasks"],
-                                      "rollouts": r["rollouts"], "command": cmd, "sweep": sweep}))
+                                      "rollouts": r["rollouts"], "command": cmd, "sweep": sweep,
+                                      "jev_rank": r.get("jev_rank")}))
                 elif sweep:
                     state = "finished — decide it" if sweep["finished"] else "running"
                     print(f"next: {r['name']} — its sweep is {state}: {sweep['file']}")
@@ -2203,7 +2990,7 @@ COMMANDS = {
     "evolve-phase": cmd_evolve_phase, "sandbox-dir": cmd_sandbox_dir,
     "transcripts": cmd_transcripts,
     "candidate-info": cmd_candidate_info, "cli-version": cmd_cli_version, "parallel": cmd_parallel,
-    "usage": cmd_usage, "prune": cmd_prune,
+    "usage": cmd_usage, "prune": cmd_prune, "scope": cmd_scope, "themes": cmd_themes,
 }
 
 if __name__ == "__main__":

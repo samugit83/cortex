@@ -1,0 +1,1 @@
+Product decided that `shop list` should show the cheapest products first by default (`--sort name` keeps the old order). QA already added tests/test_list_default_sort.py, which fails for now. Can you make the change?

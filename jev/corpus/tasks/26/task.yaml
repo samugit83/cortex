@@ -1,0 +1,5 @@
+id: 26
+title: price_per_kg divides too early, shows €0.00/kg on shelf labels
+base_sha: 09af348a4407647eb383a3773de36b07be1c3845
+timeout_s: 600
+harvested: 2026-09-20

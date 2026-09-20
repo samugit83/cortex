@@ -1,0 +1,25 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index c596b85..6cac0e3 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -17,6 +17,7 @@ All notable changes users can see. Format: [Keep a Changelog](https://keepachang
+ ### Changed
+ - `shop list` sorts products by price (cheapest first) by default; use `--sort name` to sort by name.
+ - Prices over €1,000 now show with thousands separators (e.g. €1,249.00).
++- `shop report` now displays dates in ISO format (YYYY-MM-DD) instead of European format (DD/MM/YYYY) to prevent confusion with US date interpretation.
+ 
+ ### Fixed
+ - `shop show` and `shop list` now display "Out of stock" instead of "0 left" when a product's stock is zero.
+diff --git a/shop/report.py b/shop/report.py
+index 669095a..7698bf9 100644
+--- a/shop/report.py
++++ b/shop/report.py
+@@ -6,7 +6,7 @@ from .util.dates import format_date
+ def sales_report(orders) -> str:
+     """One row per order, oldest first: date, order, customer, items, total."""
+     sorted_orders = sorted(orders, key=lambda o: (o.date, o.id))
+-    rows = [[format_date(o.date), o.id, o.customer, str(o.item_count), format_money(o.total)]
++    rows = [[format_date(o.date, style="iso"), o.id, o.customer, str(o.item_count), format_money(o.total)]
+             for o in sorted_orders]
+ 
+     if sorted_orders:

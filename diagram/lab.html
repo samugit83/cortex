@@ -9,6 +9,16 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
+  /* D0 is the DEVELOPMENT run: one run, on a Cortex that changed 39 times while it
+     ran, before the optional judge existed. Every number on this page is its
+     number, and saying so is the difference between evidence and a brochure. */
+  .runbadge{display:inline-flex; align-items:center; gap:8px; margin:0 auto 18px;
+    padding:7px 14px; border-radius:999px; font-family:var(--mono); font-size:12px;
+    background:var(--amber-soft); color:var(--amber); border:1px dashed var(--amber)}
+  .provenance{max-width:74ch; margin:26px auto 0; padding:16px 18px; border-radius:12px;
+    background:var(--panel-2); border:1px solid var(--line); color:var(--ink-soft);
+    font-size:13.5px; line-height:1.6; text-align:left}
+  .provenance b{color:var(--ink)}
   :root{
     --bg:#f6f4ef; --panel:#fffdfa; --panel-2:#efece4;
     --ink:#1b2230; --ink-soft:#5a6474; --line:#d5cfc2;
@@ -374,6 +384,7 @@
   <header class="top">
     <p class="kicker">Cortex · the lab</p>
     <h1>Does it actually work<span class="q">?</span></h1>
+    <div style="text-align:center"><span class="runbadge">run D0 · the development run · one run, n = 1</span></div>
     <p class="lede">
       Cortex claims it can learn your house rules from your corrections, and keep only the
       skills that measurably help. So we ran it for real — a working repository, real Claude
@@ -393,6 +404,24 @@
       <div class="sc"><div class="v">10</div><div class="k">candidates</div></div>
       <div class="sc"><div class="v">3</div><div class="k">kept</div></div>
       <div class="sc"><div class="v">$155</div><div class="k">total cost</div></div>
+    </div>
+
+    <div class="provenance">
+      <b>What these numbers are, and are not.</b> This page reports <b>D0</b>, a single
+      development run. Cortex itself was fixed 39 times while it ran, so the system under
+      test moved; one run cannot separate “Cortex works” from “this run went well”; and the
+      exam, though never shown to Cortex, was written by the same people who built the
+      repository. The replicate runs, the control runs, the ablations and the gate
+      calibration that answer those objections are specified in
+      <code>lab/AGENT-BRIEF.md</code> and have not been run yet.
+      <br><br>
+      <b>D0 also predates the judge.</b> Cortex has since gained an optional calibrated
+      model in its <b>proposal</b> layer — which theme recurs, which tier fits, how much of
+      the task suite a candidate is actually about. It is off by default, it took no part in
+      anything on this page, and it is barred from the decision: <code>cortex score</code>,
+      the six gates, <code>check.sh</code> and preflight contain no reference to it, and a
+      test in Cortex's own suite asserts that. Every verdict below was reached exactly the
+      way it would be reached today with the judge switched off.
     </div>
 
     <div class="scrollcue">the whole pipeline, step by step<span class="a">↓</span></div>
@@ -983,8 +1012,27 @@ feature or a user-facing change:
           <li>The house rules here are <b>machine-checkable</b>. Rules that need judgement were never tested.</li>
           <li>The sessions were driven by a script that plays a user faithfully but never gets confused.</li>
           <li>Family E ended with <b>nothing</b>. A user with that problem would finish ten rounds empty-handed.</li>
+          <li><b>n = 1.</b> One run, on a Cortex that was fixed 39 times while it ran. Replicates, controls and ablations are specified but unrun.</li>
         </ul>
       </div>
+    </div>
+
+    <div class="provenance" style="margin-top:28px">
+      <b>The most expensive thing on this page is family E.</b> Four attempts at one house
+      rule — read the time through <code>shop.clock</code> — cost <b>694 rollouts and
+      $77.70</b> and landed nothing. Each was killed for the same reason: it helped its own
+      family and broke something else, because a rule scoped to <code>shop/**</code> is
+      injected into every task in that tree, including the great majority that have nothing
+      to do with time.
+      <br><br>
+      That failure is visible <i>before</i> a sweep is paid for, and it is what
+      <code>cortex scope</code> was built to report. The obvious free version does not work:
+      over these ten candidates, what a glob <i>reaches</i> overlaps between the items that
+      were kept (19%, 50%, 96%) and the items that were buried for breaking things
+      (12%, 12%, 46%, 58%, 96%). What separates them is the share of injections that are
+      actually <i>about</i> the candidate — and that is the one quantity here that needs a
+      model. Whether a model can compute it is an open question, scored against this run's
+      own verdicts by <code>lab/bin/scope-replay</code>, and it is not answered yet.
     </div>
   </section>
 

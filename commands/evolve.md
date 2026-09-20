@@ -118,16 +118,32 @@ ls .evolve/graveyard/          # ideas already tried and killed — do not repea
 tail -60 .evolve/journal.md    # what past cycles concluded
 ```
 
-Then the **failing** tasks from the baseline, and this project's transcripts of
-the last `lookback_days` — exactly the files this lists, newest first:
+Then count what recurs, instead of remembering it:
 
 ```bash
-cortex harness transcripts
+cortex themes
 ```
 
-Look for repeated corrections, tool denials and retry loops. Read **only** those
-files: `transcripts_dir` holds every project on this machine, and other projects'
-sessions are none of this cycle's business.
+It reports one row per theme with a count, and marks the ones that clear
+`min_theme_occurrences`. **Read its `source:` line and follow the matching
+branch — they are not the same amount of evidence:**
+
+- **`source: census`** — every lesson and every transcript of the window was
+  classified and counted. The counts are complete: use them, and skip the
+  transcript reading below.
+- **`source: areas (jev off)`** — the counts cover only the lessons that named a
+  task, grouped by that task's `area:` line. Treat them as a **floor**, and read
+  the transcripts as before:
+
+  ```bash
+  cortex harness transcripts
+  ```
+
+  Look for repeated corrections, tool denials and retry loops. Read **only** those
+  files: `transcripts_dir` holds every project on this machine, and other projects'
+  sessions are none of this cycle's business.
+
+Either way, also read the **failing** tasks from the baseline.
 
 Look for **one** thing that recurs. Requirements:
 
@@ -173,12 +189,28 @@ Evidence decides the area: the files the failing tasks' fixes touched
 directory, the tier is a rule or a path-gated skill; if they are all over, it is a
 moment.
 
-**A skill is only offered; a rule is injected.** The model invokes a skill when
-its description names **the task it is doing**, and rarely when it names a **side
-duty** of that task. Measured with Haiku 4.5: "When implementing a new exporter
-plugin…" was invoked in 5 of 6 rollouts where it was visible; "Before finishing
-changes to shop/ code, verify CHANGELOG.md was updated" in 1 of 18. A rule on
-`shop/billing/**` loaded in 9 of 9. So:
+**A skill is only offered; a rule is injected.** Measured over 486 recorded
+rollouts (Haiku 4.5), counting only the runs where the item was actually visible:
+
+| Tier | Runs | Visible | Fired | **Fired given visible** |
+|---|---|---|---|---|
+| rule | 410 | 62.9% | 62.9% | **100.0%** |
+| path-gated skill | 66 | 72.7% | 19.7% | **27.1%** |
+| always-on skill | 10 | 100% | 0% | **0.0%** |
+
+**A rule that is visible always fires.** That is the argument for a rule — and it
+is also what makes an over-scoped rule the most destructive object in the system:
+it fires in every task it reaches, including the ones it is not about, and gate 3
+charges you for each one. In the same recorded data, three candidates that were
+injected into tasks they were not about cost 694 rollouts and $77.70 and landed
+nothing. Breadth is not the danger; **irrelevant** breadth is. `cortex scope` in
+A5 is what measures it before you pay.
+
+Within a tier, a skill is invoked when its description names **the task the agent
+is doing**, and rarely when it names a **side duty** of that task ("When
+implementing a new exporter plugin…" was invoked in 5 of 6 visible rollouts;
+"Before finishing changes to shop/ code, verify CHANGELOG.md was updated" in 1 of
+18). So:
 - a side duty tied to an area — a changelog line, a docs row, a registry entry, a
   house helper to use — is a **rule** on that area, as long as the fixes edit an
   existing file there (its `paths` must match that file);
@@ -186,6 +218,26 @@ changes to shop/ code, verify CHANGELOG.md was updated" in 1 of 18. A rule on
   the task ("When adding a new exporter…"), never the duty ("verify X was updated").
 
 If you cannot justify the layer in one sentence, you have picked the wrong one.
+
+**A second opinion, when one is available.** This is optional and never decides
+anything on its own:
+
+```bash
+cortex jev tier --theme "<what recurs, in one sentence>" --files "<the paths the fixes touch>"
+```
+
+- **exit 0** — it picked a layer with enough confidence to be worth hearing. Weigh
+  it against the table above and say which you chose and why. It is one input, not
+  a verdict: a wrong pick is killed by the gates, which is the only reason it is
+  safe to ask at all.
+- **exit 3** — no answer, or below `jev.confidence_floor`, or Jev is off. Decide it
+  yourself from the table, exactly as you would have anyway. A low-confidence pick
+  is not a pick, and this is the normal keyless outcome.
+
+**If the layer is a rule, run `cortex scope` on the draft `paths` in this same
+turn** (A5 shows how). A rule fires in every task it reaches; seeing that number
+*before* writing the candidate is the feedback the worst theme in the recorded
+history never got, four cycles running.
 
 Skills and rules go through the sweep below. For the other layers, make the
 change, write it in the journal, and stop — there is nothing to A/B.
@@ -247,6 +299,30 @@ cortex skills --candidate <name> --tasks "<failing ids>"
 Exit 1 = fix what the `error:` lines say before launching anything. In
 particular `could never load` means no task in that set touches a file matching
 `paths`: every rollout would measure nothing.
+
+Then check its **scope** — what it will be injected into across the whole suite,
+which is what the confirm will actually charge you for:
+
+```bash
+cortex scope --candidate <name>
+```
+
+It always prints the deterministic half (`injected into N of M tasks`). With Jev
+it also prints how many of those tasks are **about** the candidate's subject, and
+warns below `jev.scope.relevance_floor`; with Jev off it prints
+`relevance: unavailable` and you carry on — that line is not an error and never
+blocks anything.
+
+Read the warning as a question about `paths`, not about the idea. A rule injected
+into 21 tasks it is not about carries 21 chances to break something gate 3 will
+charge you for, and the usual fix is a narrower glob, which the command suggests
+when it can compute one. **Nothing here blocks the sweep and no gate reads it** —
+you decide, and the measurement still rules. It is the same category as the
+existing `DEAD glob` warning.
+
+For a **skill** it also predicts, per task, whether an agent would invoke it from
+its description alone. That is advisory and thin evidence: use it to reword a
+description before paying for a screen, never as a reason to skip one.
 
 Rules:
 - **Additive only.** Never edit an existing skill or rule in the same cycle as
@@ -542,6 +618,20 @@ rather than scheduling another week of spending.
 
 
 
+If Jev was used anywhere in this cycle, add its one line to the entry too:
+
+```bash
+cortex jev journal --candidate <name>
+```
+
+Paste what it prints **as an indented detail line inside the entry**. It never
+begins with `## `, and it must not be made to: `cortex cycle` counts `## `
+headings to refuse a cycle whose entry was not written, and a `jev:` line that
+looked like a heading would let a cycle through that recorded nothing. Exit 3
+means there is nothing to say — write the entry without the line, which is the
+normal keyless case. "Jev was unavailable" and "Jev agreed" must not look the same
+a month from now, so when it prints `jev: fallback`, keep that too.
+
 ```markdown
 ## YYYY-MM-DD  <candidate name>
 
@@ -551,6 +641,7 @@ theme:      <what recurred, and how many times>
 layer:      skill  (hook rejected: <why>)
 screen:     gain +1.34 on tasks 02, 04
 confirm:    gain +1.34 | regression 0.00 | worst_drop 0.00 | net +1.34
+            jev: theme=exporters · tier=rule conf=0.84 · scope 100% (3/3 tasks) · model=jev-1.13.0
 recheck:    (only if asked) task 05: confirm 100%->67%, recheck 100%->100% — noise
 protected:  task 01 held at 3/3
 DECISION:   KEEP

@@ -1,0 +1,5 @@
+id: 14
+title: slugify: transliterate accented characters
+base_sha: e98f2e932bc752ad14f106c6d4604ac77cd38cfa
+timeout_s: 600
+harvested: 2026-09-20

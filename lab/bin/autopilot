@@ -10,6 +10,10 @@
                              after a Cortex fix: /harvest again in session ID's own
                              chat, with the note a user would add, then `lab done --late`
 
+  --jev off | on             whether Cortex may consult Jev during this run.
+                             DEFAULT: off, for every run that produces a primary
+                             number. See "Jev" below.
+
 Every Claude turn is a real headless Claude Code session in cortex-lab (Haiku 4.5),
 fed exactly what the user would type: the scenario's prompt, the correction
 `lab verify` prints, `/harvest`, `/evolve`. Permissions are the user's own mode
@@ -19,6 +23,25 @@ autopilot does the waiting and re-runs /evolve itself, as a user would.
 Nothing is repaired by hand. When a step does not do what the protocol says, the
 autopilot logs a FINDING and moves on (or stops, if going on would corrupt data).
 Log: lab/state/autopilot.log   turns: lab/state/autopilot.json
+
+Jev
+---
+Cortex can consult Jev (a calibrated judge) in its PROPOSAL layer: which theme
+recurs, which tier fits, how much of the suite a candidate is actually about. It
+never touches the gates. But it does change WHICH candidate gets proposed, so for
+this lab it is a treatment, not tooling:
+
+  * `--jev off` (the default) is what every run producing a primary number uses.
+    The development run D0 had no Jev at all, so a Jev-on run is not comparable
+    with it and cannot test "D0 replicates".
+  * `--jev on` requires JEV_MODEL pinned to an EXACT version. `jev-latest` is an
+    alias on someone else's server: freezing Cortex's git tag does not freeze it,
+    and a run whose judge moved underneath it is not reproducible. The autopilot
+    refuses to start in that case rather than produce data nobody can trust.
+
+Either way the choice, the model id and the endpoint are recorded in
+lab/state/autopilot.json under `manifest`, so a reader can tell which runs saw a
+judge without taking anyone's word for it.
 """
 import json
 import os
@@ -46,6 +69,68 @@ DENY = ["Bash(sudo:*)", "Bash(git push:*)", "Bash(curl:*)", "Bash(wget:*)", "Bas
 MAX_CORRECTIONS = 3
 MAX_EVOLVE_CALLS = 14
 
+# Jev state for this run, decided once in main() and recorded in the manifest.
+JEV = {"enabled": False, "model": None, "base_url": None}
+
+
+def jev_env(base=None):
+    """The environment every Claude turn and every `cortex` call inherits.
+
+    With --jev off this switches Jev off explicitly rather than leaving it to
+    whatever the machine's $CORTEX_HOME/.env happens to say: a run's treatment
+    must not depend on the developer's dotfiles.
+    """
+    env = dict(base or os.environ, DISABLE_AUTOUPDATER="1")
+    env["JEV_ENABLED"] = "1" if JEV["enabled"] else "0"
+    if JEV["enabled"]:
+        if JEV["model"]:
+            env["JEV_MODEL"] = JEV["model"]
+        if JEV["base_url"]:
+            env["JEV_BASE_URL"] = JEV["base_url"]
+    else:
+        # an empty value SHADOWS a key set lower down; absent would not
+        env["JEV_API_KEY"] = ""
+    return env
+
+
+ALIASES = ("jev-latest", "jev-preview")
+
+
+def resolve_jev(argv):
+    """Read --jev from argv, settle the model, and refuse an unreproducible run."""
+    want = "off"
+    if "--jev" in argv:
+        i = argv.index("--jev")
+        if i + 1 >= len(argv) or argv[i + 1] not in ("on", "off"):
+            raise SystemExit("autopilot: --jev takes `on` or `off`")
+        want = argv[i + 1]
+        del argv[i:i + 2]
+    JEV["enabled"] = want == "on"
+    if not JEV["enabled"]:
+        return
+    model = os.environ.get("JEV_MODEL", "")
+    JEV["base_url"] = os.environ.get("JEV_BASE_URL")
+    if not model or model in ALIASES:
+        raise SystemExit(
+            f"autopilot: --jev on needs JEV_MODEL pinned to an exact version, not "
+            f"{model or '(unset)'!r}.\n"
+            "  An alias moves when TypeSafe ships a release, so the judge that\n"
+            "  proposed this run's candidates would not be the one a reader replays\n"
+            "  it with. Pin it: JEV_MODEL=jev-1.13.0 (see `cortex jev doctor` for\n"
+            "  the id the endpoint is answering with).")
+    JEV["model"] = model
+
+
+def write_manifest():
+    """One record per run of what the judge was, beside the model under test."""
+    man = {"what": "manifest", "t": datetime.now().isoformat(timespec="seconds"),
+           "rollout_model": MODEL, "jev": dict(JEV),
+           "cortex": subprocess.run(["command", "-v", "cortex"], capture_output=True,
+                                    text=True, shell=False).stdout.strip() or None}
+    record(man)
+    log(f"manifest: rollout model {MODEL} | jev "
+        + (f"ON ({JEV['model']})" if JEV["enabled"] else "OFF"))
+
 
 def log(msg):
     line = f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  {msg}"
@@ -70,7 +155,7 @@ def turn(prompt, resume=None, what="", timeout=45 * 60):
     t0 = time.time()
     try:
         p = subprocess.run(cmd, cwd=REPO, capture_output=True, text=True, timeout=timeout,
-                           env=dict(os.environ, DISABLE_AUTOUPDATER="1"))
+                           env=jev_env())
         out = json.loads(p.stdout) if p.stdout.strip().startswith("{") else {}
         rc = p.returncode
     except subprocess.TimeoutExpired:
@@ -86,7 +171,8 @@ def turn(prompt, resume=None, what="", timeout=45 * 60):
 
 
 def lab(*args):
-    p = subprocess.run([str(HERE / "lab"), *args], capture_output=True, text=True)
+    p = subprocess.run([str(HERE / "lab"), *args], capture_output=True, text=True,
+                       env=jev_env())
     return p.returncode, p.stdout + p.stderr
 
 
@@ -257,17 +343,23 @@ def prune(max_turns=12):
 
 
 def main():
-    if len(sys.argv) >= 2 and sys.argv[1] == "prune":
+    argv = sys.argv[1:]
+    resolve_jev(argv)                     # before anything spends a token
+    if len(argv) >= 1 and argv[0] == "prune":
+        write_manifest()
         return prune()
-    if len(sys.argv) >= 4 and sys.argv[1] == "ask":
-        return ask(sys.argv[2], sys.argv[3])
-    if len(sys.argv) >= 4 and sys.argv[1] == "reharvest":
-        return reharvest(sys.argv[2], sys.argv[3])
-    if len(sys.argv) < 3 or sys.argv[1] not in ("round", "evolve"):
+    if len(argv) >= 3 and argv[0] == "ask":
+        return ask(argv[1], argv[2])
+    if len(argv) >= 3 and argv[0] == "reharvest":
+        write_manifest()
+        return reharvest(argv[1], argv[2])
+    if len(argv) < 2 or argv[0] not in ("round", "evolve"):
         print(__doc__.strip())
         return 2
-    r = int(sys.argv[2])
-    if sys.argv[1] == "round":
+    write_manifest()
+    sys.argv = [sys.argv[0], *argv]
+    r = int(argv[1])
+    if argv[0] == "round":
         log(f"===== round {r}: {S.ROUNDS[r]}")
         for sid in S.ROUNDS[r]:
             session(sid)

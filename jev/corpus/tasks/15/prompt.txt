@@ -1,0 +1,1 @@
+truncate() returns one character more than the width it's given, so labels overflow. QA added tests/test_truncate_width.py. Please fix it.

@@ -1,0 +1,20 @@
+diff --git a/shop/billing/fx.py b/shop/billing/fx.py
+index 586bb1c..f169789 100644
+--- a/shop/billing/fx.py
++++ b/shop/billing/fx.py
+@@ -1,5 +1,6 @@
+ """Currency conversion for price lists shown abroad."""
+ from .money import Money
++from .rates import times
+ 
+ # EUR -> other currency, as published by finance every morning
+ RATES = {"USD": "1.0842", "GBP": "0.8531", "CHF": "0.9412", "JPY": "161"}
+@@ -7,7 +8,7 @@ RATES = {"USD": "1.0842", "GBP": "0.8531", "CHF": "0.9412", "JPY": "161"}
+ 
+ def convert(amount: Money, rate: str) -> Money:
+     """`amount` converted with an exchange `rate` given as text ("1.0842", "161")."""
+-    return Money(amount.cents * int(rate.split(".")[0]))
++    return times(amount, rate)
+ 
+ 
+ def to_currency(amount: Money, currency: str) -> Money:

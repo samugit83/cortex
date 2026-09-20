@@ -1,0 +1,3 @@
+Our USD and GBP price lists are wrong: convert() ignores the decimals of the exchange
+rate, so 1.0842 is used as 1. Finance publishes 4 decimals. QA added
+tests/test_fx_rates.py — can you fix convert()?

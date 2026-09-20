@@ -1,0 +1,1 @@
+Product URLs are broken for names with accents: slugify('Café chair') gives 'caf-chair'. QA added tests/test_slugify_accents.py. Can you fix it?

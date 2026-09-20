@@ -1,0 +1,5 @@
+id: 25
+title: shop report: use ISO dates instead of EU format
+base_sha: 35c9d7918944db6e39fbff12867bce6844b348b6
+timeout_s: 600
+harvested: 2026-09-20

@@ -1,0 +1,40 @@
+diff --git a/shop/cart.py b/shop/cart.py
+index ad71605..5979713 100644
+--- a/shop/cart.py
++++ b/shop/cart.py
+@@ -2,13 +2,16 @@
+ from __future__ import annotations
+ 
+ import json
++from datetime import datetime, timedelta
+ 
+ from .billing.money import Money
++from . import clock
+ 
+ 
+ class Cart:
+     def __init__(self, lines: dict[str, int] | None = None):
+         self.lines: dict[str, int] = dict(lines or {})
++        self.expires_at: datetime | None = None
+ 
+     def add(self, sku: str, qty: int = 1) -> None:
+         if qty <= 0:
+@@ -29,6 +32,18 @@ class Cart:
+         by_sku = {p.sku: p for p in products}
+         return Money.total(by_sku[sku].price * qty for sku, qty in self.lines.items())
+ 
++    def reserve(self, minutes: int = 15) -> None:
++        """Reserve the cart for the specified number of minutes."""
++        self.expires_at = clock.now() + timedelta(minutes=minutes)
++
++    def is_expired(self, at: datetime | None = None) -> bool:
++        """Check if the cart has expired. Returns False if not reserved."""
++        if self.expires_at is None:
++            return False
++        if at is None:
++            at = clock.now()
++        return at >= self.expires_at
++
+     def to_dict(self) -> dict:
+         return {"lines": dict(self.lines)}
+ 
