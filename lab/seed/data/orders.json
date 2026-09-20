@@ -1,0 +1,15 @@
+[
+  {"id": "A-1001", "date": "2026-09-02", "customer": "Rossi SRL", "status": "paid",
+   "lines": [{"sku": "MUG-001", "name": "Ceramic mug", "qty": 2, "unit_price": "8.50"},
+             {"sku": "TEA-001", "name": "Green tea 100g", "qty": 1, "unit_price": "5.20"}]},
+  {"id": "A-1002", "date": "2026-09-05", "customer": "Studio Verde", "status": "shipped",
+   "lines": [{"sku": "LMP-001", "name": "Desk lamp", "qty": 1, "unit_price": "39.00"}]},
+  {"id": "A-1003", "date": "2026-09-08", "customer": "Bianchi & Figli", "status": "paid",
+   "lines": [{"sku": "NTB-001", "name": "Dot-grid notebook", "qty": 5, "unit_price": "7.90"},
+             {"sku": "PEN-001", "name": "Fountain pen", "qty": 1, "unit_price": "48.50"}]},
+  {"id": "A-1004", "date": "2026-09-12", "customer": "Rossi SRL", "status": "refunded",
+   "lines": [{"sku": "BAG-001", "name": "Canvas tote bag", "qty": 3, "unit_price": "12.00"}]},
+  {"id": "A-1005", "date": "2026-09-15", "customer": "Caffè Aurora", "status": "paid",
+   "lines": [{"sku": "CHR-001", "name": "Café chair", "qty": 4, "unit_price": "89.00"},
+             {"sku": "MUG-002", "name": "Travel mug", "qty": 6, "unit_price": "14.90"}]}
+]

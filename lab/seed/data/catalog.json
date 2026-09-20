@@ -1,0 +1,13 @@
+[
+  {"sku": "MUG-001", "name": "Ceramic mug", "category": "kitchen", "price": "8.50", "stock": 24, "added": "2025-11-02", "restocked": "2026-08-30"},
+  {"sku": "MUG-002", "name": "Travel mug", "category": "kitchen", "price": "14.90", "stock": 9, "added": "2026-02-14", "restocked": "2026-07-01"},
+  {"sku": "TEA-001", "name": "Green tea 100g", "category": "food", "price": "5.20", "stock": 40, "added": "2025-09-01", "restocked": "2026-09-10"},
+  {"sku": "TEA-002", "name": "Earl Grey 250g", "category": "food", "price": "9.75", "stock": 15, "added": "2026-08-25", "restocked": "2026-08-25"},
+  {"sku": "LMP-001", "name": "Desk lamp", "category": "home", "price": "39.00", "stock": 6, "added": "2025-10-10", "restocked": "2026-05-12"},
+  {"sku": "LMP-002", "name": "Floor lamp", "category": "home", "price": "129.00", "stock": 0, "added": "2026-01-20", "restocked": "2026-03-03"},
+  {"sku": "BAG-001", "name": "Canvas tote bag", "category": "accessories", "price": "12.00", "stock": 31, "added": "2026-09-01", "restocked": "2026-09-01"},
+  {"sku": "PEN-001", "name": "Fountain pen", "category": "stationery", "price": "48.50", "stock": 3, "added": "2025-12-05", "restocked": "2026-06-18"},
+  {"sku": "NTB-001", "name": "Dot-grid notebook", "category": "stationery", "price": "7.90", "stock": 55, "added": "2026-03-30", "restocked": "2026-09-05"},
+  {"sku": "CHR-001", "name": "Café chair", "category": "home", "price": "89.00", "stock": 4, "added": "2026-07-15", "restocked": "2026-07-15"},
+  {"sku": "DSK-001", "name": "Oak standing desk", "category": "home", "price": "1249.00", "stock": 2, "added": "2026-06-01", "restocked": "2026-06-01"}
+]

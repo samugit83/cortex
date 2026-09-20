@@ -1,0 +1,7 @@
+[
+  {"id": "A-1001", "date": "2026-09-02", "customer": "Rossi SRL", "status": "paid",
+   "lines": [{"sku": "MUG-001", "name": "Ceramic mug", "qty": 2, "unit_price": "8.50"},
+             {"sku": "TEA-001", "name": "Green tea 100g", "qty": 1, "unit_price": "5.20"}]},
+  {"id": "A-1002", "date": "2026-09-05", "customer": "Studio Verde", "status": "shipped",
+   "lines": [{"sku": "LMP-001", "name": "Desk lamp", "qty": 1, "unit_price": "39.00"}]}
+]

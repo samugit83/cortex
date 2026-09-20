@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+lab/state/*.out
+lab/state/autopilot.log
+lab/bench/results.jsonl
+lab/bench/tasks.json
+.DS_Store

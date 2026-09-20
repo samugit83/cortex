@@ -1,0 +1,5 @@
+id: NN
+title: one short line describing what was broken
+base_sha: 0000000          # the commit where check.sh FAILS
+timeout_s: 600
+harvested: YYYY-MM-DD

@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Skills Across Time</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --bg:#f6f4ef; --panel:#fffdfa; --panel-2:#efece4;
+    --ink:#1b2230; --ink-soft:#5a6474; --line:#d5cfc2;
+    --harvest:#2f9e6f; --harvest-soft:#e3f3ec;
+    --evolve:#3b82c4;  --evolve-soft:#e2edf7;
+    --prune:#c0508a;   --prune-soft:#f7e6ef;
+    --amber:#c98a2b;   --amber-soft:#f7edda;
+    --bug:#c0392b; --bug-soft:#f7e4e1;
+    --keep:#2f9e6f; --kill:#c0392b;
+    --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+    --disp:'Space Grotesk',system-ui,sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+    --shadow:0 1px 2px rgba(20,25,40,.06),0 8px 24px rgba(20,25,40,.07);
+    --shadow-lg:0 2px 4px rgba(20,25,40,.08),0 18px 46px rgba(20,25,40,.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0f1420; --panel:#161d2b; --panel-2:#1d2636;
+      --ink:#e8ecf3; --ink-soft:#9aa6b8; --line:#2b3547;
+      --harvest:#4cc191; --harvest-soft:#12312a;
+      --evolve:#5fa4e0;  --evolve-soft:#122436;
+      --prune:#e079b0;   --prune-soft:#331327;
+      --amber:#e0a94e;   --amber-soft:#33270f;
+      --bug:#e06457; --bug-soft:#331816;
+      --keep:#4cc191; --kill:#e06457;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+      --shadow-lg:0 2px 6px rgba(0,0,0,.4),0 20px 50px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0f1420; --panel:#161d2b; --panel-2:#1d2636;
+    --ink:#e8ecf3; --ink-soft:#9aa6b8; --line:#2b3547;
+    --harvest:#4cc191; --harvest-soft:#12312a;
+    --evolve:#5fa4e0;  --evolve-soft:#122436;
+    --prune:#e079b0;   --prune-soft:#331327;
+    --amber:#e0a94e;   --amber-soft:#33270f;
+    --bug:#e06457; --bug-soft:#331816;
+    --keep:#4cc191; --kill:#e06457;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+    --shadow-lg:0 2px 6px rgba(0,0,0,.4),0 20px 50px rgba(0,0,0,.5);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html,body{margin:0}
+  body{background:var(--bg); color:var(--ink); font-family:var(--body); line-height:1.55;
+    -webkit-font-smoothing:antialiased; padding-block:0}
+  .wrap{max-width:1120px; margin:0 auto; padding:0 20px}
+  b{font-weight:600; color:var(--ink)}
+  em{font-style:normal; color:var(--evolve); font-weight:600}
+
+  .toggle{position:fixed; top:calc(12px + env(safe-area-inset-top,0px)); right:16px; z-index:30;
+    font-family:var(--mono); font-size:12px; padding:7px 12px; border-radius:999px;
+    border:1px solid var(--line); background:var(--panel); color:var(--ink-soft); cursor:pointer;
+    box-shadow:var(--shadow); transition:transform .15s, color .15s}
+  .toggle:hover{color:var(--ink); transform:translateY(-1px)}
+  .toggle:focus-visible{outline:2px solid var(--evolve); outline-offset:2px}
+
+  header.top{padding:66px 0 8px; text-align:center}
+  .back{display:inline-block; font-family:var(--mono); font-size:12px; color:var(--ink-soft);
+    text-decoration:none; margin-bottom:22px}
+  .back:hover{color:var(--evolve)}
+  .kicker{font-family:var(--mono); font-size:12px; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--ink-soft); margin:0 0 14px}
+  h1{font-family:var(--disp); font-weight:700; font-size:clamp(32px,5.6vw,56px); line-height:1.04;
+    letter-spacing:-.02em; margin:0 0 16px; text-wrap:balance}
+  .lede{max-width:64ch; margin:0 auto; font-size:clamp(16px,2.2vw,19px); color:var(--ink-soft)}
+
+  .oneline{max-width:900px; margin:30px auto 0; padding:20px 26px; background:var(--panel);
+    border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow);
+    font-family:var(--disp); font-weight:500; font-size:clamp(16px,2.3vw,20px); line-height:1.5;
+    text-align:center; text-wrap:balance}
+  .oneline .old{color:var(--bug); font-weight:600}
+  .oneline .new{color:var(--evolve); font-weight:600}
+
+  section{padding:40px 0 0}
+  .sec-head{max-width:70ch; margin:0 auto 8px; text-align:center}
+  .sec-head h2{font-family:var(--disp); font-weight:600; font-size:clamp(21px,3vw,28px);
+    margin:0 0 8px; letter-spacing:-.01em}
+  .sec-head p{margin:0; color:var(--ink-soft); font-size:15px}
+
+  figure.fig{margin:26px 0 0; padding:24px 20px; background:var(--panel); border:1px solid var(--line);
+    border-radius:18px; box-shadow:var(--shadow); color:var(--ink)}
+  figure.fig .figwrap{overflow-x:auto}
+  figure.fig svg{display:block; width:100%; height:auto; min-width:720px; margin:0 auto}
+  figure.fig figcaption{margin-top:16px; font-size:13.5px; color:var(--ink-soft); text-align:center; text-wrap:balance; max-width:80ch; margin-left:auto; margin-right:auto}
+  figure.fig figcaption b{color:var(--ink)}
+
+  /* two-column contrast */
+  .contrast{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:26px}
+  @media (max-width:720px){ .contrast{grid-template-columns:1fr} }
+  .card{padding:22px; border-radius:16px; border:1px solid var(--line); background:var(--panel); box-shadow:var(--shadow)}
+  .card.bad{border-color:var(--kill)} .card.good{border-color:var(--keep)}
+  .card .tag{font-family:var(--mono); font-size:12px; font-weight:600; letter-spacing:.06em; display:inline-flex; gap:8px; align-items:center; margin-bottom:12px}
+  .card.bad .tag{color:var(--kill)} .card.good .tag{color:var(--keep)}
+  .card h3{font-family:var(--disp); font-weight:600; font-size:17px; margin:0 0 8px}
+  .card p{margin:0 0 12px; color:var(--ink-soft); font-size:14px}
+  .card .mini{overflow-x:auto}
+  .card svg{display:block; width:100%; height:auto; min-width:280px}
+
+  .takeaway{margin:40px auto 0; padding:24px 26px; border-radius:18px; text-align:center;
+    background:var(--evolve-soft); border:1px solid var(--evolve)}
+  .takeaway .t{font-family:var(--disp); font-weight:600; font-size:clamp(17px,2.6vw,22px); line-height:1.45; text-wrap:balance; margin:0}
+  .takeaway .s{margin:10px 0 0; color:var(--ink-soft); font-size:14px}
+
+  footer.end{padding:44px 0 70px; text-align:center; color:var(--ink-soft); font-size:13px}
+  footer.end code{font-family:var(--mono); color:var(--ink)}
+  figcaption code, .card code{font-family:var(--mono); font-size:.92em; color:var(--ink)}
+  footer.end a{color:var(--evolve); text-decoration:none}
+
+  /* svg helpers */
+  .mono{font-family:var(--mono)} .disp{font-family:var(--disp)}
+  .t-ink{fill:var(--ink)} .t-soft{fill:var(--ink-soft)}
+  .axis{stroke:var(--line); stroke-width:2.5; fill:none}
+  .minor{fill:var(--line)}
+  .pin{stroke:var(--line); stroke-width:1.5; stroke-dasharray:3 4; fill:none}
+  .flow{fill:none; stroke-width:2.4; stroke-dasharray:7 9; animation:flow 1.15s linear infinite}
+  @keyframes flow{to{stroke-dashoffset:-32}}
+  .pulse{animation:pulse 2.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto}
+    .flow{animation:none; stroke-dasharray:none}
+    .pulse{animation:none}
+    .travel{display:none}
+  }
+</style>
+</head>
+<body>
+<button class="toggle" id="themeBtn" aria-label="Toggle light or dark theme">◑ theme</button>
+
+<div class="wrap">
+
+  <header class="top">
+    <a class="back" href="index.html">← back to overview</a>
+    <p class="kicker">why tasks live in the past</p>
+    <h1>Today's skills, yesterday's problems</h1>
+    <p class="lede">
+      When you run <b>/evolve</b> (or <b>/prune</b>), it does <em>not</em> test your latest code. It rewinds to
+      the exact moments things were broken and asks: <b>can my skills solve these now?</b> Here's why that's
+      the only thing worth measuring.
+    </p>
+    <p class="oneline">
+      The <span class="old">code</span> travels back to each bug &nbsp;·&nbsp;
+      the <span class="new">skills</span> stay fixed at today.
+    </p>
+  </header>
+
+  <!-- ============ 1. THE TIMELINE ============ -->
+  <section>
+    <div class="sec-head">
+      <h2>Your history, and the bugs you saved</h2>
+      <p>Every time you fixed something, <b>/harvest</b> pinned a task to that commit — the moment the bug was alive.</p>
+    </div>
+    <figure class="fig">
+      <div class="figwrap">
+        <svg viewBox="0 0 1000 430" role="img" aria-label="A git history line running through time. Three commits where you fixed a bug each became a task, pinned to that commit. Today, at the far right, holds your current skills.">
+          <!-- title row -->
+          <text class="mono t-soft" x="60" y="40" font-size="13">git history</text>
+          <text class="mono t-soft" x="940" y="40" font-size="13" text-anchor="end">time →</text>
+
+          <!-- axis -->
+          <line class="axis" x1="60" y1="150" x2="928" y2="150"/>
+          <polygon points="928,143 944,150 928,157" fill="var(--line)"/>
+
+          <!-- minor commits -->
+          <circle class="minor" cx="120" cy="150" r="4"/>
+          <circle class="minor" cx="320" cy="150" r="4"/>
+          <circle class="minor" cx="420" cy="150" r="4"/>
+          <circle class="minor" cx="600" cy="150" r="4"/>
+          <circle class="minor" cx="770" cy="150" r="4"/>
+
+          <!-- ===== bug commit 1 : broker (March) ===== -->
+          <g>
+            <circle cx="220" cy="150" r="11" fill="var(--bg)" stroke="var(--bug)" stroke-width="3"/>
+            <circle class="pulse" cx="220" cy="150" r="5" fill="var(--bug)"/>
+            <text class="mono t-soft" x="220" y="118" font-size="12" text-anchor="middle">Mar</text>
+            <!-- bug flag -->
+            <rect x="142" y="78" width="156" height="26" rx="8" fill="var(--bug-soft)" stroke="var(--bug)"/>
+            <text class="mono" x="220" y="95" font-size="11.5" text-anchor="middle" fill="var(--bug)" font-weight="600">🐛 broker, before fix</text>
+            <!-- pin down -->
+            <line class="pin" x1="220" y1="161" x2="220" y2="250"/>
+            <!-- task card -->
+            <rect x="120" y="250" width="200" height="126" rx="12" fill="var(--bg)" stroke="var(--line)" stroke-width="1.5"/>
+            <text class="mono" x="136" y="276" font-size="12" fill="var(--harvest)" font-weight="600">Task 01</text>
+            <text class="t-ink" x="136" y="298" font-size="13">"fix the broker"</text>
+            <line x1="136" y1="312" x2="304" y2="312" stroke="var(--line)"/>
+            <text class="mono t-soft" x="136" y="333" font-size="11">replay starts at:</text>
+            <text class="mono t-ink" x="136" y="352" font-size="12" font-weight="600">↑ this commit (broken)</text>
+            <text class="t-soft" x="136" y="370" font-size="11">the bug is alive here</text>
+          </g>
+
+          <!-- ===== bug commit 2 : parser (June) ===== -->
+          <g>
+            <circle cx="470" cy="150" r="11" fill="var(--bg)" stroke="var(--bug)" stroke-width="3"/>
+            <circle class="pulse" cx="470" cy="150" r="5" fill="var(--bug)"/>
+            <text class="mono t-soft" x="470" y="118" font-size="12" text-anchor="middle">Jun</text>
+            <rect x="392" y="78" width="156" height="26" rx="8" fill="var(--bug-soft)" stroke="var(--bug)"/>
+            <text class="mono" x="470" y="95" font-size="11.5" text-anchor="middle" fill="var(--bug)" font-weight="600">🐛 parser, before fix</text>
+            <line class="pin" x1="470" y1="161" x2="470" y2="250"/>
+            <rect x="370" y="250" width="200" height="126" rx="12" fill="var(--bg)" stroke="var(--line)" stroke-width="1.5"/>
+            <text class="mono" x="386" y="276" font-size="12" fill="var(--harvest)" font-weight="600">Task 02</text>
+            <text class="t-ink" x="386" y="298" font-size="13">"fix the parser"</text>
+            <line x1="386" y1="312" x2="554" y2="312" stroke="var(--line)"/>
+            <text class="mono t-soft" x="386" y="333" font-size="11">replay starts at:</text>
+            <text class="mono t-ink" x="386" y="352" font-size="12" font-weight="600">↑ this commit (broken)</text>
+            <text class="t-soft" x="386" y="370" font-size="11">a different point in time</text>
+          </g>
+
+          <!-- ===== bug commit 3 : calc (Sept) ===== -->
+          <g>
+            <circle cx="690" cy="150" r="11" fill="var(--bg)" stroke="var(--bug)" stroke-width="3"/>
+            <circle class="pulse" cx="690" cy="150" r="5" fill="var(--bug)"/>
+            <text class="mono t-soft" x="690" y="118" font-size="12" text-anchor="middle">Sep</text>
+            <rect x="612" y="78" width="156" height="26" rx="8" fill="var(--bug-soft)" stroke="var(--bug)"/>
+            <text class="mono" x="690" y="95" font-size="11.5" text-anchor="middle" fill="var(--bug)" font-weight="600">🐛 calc, before fix</text>
+            <line class="pin" x1="690" y1="161" x2="690" y2="250"/>
+            <rect x="590" y="250" width="200" height="126" rx="12" fill="var(--bg)" stroke="var(--line)" stroke-width="1.5"/>
+            <text class="mono" x="606" y="276" font-size="12" fill="var(--harvest)" font-weight="600">Task 03</text>
+            <text class="t-ink" x="606" y="298" font-size="13">"fix the calculator"</text>
+            <line x1="606" y1="312" x2="774" y2="312" stroke="var(--line)"/>
+            <text class="mono t-soft" x="606" y="333" font-size="11">replay starts at:</text>
+            <text class="mono t-ink" x="606" y="352" font-size="12" font-weight="600">↑ this commit (broken)</text>
+            <text class="t-soft" x="606" y="370" font-size="11">another point again</text>
+          </g>
+
+          <!-- ===== TODAY / HEAD ===== -->
+          <g>
+            <circle cx="880" cy="150" r="13" fill="var(--evolve-soft)" stroke="var(--evolve)" stroke-width="3"/>
+            <circle cx="880" cy="150" r="5" fill="var(--evolve)"/>
+            <line class="pin" x1="880" y1="90" x2="880" y2="139" stroke="var(--evolve)"/>
+            <rect x="792" y="250" width="176" height="126" rx="12" fill="var(--evolve-soft)" stroke="var(--evolve)" stroke-width="1.5"/>
+            <text class="mono" x="808" y="276" font-size="12" fill="var(--evolve)" font-weight="600">TODAY = HEAD</text>
+            <text class="t-ink disp" x="808" y="300" font-size="13.5" font-weight="600">your skills + rules</text>
+            <line x1="808" y1="314" x2="952" y2="314" stroke="var(--evolve)" opacity=".5"/>
+            <text class="t-soft" x="808" y="335" font-size="11.5">every bug here is</text>
+            <text class="t-soft" x="808" y="352" font-size="11.5">already fixed —</text>
+            <text class="t-ink" x="808" y="370" font-size="11.5" font-weight="600">nothing to solve</text>
+            <text class="mono" x="880" y="70" font-size="11.5" text-anchor="middle" fill="var(--evolve)" font-weight="600">◆ you are here</text>
+          </g>
+        </svg>
+      </div>
+      <figcaption>
+        Three bugs, fixed months apart, became three tasks — each <b>pinned to the last commit where that bug was still alive</b>
+        (its <code>base_sha</code>: the commit right before the fix). At <b>HEAD</b> (today) they're all already fixed, so
+        there's nothing left to solve there.
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- ============ 2. WHAT EVOLVE DOES ============ -->
+  <section>
+    <div class="sec-head">
+      <h2>What /evolve actually does</h2>
+      <p>It carries <b>today's skills backwards</b> to each bug, and checks whether they can fix it.</p>
+    </div>
+    <figure class="fig">
+      <div class="figwrap">
+        <svg viewBox="0 0 1000 360" role="img" aria-label="From today's skills on the right, evolve sends today's skills back to each of the three past bug commits, dropping them onto the broken code to see if they can solve it.">
+          <defs>
+            <marker id="ah" markerWidth="12" markerHeight="12" refX="8" refY="4" orient="auto">
+              <polygon points="0,0 9,4 0,8" fill="var(--evolve)"/>
+            </marker>
+          </defs>
+
+          <!-- axis -->
+          <line class="axis" x1="60" y1="90" x2="928" y2="90"/>
+          <polygon points="928,83 944,90 928,97" fill="var(--line)"/>
+          <text class="mono t-soft" x="940" y="72" font-size="12" text-anchor="end">time →</text>
+
+          <!-- three broken commits -->
+          <g>
+            <circle cx="180" cy="90" r="10" fill="var(--bg)" stroke="var(--bug)" stroke-width="2.5"/>
+            <text class="mono t-soft" x="180" y="66" font-size="11.5" text-anchor="middle">Mar · broker</text>
+            <rect x="120" y="120" width="120" height="34" rx="9" fill="var(--bug-soft)" stroke="var(--bug)"/>
+            <text class="mono" x="180" y="141" font-size="11" text-anchor="middle" fill="var(--bug)">broken code</text>
+          </g>
+          <g>
+            <circle cx="410" cy="90" r="10" fill="var(--bg)" stroke="var(--bug)" stroke-width="2.5"/>
+            <text class="mono t-soft" x="410" y="66" font-size="11.5" text-anchor="middle">Jun · parser</text>
+            <rect x="350" y="120" width="120" height="34" rx="9" fill="var(--bug-soft)" stroke="var(--bug)"/>
+            <text class="mono" x="410" y="141" font-size="11" text-anchor="middle" fill="var(--bug)">broken code</text>
+          </g>
+          <g>
+            <circle cx="640" cy="90" r="10" fill="var(--bg)" stroke="var(--bug)" stroke-width="2.5"/>
+            <text class="mono t-soft" x="640" y="66" font-size="11.5" text-anchor="middle">Sep · calc</text>
+            <rect x="580" y="120" width="120" height="34" rx="9" fill="var(--bug-soft)" stroke="var(--bug)"/>
+            <text class="mono" x="640" y="141" font-size="11" text-anchor="middle" fill="var(--bug)">broken code</text>
+          </g>
+
+          <!-- today skills box (right) -->
+          <rect x="792" y="150" width="176" height="150" rx="14" fill="var(--evolve-soft)" stroke="var(--evolve)" stroke-width="2"/>
+          <text class="mono" x="880" y="176" font-size="12" text-anchor="middle" fill="var(--evolve)" font-weight="600">TODAY'S SKILLS</text>
+          <rect x="812" y="190" width="136" height="30" rx="7" fill="var(--bg)" stroke="var(--line)"/>
+          <text class="mono t-ink" x="880" y="210" font-size="12" text-anchor="middle">base (as-is)</text>
+          <rect x="812" y="228" width="136" height="30" rx="7" fill="var(--bg)" stroke="var(--evolve)"/>
+          <text class="mono" x="880" y="248" font-size="12" text-anchor="middle" fill="var(--evolve)">cand (+ new)</text>
+          <text class="t-soft" x="880" y="284" font-size="11" text-anchor="middle">frozen at today</text>
+
+          <!-- rewind arrows: from today box back to each commit, travelling dot -->
+          <path id="r1" class="flow" stroke="var(--evolve)" marker-end="url(#ah)" d="M792,214 C560,214 380,150 190,110"/>
+          <path id="r2" class="flow" stroke="var(--evolve)" marker-end="url(#ah)" d="M792,222 C620,240 520,150 420,110"/>
+          <path id="r3" class="flow" stroke="var(--evolve)" marker-end="url(#ah)" d="M792,232 C740,270 700,160 650,110"/>
+          <g class="travel" fill="var(--evolve)">
+            <circle r="4"><animateMotion dur="1.9s" repeatCount="indefinite" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#r1"/></animateMotion></circle>
+            <circle r="4"><animateMotion dur="1.9s" begin="0.3s" repeatCount="indefinite" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#r2"/></animateMotion></circle>
+            <circle r="4"><animateMotion dur="1.9s" begin="0.6s" repeatCount="indefinite" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#r3"/></animateMotion></circle>
+          </g>
+
+          <!-- center label -->
+          <rect x="330" y="300" width="340" height="40" rx="10" fill="var(--panel)" stroke="var(--evolve)"/>
+          <text class="disp" x="500" y="325" font-size="14" text-anchor="middle" fill="var(--evolve)" font-weight="600">rewind → drop today's skills onto the bug</text>
+        </svg>
+      </div>
+      <figcaption>
+        Each dot carries <b>today's skills back in time</b> to a bug and tries to fix it — <b>base</b> without the new skill,
+        <b>cand</b> with it (in <b>/prune</b>: <b>cand</b> is today's set <em>minus</em> one item). The code is old; the skills are
+        today's. That's the whole experiment. Any skills, rules or <code>CLAUDE.md</code> that were committed at the old
+        commit are <b>replaced</b> by today's before every run — the old code never runs old instructions.
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- ============ 3. WHY NOT HEAD ============ -->
+  <section>
+    <div class="sec-head">
+      <h2>Why not just test at HEAD?</h2>
+      <p>Because you're not checking your code — you're checking whether Claude can <b>solve problems</b>.</p>
+    </div>
+    <div class="contrast">
+      <div class="card bad">
+        <span class="tag">✗ testing at HEAD</span>
+        <h3>Everything's already fixed</h3>
+        <p>At today's commit, every past bug is gone. Claude is handed a working repo and has nothing to do — so every task "passes" and you learn nothing about your skills.</p>
+        <div class="mini">
+          <svg viewBox="0 0 300 120" role="img" aria-label="At HEAD, all three tasks are already solved, so all pass trivially and teach nothing.">
+            <text class="mono" x="10" y="24" font-size="12" fill="var(--kill)">at HEAD (today):</text>
+            <g font-size="12" class="mono">
+              <text class="t-soft" x="10" y="52">task 01</text><text x="120" y="52" fill="var(--keep)">✓ already fixed</text>
+              <text class="t-soft" x="10" y="76">task 02</text><text x="120" y="76" fill="var(--keep)">✓ already fixed</text>
+              <text class="t-soft" x="10" y="100">task 03</text><text x="120" y="100" fill="var(--keep)">✓ already fixed</text>
+            </g>
+            <text class="disp" x="10" y="118" font-size="0"> </text>
+          </svg>
+        </div>
+        <p style="margin-top:12px"><b>Result:</b> a perfect score that means nothing.</p>
+      </div>
+
+      <div class="card good">
+        <span class="tag">✓ rewinding to each bug</span>
+        <h3>Real problems to solve</h3>
+        <p>At each bug's own commit, the problem is live again — and every run <b>proves</b> it first: the task's check must fail before Claude starts, or the run is thrown out. Now the score is real: it shows whether your skills actually help Claude fix things it couldn't before.</p>
+        <div class="mini">
+          <svg viewBox="0 0 300 120" role="img" aria-label="Rewound to each bug, tasks are genuinely broken, so the score reflects whether the skills help.">
+            <text class="mono" x="10" y="24" font-size="12" fill="var(--keep)">rewound to each bug:</text>
+            <g font-size="12" class="mono">
+              <text class="t-soft" x="10" y="52">task 01</text><text x="120" y="52" fill="var(--bug)">✗ broken → try</text>
+              <text class="t-soft" x="10" y="76">task 02</text><text x="120" y="76" fill="var(--bug)">✗ broken → try</text>
+              <text class="t-soft" x="10" y="100">task 03</text><text x="120" y="100" fill="var(--bug)">✗ broken → try</text>
+            </g>
+          </svg>
+        </div>
+        <p style="margin-top:12px"><b>Result:</b> a score you can actually trust.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TAKEAWAY ============ -->
+  <div class="takeaway">
+    <p class="t">Cortex isn't asking "does my code work today?"<br>It's asking "do my skills help Claude solve real problems?"</p>
+    <p class="s">So it re-opens old, already-solved problems as fresh challenges — each at the moment it was hard — and measures how today's skills cope.</p>
+  </div>
+
+  <footer class="end">
+    <p>Part of the Cortex explainer · <a href="index.html">back to the overview →</a> &nbsp;·&nbsp; <code>cortex init</code> to begin.</p>
+  </footer>
+
+</div>
+
+<script>
+  (function(){
+    var root=document.documentElement, btn=document.getElementById('themeBtn');
+    function cur(){var t=root.getAttribute('data-theme'); if(t) return t;
+      return matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}
+    btn.addEventListener('click',function(){
+      var n=cur()==='dark'?'light':'dark';
+      root.setAttribute('data-theme',n);
+      btn.textContent=n==='dark'?'☀ light':'☾ dark';
+    });
+  })();
+</script>
+</body>
+</html>

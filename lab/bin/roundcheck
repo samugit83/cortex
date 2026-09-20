@@ -1,0 +1,94 @@
+#!/usr/bin/env python3
+"""roundcheck N — the experimenter's check of one lab round, as Markdown.
+
+Sessions (corrections, harvested task, lesson, cost), harvest quality (does each
+task's check tell a house-rule fix from a rule-breaking one), preflight, the
+sweeps /evolve ran (verdict, gains, firing, cost), the routing table, lessons.
+"""
+import json
+import re
+import subprocess
+import sys
+import types
+from datetime import datetime, timedelta
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+src = (HERE / "lab").read_text()
+L = types.ModuleType("labtool")
+L.__file__ = str(HERE / "lab")
+exec(compile(src, "lab", "exec"), L.__dict__)
+S, REPO = L.S, L.REPO
+
+
+def sh(cmd, cwd=REPO):
+    return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, shell=isinstance(cmd, str))
+
+
+def main():
+    r = int(sys.argv[1])
+    st = L.load_state()
+    turns = json.loads((L.STATE.parent / "autopilot.json").read_text()) if (L.STATE.parent / "autopilot.json").exists() else []
+    out = [f"# Round {r} — check", "", f"_generated {datetime.now().isoformat(timespec='minutes')}_", "",
+           "## Sessions", "",
+           "| Scenario | Family | Verify sequence | Corrections | Task | Lessons | Start OK | Session cost |",
+           "|---|---|---|---|---|---|---|---|"]
+    for sid in S.ROUNDS[r]:
+        rec = st["scenarios"].get(sid, {})
+        s = S.by_id(sid)
+        seq = " → ".join(a["verdict"] for a in rec.get("attempts", []))
+        cost = sum((t.get("cost") or 0) for t in turns if t["what"].startswith(f"{sid} "))
+        out.append(f"| {sid} {s['title']} | {s['family']} | {seq or '—'} | {rec.get('corrections', '—')} | "
+                   f"{', '.join(rec.get('tasks', [])) or 'none'} | {rec.get('lessons_added', '—')} | "
+                   f"{'✔' if not rec.get('wrong_base') else '✘ ' + '; '.join(rec['wrong_base'])} | "
+                   f"{'$%.2f' % cost if cost else '—'} |")
+    out += ["", "## Harvest quality (`lab audit`)", "", "```"]
+    ids = [sid for sid in S.ROUNDS[r] if st["scenarios"].get(sid, {}).get("tasks")]
+    a = sh([str(HERE / "lab"), "audit", *ids], cwd=HERE)
+    out += [a.stdout.strip() or "(no harvested tasks)", "```", ""]
+    for sid in ids:
+        for t in st["scenarios"][sid]["tasks"]:
+            ck = REPO / ".evolve/tasks" / t / "check.sh"
+            if ck.exists():
+                body = [l for l in ck.read_text().splitlines() if l.strip() and not l.startswith("#!")]
+                out.append(f"- task {t} ({sid}) check: `{' ; '.join(body)[:220]}`")
+    pf = sh("cortex preflight")
+    out += ["", "## Preflight", "", "```", pf.stdout.strip(), "```", ""]
+    out += ["## Lessons", "", "```"]
+    out += [l for l in (REPO / ".evolve/lessons.md").read_text().splitlines() if l.startswith("20")]
+    out += ["```", "", "## Sweeps this round", ""]
+    evolve_turns = [t for t in turns if t["what"].startswith(f"round {r} /evolve")]
+    # a turn is recorded when it ENDS: the sweep it launched is older than that
+    since = None
+    if evolve_turns:
+        t0 = datetime.fromisoformat(evolve_turns[0]["t"]) - timedelta(seconds=(evolve_turns[0].get("secs") or 0) + 60)
+        since = t0.strftime("%Y%m%dT%H%M%S")
+    runs = sorted((REPO / ".evolve/runs").glob("*.jsonl"))
+    if since:
+        runs = [f for f in runs if f.name[:15] >= since[:15]] or runs[-2:]
+    out += ["| File | Phase | Verdict | Gain | Net runs | Fired | Per task (base→cand) | Cost | Elapsed | At once |",
+            "|---|---|---|---|---|---|---|---|---|---|"]
+    for f in runs:
+        j = json.loads(sh(["cortex", "score", str(f)]).stdout or "{}")
+        pt = ", ".join(f"{p['task']} {p['base']:.2f}→{p['cand']:.2f}" + ("" if p.get("exposed", True) else "·") for p in j.get("per_task", []))
+        rc = (j.get("recheck") or {}).get("replicated")
+        out.append(f"| {f.name} | {j.get('phase')} | **{j.get('verdict')}** | {j.get('gain')} | {j.get('net_runs')} | "
+                   f"{j.get('candidate_fired_runs')} | {pt} | ${j.get('cost_usd_total')} | "
+                   f"{round((j.get('elapsed_secs') or j.get('wall_secs_total') or 0) / 60)} min | {j.get('workers') or 1} |"
+                   + (f" replicated={rc}" if rc is not None else ""))
+    ecost = sum((t.get("cost") or 0) for t in evolve_turns)
+    out += ["", f"/evolve turns: {len(evolve_turns)}, ${ecost:.2f}", "", "## Journal (tail)", "", "```"]
+    out += (REPO / ".evolve/journal.md").read_text().strip().splitlines()[-16:]
+    out += ["```", "", "## Routing after the round", "", "```", sh("cortex skills").stdout.strip(), "```", ""]
+    live = list((REPO / ".claude/rules").glob("*.md")) + list((REPO / ".claude/skills").glob("*/SKILL.md"))
+    for p in live:
+        out += [f"### {p.relative_to(REPO)}", "", "```markdown", p.read_text().strip(), "```", ""]
+    findings = [l for l in (L.STATE.parent / "autopilot.log").read_text().splitlines()
+                if "FINDING" in l and f"round {r}" in l or any(f"FINDING {sid}" in l for sid in S.ROUNDS[r])] \
+        if (L.STATE.parent / "autopilot.log").exists() else []
+    out += ["## Autopilot findings", ""] + ([f"- {l}" for l in findings] or ["- none"]) + [""]
+    print("\n".join(out))
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,280 @@
+#!/usr/bin/env python3
+"""autopilot — run lab rounds with no one at the keyboard.
+
+  autopilot round N          round N: every session (prompt, verify, corrections,
+                             /harvest, done), then /evolve until the cycle ends, then commit
+  autopilot evolve N         only the /evolve part of round N
+  autopilot prune             the /prune pass: plan, approve, measure, record
+  autopilot ask ID "message"  say something in session ID's own chat (no bookkeeping)
+  autopilot reharvest ID "note"
+                             after a Cortex fix: /harvest again in session ID's own
+                             chat, with the note a user would add, then `lab done --late`
+
+Every Claude turn is a real headless Claude Code session in cortex-lab (Haiku 4.5),
+fed exactly what the user would type: the scenario's prompt, the correction
+`lab verify` prints, `/harvest`, `/evolve`. Permissions are the user's own mode
+(bypassPermissions), minus a deny list. The scheduler tool is disabled: the
+autopilot does the waiting and re-runs /evolve itself, as a user would.
+
+Nothing is repaired by hand. When a step does not do what the protocol says, the
+autopilot logs a FINDING and moves on (or stops, if going on would corrupt data).
+Log: lab/state/autopilot.log   turns: lab/state/autopilot.json
+"""
+import json
+import os
+import subprocess
+import sys
+import time
+import types
+from datetime import datetime
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+src = (HERE / "lab").read_text()
+L = types.ModuleType("labtool")
+L.__file__ = str(HERE / "lab")
+exec(compile(src, "lab", "exec"), L.__dict__)
+S = L.S
+REPO = L.REPO
+STATE_DIR = L.STATE.parent
+LOG = STATE_DIR / "autopilot.log"
+TURNS = STATE_DIR / "autopilot.json"
+MODEL = "claude-haiku-4-5-20251001"
+DENY = ["Bash(sudo:*)", "Bash(git push:*)", "Bash(curl:*)", "Bash(wget:*)", "Bash(ssh:*)",
+        "Bash(scp:*)", "Bash(rm -rf /:*)", "Bash(rm -rf ~:*)", "Bash(rm -rf /home:*)",
+        "Bash(rm -rf $HOME:*)", "ScheduleWakeup", "CronCreate", "RemoteTrigger", "WebFetch", "WebSearch"]
+MAX_CORRECTIONS = 3
+MAX_EVOLVE_CALLS = 14
+
+
+def log(msg):
+    line = f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  {msg}"
+    print(line, flush=True)
+    with open(LOG, "a") as fh:
+        fh.write(line + "\n")
+
+
+def record(entry):
+    data = json.loads(TURNS.read_text()) if TURNS.exists() else []
+    data.append(entry)
+    TURNS.write_text(json.dumps(data, indent=1))
+
+
+def turn(prompt, resume=None, what="", timeout=45 * 60):
+    """One user message to Claude Code, headless. Returns the result JSON (or an error stub)."""
+    cmd = ["claude", "--model", MODEL, "--permission-mode", "bypassPermissions",
+           "--output-format", "json"]
+    if resume:
+        cmd += ["--resume", resume]
+    cmd += ["--disallowedTools", *DENY, "-p", prompt]
+    t0 = time.time()
+    try:
+        p = subprocess.run(cmd, cwd=REPO, capture_output=True, text=True, timeout=timeout,
+                           env=dict(os.environ, DISABLE_AUTOUPDATER="1"))
+        out = json.loads(p.stdout) if p.stdout.strip().startswith("{") else {}
+        rc = p.returncode
+    except subprocess.TimeoutExpired:
+        out, rc = {}, 124
+    res = {"what": what, "t": datetime.now().isoformat(timespec="seconds"), "rc": rc,
+           "session": out.get("session_id") or resume, "cost": out.get("total_cost_usd"),
+           "turns": out.get("num_turns"), "secs": round(time.time() - t0),
+           "is_error": out.get("is_error", rc != 0), "result": (out.get("result") or "")[-1500:]}
+    record(res)
+    log(f"   turn {what}: {res['secs']}s ${res['cost']} rc={rc}"
+        + (f" ERROR" if res["is_error"] else "") + f" | {res['result'][-160:].strip().replace(chr(10), ' ')}")
+    return res
+
+
+def lab(*args):
+    p = subprocess.run([str(HERE / "lab"), *args], capture_output=True, text=True)
+    return p.returncode, p.stdout + p.stderr
+
+
+def last_verdict(sid):
+    rec = L.load_state()["scenarios"].get(sid, {})
+    return (rec.get("attempts") or [{}])[-1].get("verdict")
+
+
+def session(sid):
+    rec = L.load_state()["scenarios"].get(sid, {})
+    if rec.get("status") in ("done", "skipped"):
+        log(f"{sid}: already {rec['status']}")
+        return
+    s = S.by_id(sid)
+    if rec.get("status") != "open":
+        rc, out = lab("next")
+        if rc != 0:
+            log(f"{sid}: lab next refused: {out.strip()[-300:]}")
+            if L.load_state()["scenarios"].get(sid, {}).get("status") == "skipped":
+                return
+            raise SystemExit(f"FINDING {sid}: cannot start the session")
+    log(f"{sid} ({s['family']}) {s['title']}")
+    t = turn(s["prompt"], what=f"{sid} prompt")
+    sess = t["session"]
+    for i in range(MAX_CORRECTIONS + 1):
+        lab("verify")
+        v = last_verdict(sid)
+        log(f"   verify: {v}")
+        if v == "ok" or i == MAX_CORRECTIONS:
+            break
+        t = turn(L.correction(v, s), resume=sess, what=f"{sid} correction {v}")
+    if v != "ok":
+        log(f"FINDING {sid}: still '{v}' after {MAX_CORRECTIONS} corrections")
+    turn("/harvest", resume=sess, what=f"{sid} /harvest")
+    rc, out = lab("done")
+    if rc != 0 and "no task was harvested" in out:
+        log(f"FINDING {sid}: /harvest produced no task; asking once more, as a user would")
+        turn("/harvest", resume=sess, what=f"{sid} /harvest again")
+        rc, out = lab("done")
+        if rc != 0 and "no task was harvested" in out:
+            rc, out = lab("done", "--no-task")
+    if rc != 0 and "not complete" in out:
+        rc, out = lab("done", "--force")
+    log(f"   {out.strip().splitlines()[0] if out.strip() else rc}")
+    for w in out.splitlines()[1:]:
+        if "!!" in w:
+            log(f"FINDING {sid}: {w.strip()}")
+
+
+def sweep_running():
+    lock = REPO / ".evolve" / "runs" / ".lock"
+    if not lock.exists():
+        return False
+    p = subprocess.run(["flock", "-n", str(lock), "true"])
+    return p.returncode != 0
+
+
+def wait_sweep():
+    waited = 0
+    while sweep_running():
+        if waited % 600 == 0:
+            tail = (REPO / ".evolve/runs/sweep.log")
+            last = tail.read_text().strip().splitlines()[-1:] if tail.exists() else []
+            log(f"   sweep running… {last[0] if last else ''}")
+        time.sleep(30)
+        waited += 30
+    return waited
+
+
+def snapshot():
+    st = REPO / ".evolve" / "state.json"
+    cycles = json.loads(st.read_text()).get("cycles", 0) if st.exists() else 0
+    journal = (REPO / ".evolve" / "journal.md").read_text()
+    cands = sorted(p.name for p in (REPO / ".evolve" / "candidate").glob("*"))
+    runs = sorted(p.name for p in (REPO / ".evolve" / "runs").glob("*.jsonl"))
+    return {"cycles": cycles, "entries": journal.count("\n## "), "cands": cands, "runs": runs}
+
+
+def evolve(r):
+    start = snapshot()
+    log(f"round {r}: /evolve (cycles so far {start['cycles']}, candidates {start['cands']})")
+    stale = 0
+    for n in range(MAX_EVOLVE_CALLS):
+        w = wait_sweep()
+        if w:
+            log(f"   sweep finished after ~{w // 60} min")
+        before = snapshot()
+        t = turn("/evolve", what=f"round {r} /evolve #{n + 1}")
+        time.sleep(5)
+        after = snapshot()
+        if sweep_running():
+            stale = 0
+            log(f"   a sweep is running: {[x for x in after['runs'] if x not in before['runs']]}")
+            continue
+        # a cycle has ended when the journal has its entry (KEEP, KILL or "nothing
+        # to learn") and no candidate is left. The counter alone is not enough:
+        # replaying the previous cycle's ending once bumped it with no new cycle.
+        if after["entries"] > start["entries"] and not after["cands"]:
+            log(f"round {r}: cycle ended (cycles {after['cycles']}, journal entries {after['entries']})")
+            break
+        if after["cycles"] > before["cycles"] and after["entries"] == before["entries"]:
+            log(f"FINDING round {r}: a cycle was recorded with no journal entry")
+        text = t["result"].lower()
+        if "valid task" in text and ("not enough" in text or "only" in text or "insufficient" in text):
+            log(f"round {r}: /evolve stopped on too few valid tasks")
+            break
+        if "barren" in text or "nothing to learn" in text:
+            ended = after["entries"] > start["entries"]
+            log(f"round {r}: BARREN" + ("" if ended else " — FINDING: no `cortex cycle`/journal record"))
+            break
+        stale = stale + 1 if after == before else 0
+        if stale >= 2:
+            log(f"FINDING round {r}: /evolve made no progress twice: {t['result'][-300:]}")
+            break
+    rc, out = lab("commit")
+    log(f"   {out.strip()}")
+
+
+def session_id(sid):
+    for t in json.loads(TURNS.read_text()):
+        if t["what"] == f"{sid} prompt" and t.get("session"):
+            return t["session"]
+    raise SystemExit(f"no recorded chat for {sid}")
+
+
+def reharvest(sid, note):
+    """A user who saw /harvest fail on a Cortex bug upgrades Cortex, goes back to
+    that session's chat and asks again, saying why."""
+    log(f"REHARVEST {sid}: {note}")
+    turn(f"/harvest {note}", resume=session_id(sid), what=f"{sid} /harvest (after a Cortex fix)")
+    rc, out = lab("done", "--late", sid)
+    log(f"   {out.strip().splitlines()[0] if out.strip() else rc}")
+    for w in out.splitlines()[1:]:
+        if "!!" in w:
+            log(f"FINDING {sid}: {w.strip()}")
+    return rc
+
+
+def ask(sid, message):
+    """What a user types into a session's own chat after reading a report: no lab
+    bookkeeping, just the message and what came back."""
+    log(f"ASK {sid}: {message}")
+    t = turn(message, resume=session_id(sid), what=f"{sid} ask")
+    return 0 if not t["is_error"] else 1
+
+
+def prune(max_turns=12):
+    """The /prune pass, driven as a user would: /prune in a fresh chat, approve the
+    plan it proposes in that same chat, then /prune again until it is finished."""
+    sid = None
+    for n in range(max_turns):
+        st = subprocess.run(["cortex", "prune", "status"], cwd=REPO, capture_output=True, text=True).stdout
+        log(f"prune #{n + 1}: status {st.strip().splitlines()[0] if st.strip() else '(none)'}")
+        if "DONE" in st or "CANCELLED" in st:
+            break
+        t = turn("/prune", what=f"prune #{n + 1}")
+        sid = t["session"]
+        text = (t["result"] or "").lower()
+        if "approve" in text and ("waiting" in text or "approval" in text or "shall i" in text or "proceed" in text):
+            log("prune: approving the plan, as the user would")
+            turn("Yes — approve the plan and start measuring.", resume=sid, what=f"prune #{n + 1} approve")
+        if sweep_running():
+            w = wait_sweep()
+            log(f"   sweep finished after ~{w // 60} min")
+    rc, out = lab("commit")
+    log(f"   {out.strip()}")
+    return 0
+
+
+def main():
+    if len(sys.argv) >= 2 and sys.argv[1] == "prune":
+        return prune()
+    if len(sys.argv) >= 4 and sys.argv[1] == "ask":
+        return ask(sys.argv[2], sys.argv[3])
+    if len(sys.argv) >= 4 and sys.argv[1] == "reharvest":
+        return reharvest(sys.argv[2], sys.argv[3])
+    if len(sys.argv) < 3 or sys.argv[1] not in ("round", "evolve"):
+        print(__doc__.strip())
+        return 2
+    r = int(sys.argv[2])
+    if sys.argv[1] == "round":
+        log(f"===== round {r}: {S.ROUNDS[r]}")
+        for sid in S.ROUNDS[r]:
+            session(sid)
+    evolve(r)
+    log(f"===== round {r} finished")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

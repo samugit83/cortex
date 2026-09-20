@@ -1,0 +1,556 @@
+#!/usr/bin/env bash
+# cortex — evolve Claude Code skills by measurement, not by guessing.
+set -euo pipefail
+
+# Resolve symlinks: install.sh links this into ~/.local/bin, so BASH_SOURCE
+# alone would resolve CORTEX_HOME to ~/.local and every path would break.
+_self="${BASH_SOURCE[0]}"
+while [ -L "$_self" ]; do
+  _tgt="$(readlink "$_self")"
+  case "$_tgt" in /*) _self="$_tgt" ;; *) _self="$(dirname "$_self")/$_tgt" ;; esac
+done
+CORTEX_HOME="$(cd "$(dirname "$_self")/.." && pwd)"
+export CORTEX_HOME
+
+usage() {
+  cat <<'__HELP__'
+cortex — evolve Claude Code skills by measurement
+
+USAGE
+  cortex init [repo]     Set up .evolve/ + commands in a repo (default: cwd)
+  cortex status          Show tasks, lessons, skills per tier, always-on context,
+                         harness hash, pinned model, last cycle
+  cortex baseline --model <id>
+                         Freeze current scores as the baseline to beat
+  cortex config [--check] Recompile config.yaml -> config.json and validate
+  cortex cycle KEEP|KILL <name> | BARREN
+                         Record a cycle outcome (once); stops the loop when barren
+  cortex phase           Where the /evolve cycle stands: A, B, C, D, relaunch or prune
+  cortex skills [--candidate <n>] [--replace "<a> [b]"] [--tasks "01 02"] [--quiet]
+                         Validate every skill and rule and print the routing
+                         table (which tier, which paths, what is always on)
+  cortex promote <name> [--force]
+                         Make .evolve/candidate/<name> live: a SKILL.md goes to
+                         .claude/skills/<name>/, a RULE.md to .claude/rules/<name>.md.
+                         Refused unless a confirm sweep said KEEP (or a swap ACCEPT)
+  cortex bury <name> --from candidate|live [--why "reason"]
+                         Move a skill or rule to the graveyard (never overwrites)
+  cortex usage [--days N] [--json]
+                         How each skill/rule was used in your sessions (last
+                         prune.usage_days) and which tasks can measure it —
+                         for choosing what /prune tests, never for deleting
+  cortex prune plan [--items "<a> [b]"] [--why "<a>=reason"] | approve | cancel
+         | next | record <name> --verdict V | finish [--force] | status
+         | estimate [--tasks "01 02"]
+                         The /prune pass: a plan with rollouts, time, tokens
+                         and cost, that runs only after you approve it
+  cortex task new --base <sha> [--head <sha>] [--title "..."]
+                         Start a harvested task: .evolve/tasks/NN/ with fix.patch
+                         (every change since <sha>, new files included) and task.yaml
+  cortex harness <sub>   Low-level routing tools (touching, hash, summary, ...)
+  cortex restore <skill> Put back a skill parked by an older Cortex version
+  cortex preflight [--parallel auto|N]
+                         Validate every task still discriminates (N tasks at once)
+  cortex sweep --candidate <name> | --replace "<a> [b]" [--parallel auto|N]
+                         Run a base-vs-change sweep (used by /evolve and /prune),
+                         N rollouts at once (measurement.parallel.rollouts)
+  cortex score           Print the last sweep's scores as JSON
+  cortex clean           Remove worktrees and stale run state
+  cortex doctor          Check the environment is usable, and what parallel
+                         auto resolves to on this machine right now
+
+Normally you do not call sweep/score by hand — /evolve and /prune do.
+__HELP__
+}
+
+die() { echo "cortex: $*" >&2; exit 1; }
+
+repo_root() {
+  git rev-parse --show-toplevel 2>/dev/null || die "not inside a git repository"
+}
+
+valid_name() {            # a skill name is one path component, nothing else
+  # A leading '-' would be read as an option; a leading '.' hides the entry.
+  case "$1" in ""|.|..|.*|-*|*[!A-Za-z0-9._-]*) die "invalid skill name: '$1' (letters, digits, . _ - only)" ;; esac
+}
+
+HARNESS() { python3 "$CORTEX_HOME/bin/harness.py" "$@"; }
+
+# min_claude_version from the repo's config when there is one, else the default
+min_cli() {
+  local repo v=""
+  repo="$(git rev-parse --show-toplevel 2>/dev/null)" && \
+    v=$(jq -r '.min_claude_version // empty' "$repo/.evolve/config.json" 2>/dev/null)
+  echo "${v:-2.1.276}"
+}
+
+cmd_doctor() {
+  local ok=0
+  for c in git jq claude timeout flock python3; do
+    if command -v "$c" >/dev/null 2>&1; then
+      printf '  %-10s %s\n' "$c" "$(command -v "$c")"
+    else
+      printf '  %-10s MISSING\n' "$c"; ok=1
+    fi
+  done
+  # path-gated skills and rules load by rules verified on one CLI version; an
+  # older CLI would run every rollout under different loading behaviour.
+  if command -v claude >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
+    local min ver rc; min=$(min_cli)
+    ver=$(HARNESS cli-version --min "$min") && rc=0 || rc=$?
+    case $rc in
+      0) printf '  %-10s %s (>= %s)\n' "version" "$ver" "$min" ;;
+      1) printf '  %-10s %s — TOO OLD: path-gated skills and rules need >= %s\n' "version" "$ver" "$min"; ok=1 ;;
+      *) printf '  %-10s cannot read `claude --version`\n' "version"; ok=1 ;;
+    esac
+  fi
+  # what `auto` means on this machine right now (sized again when each run starts)
+  if command -v python3 >/dev/null 2>&1; then
+    local k j
+    for k in rollouts preflight; do
+      j=$(HARNESS parallel --kind "$k" --jobs 64 --json 2>/dev/null) || continue
+      printf '  %-10s %s at a time — %s\n' "$k" "$(echo "$j" | jq -r .workers)" "$(echo "$j" | jq -r .why)"
+    done
+  fi
+  [ "$ok" -eq 0 ] && echo "environment ok" || echo "environment incomplete"
+  return $ok
+}
+
+cmd_init() {
+  local repo="${1:-$(pwd)}"
+  repo="$(cd "$repo" && git rev-parse --show-toplevel)" || die "not a git repo: $repo"
+
+  mkdir -p "$repo/.evolve"/{tasks,graveyard,candidate,runs}
+  mkdir -p "$repo/.evolve/tasks/_broken"
+  mkdir -p "$repo/.claude/commands" "$repo/.claude/skills" "$repo/.claude/rules"
+
+  # The root CLAUDE.md is the one file Claude Code loads on every turn. Create a
+  # minimal one only when the repo has none in ANY of the places Claude Code
+  # reads project memory from: a second copy would be loaded twice.
+  if [ ! -e "$repo/CLAUDE.md" ] && [ ! -L "$repo/CLAUDE.md" ] \
+     && [ ! -e "$repo/.claude/CLAUDE.md" ] && [ ! -e "$repo/CLAUDE.local.md" ]; then
+    cat > "$repo/CLAUDE.md" <<C
+# $(basename "$repo")
+
+<!--
+Loaded into Claude's context on EVERY turn. Keep it short: only rules an agent
+could break while working on something unrelated. Everything else loads on demand:
+  .claude/rules/<area>.md   with  paths: [<area>/**]   injected when Claude reads a matching file
+  .claude/skills/<name>/    with  paths: [...]         offered when Claude reads or writes a matching file
+  .claude/skills/<name>/    without paths              offered at the moment its description names
+Cortex (/evolve, /prune) measures which of these earn their place.
+-->
+C
+    echo "  created CLAUDE.md (minimal; loaded on every turn)"
+  fi
+
+  [ -f "$repo/.evolve/lessons.md" ] || cat > "$repo/.evolve/lessons.md" <<'L'
+# Lessons
+
+One line per correction. Written by /harvest. Read by /evolve.
+Format: `YYYY-MM-DD | task NN | what I did wrong | what was wanted instead`
+(`no task` when the session harvested none)
+
+L
+  [ -f "$repo/.evolve/journal.md" ] || cat > "$repo/.evolve/journal.md" <<'J'
+# Evolution journal
+
+One entry per /evolve cycle, kept or killed. This is the permanent record
+of why the skills folder looks the way it does.
+
+J
+  [ -f "$repo/.evolve/config.yaml" ] || cat > "$repo/.evolve/config.yaml" <<'Y'
+# Cortex configuration.
+# Edit this file; `.evolve/config.json` is compiled from it and is not edited
+# by hand. Run `cortex config` after changing anything (sweeps recompile
+# automatically when this file is newer). Every setting is explained in the
+# "Configuration reference" section of the Cortex README.
+
+measurement:
+  k:
+    screen: 2            # rollouts per task in the cheap screening phase
+    confirm: 3           # rollouts per task in the deciding phase
+  max_runs_per_cycle: 60 # hard budget stop. The one thing between you and an unbounded bill.
+  rollout_timeout_s: 600 # kill an agent that will not finish. Counts as a real FAILURE.
+  check_timeout_s: 120   # kill a verifier that hangs. Counts as INVALID, not a failure.
+  max_invalid_rate: 0.1  # above this share of invalid rollouts, refuse to score the sweep
+  parallel:              # how many run at once. auto = sized when a run starts, from ram_percent
+    rollouts: auto       # sweep rollouts at once, each in its own sandbox clone (auto or 1-64)
+    preflight: auto      # tasks preflight checks at once, each in its own worktree (auto or 1-64)
+    ram_percent: 50      # auto uses at most this % of the RAM available at that moment
+    ram_per_rollout_mb: 1024  # what one rollout needs (the agent + its check), for auto
+    ram_per_check_mb: 512     # what one preflight check needs, for auto
+    max_rollouts: 16     # auto never runs more rollouts at once: past that, parallel agents
+                         # only meet the API's rate limits (a rate-limited rollout is INVALID)
+    cpus_per_rollout: 1  # CPUs one rollout keeps busy (its agent AND the tests it runs): auto runs at
+                         # most CPUs / this. Raise it when score says the machine was oversubscribed
+    with_services: false # tasks with a precondition.sh share services: one at a time, unless true
+
+gates:
+  regression_tolerance: 0.34  # largest drop allowed on any single task (0.34 = one run in three)
+  min_net_runs: 2             # reject a win smaller than this many runs as noise
+
+collection:
+  min_valid_tasks: 3          # refuse to evolve with fewer valid tasks than this
+  min_theme_occurrences: 3    # how often a problem must recur before it earns a skill
+  lookback_days: 7            # transcript window /evolve reads
+  transcripts_dir: ~/.claude/projects
+  stop_after_barren_cycles: 2 # give up after this many cycles with no KEEP
+  always_on_budget_chars: 3000 # always-on context (CLAUDE.md + always-on skills + path-less rules) before check warns
+
+prune:
+  usage_days: 30              # how far back /prune reads your sessions to see what each item is used for
+  max_items: 3                # most items one routine /prune pass may test; after a model change it tests ALL
+
+baseline:
+  model: ""                   # pin a model id for rollouts; "" = whatever the CLI defaults to
+  max_age_days: 30            # re-measure the baseline once it is older than this
+
+environment:
+  sandbox_root: /tmp/cortex-evolve   # outside /tmp is allowed (warns); needed when docker cannot read /tmp
+  permission_mode: acceptEdits       # headless rollouts must never wait on a prompt
+  harness_files:                     # copied into BOTH sandboxes, identical
+    - CLAUDE.md
+  cache_dirs:                        # purged between states; stale caches silently corrupt scores
+    - __pycache__
+    - .pytest_cache
+  rollout_env:                       # environment variables set for every rollout
+    PYTHONDONTWRITEBYTECODE: "1"
+  min_claude_version: "2.1.276"      # oldest CLI whose skill/rule loading Cortex was verified against
+Y
+  "$CORTEX_HOME/bin/compile-config.py" "$repo" --quiet || die "config.yaml is invalid"
+
+  # Re-running init is how a repo picks up a newer Cortex. It must not destroy
+  # local edits to the commands. .cortex-installed records the fingerprint of
+  # what init last installed: a copy still matching it is merely an older
+  # version (replaced quietly); one that does not was edited by you (kept).
+  local c stamp cur rec reg="$repo/.claude/commands/.cortex-installed"
+  stamp=$(date +%Y%m%dT%H%M%S)
+  for c in harvest evolve prune; do
+    if [ -f "$repo/.claude/commands/$c.md" ] && \
+       ! cmp -s "$CORTEX_HOME/commands/$c.md" "$repo/.claude/commands/$c.md"; then
+      cur=$(sha256sum < "$repo/.claude/commands/$c.md" | cut -c1-64)
+      rec=$(awk -v n="$c" '$1 == n {print $2}' "$reg" 2>/dev/null)
+      if [ -n "$rec" ] && [ "$cur" = "$rec" ]; then
+        echo "  updated /$c to this Cortex's version"
+      else
+        mv "$repo/.claude/commands/$c.md" "$repo/.claude/commands/$c.md.bak-$stamp"
+        if [ -n "$rec" ]; then
+          echo "  kept your edited /$c as .claude/commands/$c.md.bak-$stamp"
+        else
+          echo "  kept the previous /$c as .claude/commands/$c.md.bak-$stamp (no record of whether you edited it)"
+        fi
+      fi
+    fi
+    cp "$CORTEX_HOME/commands/$c.md" "$repo/.claude/commands/$c.md"
+  done
+  for c in harvest evolve prune; do
+    printf '%s %s\n' "$c" "$(sha256sum < "$repo/.claude/commands/$c.md" | cut -c1-64)"
+  done > "$reg"
+
+  # one line at a time: a repo initialised by an older Cortex gets the new lines too
+  local line added=0
+  for line in ".evolve/runs/" ".evolve/candidate/"; do
+    if ! grep -qxF "$line" "$repo/.gitignore" 2>/dev/null; then
+      [ "$added" -eq 0 ] && { echo ""; echo "# cortex runtime"; } >> "$repo/.gitignore"
+      echo "$line" >> "$repo/.gitignore"; added=1
+    fi
+  done
+
+  echo "cortex initialised in $repo"
+  echo "  .evolve/            task + lesson store"
+  echo "  .claude/commands/   /harvest  /evolve  /prune"
+  echo "  .claude/rules/      path-scoped rules (loaded when Claude reads a matching file)"
+  echo ""
+  echo "Next: do some work, then run /harvest before you close the session."
+}
+
+cmd_status() {
+  local repo; repo="$(repo_root)"
+  local tasks lessons skills
+  tasks=$(find "$repo/.evolve/tasks" -maxdepth 1 -mindepth 1 -type d ! -name '_broken' 2>/dev/null | wc -l || true)
+  lessons=$(grep -c '^20' "$repo/.evolve/lessons.md" 2>/dev/null || true); lessons=${lessons:-0}
+  # `|| true`: under pipefail a missing folder fails the pipeline, and set -e
+  # would silently end `status` half-way (it did, for every new repo)
+  skills=$(find "$repo/.claude/skills" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l || true)
+  echo "repo     $repo"
+  echo "tasks    $tasks valid, $(find "$repo/.evolve/tasks/_broken" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l) quarantined"
+  echo "lessons  $lessons"
+  local rules; rules=$(find "$repo/.claude/rules" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l || true)
+  echo "live     $skills skill(s), $rules rule(s); $(find "$repo/.evolve/graveyard" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l) buried"
+  local sum
+  if sum=$(HARNESS summary 2>/dev/null); then
+    echo "$sum" | jq -r '"tiers    \(.tiers.always // 0) always-on, \(.tiers.gated // 0) path-gated, \(.tiers.rule // 0) rules, \(.tiers["rule-always"] // 0) path-less rules, \(.tiers.manual // 0) manual",
+                         "context  \(.always_on_chars)/\(.budget) chars always on" + (if .dead > 0 then "   !! \(.dead) item(s) with DEAD paths — run: cortex skills" else "" end),
+                         "harness  \(.hash)"'
+  fi
+  local model
+  model=$(jq -r '.model // ""' "$repo/.evolve/config.json" 2>/dev/null)
+  echo "model    ${model:-(not pinned — rollouts use the CLI default)}"
+  # .evolve/ablation/ only exists in repos set up by an older Cortex, where
+  # /prune moved live skills out of .claude/skills/ to measure them.
+  local parked
+  parked=$(find "$repo/.evolve/ablation" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l || true)
+  if [ "$parked" -gt 0 ]; then
+    echo ""
+    echo "  !! $parked SKILL(S) PARKED FOR ABLATION AND NOT RESTORED:"
+    find "$repo/.evolve/ablation" -maxdepth 1 -mindepth 1 -type d -printf '     %f\n' 2>/dev/null
+    echo "     restore with: cortex restore <name>"
+  fi
+  echo ""
+  echo "last cycle:"
+  tail -n 12 "$repo/.evolve/journal.md" 2>/dev/null | sed 's/^/  /'
+}
+
+cmd_config() {            # cortex config [--check]
+  local repo; repo="$(repo_root)"
+  if [ "${1:-}" = "--check" ]; then
+    "$CORTEX_HOME/bin/compile-config.py" "$repo" --quiet >/dev/null && echo "config.yaml is valid"
+  else
+    "$CORTEX_HOME/bin/compile-config.py" "$repo" && jq . "$repo/.evolve/config.json"
+  fi
+}
+
+# stop_after_barren_cycles was prose-only, so nothing enforced it. A loop that
+# keeps finding nothing is a loop quietly spending money every week.
+cmd_cycle() {             # cortex cycle KEEP|KILL <name> | BARREN
+  local repo v="${1:-}" name="${2:-}"; repo="$(repo_root)"
+  case "$v" in KEEP|KILL|BARREN) ;; *) die "usage: cortex cycle KEEP|KILL <name> | BARREN" ;; esac
+  [ -z "$name" ] || valid_name "$name"
+  local st="$repo/.evolve/state.json" limit streak
+  [ -f "$st" ] || echo '{"barren_streak":0,"cycles":0}' > "$st"
+  # a cycle is recorded once: replaying the previous cycle's ending (it happened)
+  # must not count a second KEEP for the same candidate
+  if [ -n "$name" ] && [ "$(jq -r '"\(.last // "")/\(.last_name // "")"' "$st")" = "$v/$name" ]; then
+    die "cycle $v for $name is already recorded — this cycle has ended; start a new one"
+  fi
+  # the journal is the permanent record of why the skills folder looks the way it
+  # does, so a KEEP or KILL is recorded only once its entry is written (a model once
+  # skipped it). One more "## ... <name>" heading than this name's recorded cycles.
+  local journal="$repo/.evolve/journal.md"
+  if [ -n "$name" ]; then
+    local have want
+    have=$(grep -cE "^## .*\b${name}\b" "$journal" 2>/dev/null || true)
+    want=$(( $(jq -r --arg n "$name" '(.names // {})[$n] // (if (.last_name // "") == $n then 1 else 0 end)' "$st") + 1 ))
+    [ "${have:-0}" -ge "$want" ] || die "write this cycle's journal entry first: a NEW '## <date>  $name' heading in .evolve/journal.md (D5). $name has $((want - 1)) recorded cycle(s) and ${have:-0} heading(s) — add one below the others, never edit an older entry into this one"
+  fi
+  if [ "$v" = "BARREN" ]; then
+    printf '\n## %s  (barren)\n\nnothing to learn: no theme cleared the bar\n' "$(date +%Y-%m-%d)" >> "$journal"
+  fi
+  limit=$(jq -r '.stop_after_barren_cycles' "$repo/.evolve/config.json")
+  if [ "$v" = "KEEP" ]; then streak=0; else streak=$(( $(jq -r '.barren_streak' "$st") + 1 )); fi
+  jq --argjson s "$streak" --arg v "$v" --arg t "$(date -Is)" --arg n "$name" \
+     '(.names // (if (.last_name // "") != "" then {(.last_name): 1} else {} end)) as $names
+      | .barren_streak=$s | .cycles=(.cycles+1) | .last=$v | .last_at=$t | .last_name=$n
+      | .names = (if $n == "" then $names else ($names + {($n): (($names[$n] // 0) + 1)}) end)' \
+     "$st" > "$st.tmp" && mv "$st.tmp" "$st"
+  echo "cycle recorded: $v (barren streak $streak/$limit)"
+  if [ "$streak" -ge "$limit" ]; then
+    echo "STOP: $streak cycles without a KEEP. Either the tasks stopped discriminating," >&2
+    echo "      the skills folder is already good, or nothing is being harvested." >&2
+    return 2
+  fi
+  return 0
+}
+
+# Both moves refuse to overwrite. A plain `mv src dst` onto an existing
+# directory nests src INSIDE dst, so v2 of a skill buried next to v1 would
+# vanish into graveyard/<name>/<name>/, and a promoted skill with a live
+# namesake would never load.
+#
+# Names are shared by both tiers: a skill and a rule with the same name would
+# make "which one fired" unanswerable, so neither move may create that.
+cand_kind() {             # candidate dir -> skill | rule ; dies if neither/both
+  local d="$1" s=0 r=0
+  [ -f "$d/SKILL.md" ] && s=1
+  [ -f "$d/RULE.md" ] && r=1
+  [ "$s$r" = "10" ] && { echo skill; return; }
+  [ "$s$r" = "01" ] && { echo rule; return; }
+  die "candidate $(basename "$d") must contain exactly one of SKILL.md or RULE.md"
+}
+
+live_kind() {             # name -> skill | rule | none ; dies if both
+  local repo="$1" name="$2" s=0 r=0
+  [ -e "$repo/.claude/skills/$name" ] && s=1
+  [ -e "$repo/.claude/rules/$name.md" ] && r=1
+  case "$s$r" in
+    10) echo skill ;; 01) echo rule ;; 00) echo none ;;
+    *)  die "'$name' is both a live skill and a live rule — fix that first (cortex skills)" ;;
+  esac
+}
+
+# A screen only decides whether the confirm is worth paying for (k=2, the
+# theme's tasks); a candidate is kept by a CONFIRM over every task, or by a
+# /prune swap that lost nothing. Refuse anything else: a model reading
+# numbers by hand once promoted straight from a screen.
+measured_keep() {         # $1 = repo, $2 = name ; sets PROMOTE_WHY on refusal
+  local f="" x v
+  while IFS= read -r x; do
+    if jq -e --arg n "$2" 'select(.event == "start" and .candidate == $n)' "$x" >/dev/null 2>&1; then
+      f="$x"; break
+    fi
+  done < <(ls -1 "$1/.evolve/runs/"*.jsonl 2>/dev/null | sort -r)
+  if [ -z "$f" ]; then PROMOTE_WHY="no sweep has measured it"; return 1; fi
+  v=$("$CORTEX_HOME/bin/score.sh" "$f" 2>/dev/null | jq -r '"\(.mode) \(.phase) \(.verdict)"' 2>/dev/null)
+  case "$v" in
+    "add confirm KEEP"|"add recheck KEEP"|"replace "*" ACCEPT") return 0 ;;
+  esac
+  PROMOTE_WHY="its newest sweep ($(basename "$f")) says: ${v:-unreadable}"
+  return 1
+}
+
+cmd_promote() {           # cortex promote <name> [--force]  — candidate -> live
+  local repo name="" force=0 kind live a; repo="$(repo_root)"
+  for a in "$@"; do case "$a" in --force) force=1 ;; *) name="$a" ;; esac; done
+  valid_name "$name"
+  [ -d "$repo/.evolve/candidate/$name" ] || die "no such candidate: $name"
+  kind=$(cand_kind "$repo/.evolve/candidate/$name")
+  live=$(live_kind "$repo" "$name")
+  [ "$live" = "none" ] || \
+    die "a live $live is already called $name — bury it first: cortex bury $name --from live"
+  if [ "$kind" = "rule" ]; then
+    local extra; extra=$(find "$repo/.evolve/candidate/$name" -mindepth 1 ! -name RULE.md | head -1)
+    [ -z "$extra" ] || die "a rule is a single file; remove ${extra#"$repo"/} first"
+  fi
+  if [ "$force" -eq 0 ] && ! measured_keep "$repo" "$name"; then
+    die "refusing to promote $name: $PROMOTE_WHY. Only a CONFIRM sweep (or its recheck) that says KEEP, or a /prune swap that says ACCEPT, makes a candidate live. A screen that passes says CONFIRM: run the confirm (cortex promote --force skips this check)."
+  fi
+  if [ "$kind" = "skill" ]; then
+    mkdir -p "$repo/.claude/skills"
+    mv "$repo/.evolve/candidate/$name" "$repo/.claude/skills/$name"
+  else
+    mkdir -p "$repo/.claude/rules"
+    mv "$repo/.evolve/candidate/$name/RULE.md" "$repo/.claude/rules/$name.md"
+    rmdir "$repo/.evolve/candidate/$name"
+  fi
+  echo "promoted $name ($kind)"
+}
+
+cmd_bury() {              # cortex bury <name> --from candidate|live [--why "..."]
+  local repo name="" from="" why="" src dest kind; repo="$(repo_root)"
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --from) from="${2:-}"; shift 2 ;;
+      --why)  why="${2:-}"; shift 2 ;;
+      -*)     die "unknown option: $1" ;;
+      *)      name="$1"; shift ;;
+    esac
+  done
+  valid_name "$name"
+  case "$from" in
+    candidate) src="$repo/.evolve/candidate/$name"
+               [ -d "$src" ] || die "no such candidate skill: $name"
+               # a malformed candidate (neither or both files) must still be
+               # buryable — that is how it gets cleaned up
+               if [ -f "$src/SKILL.md" ] && [ ! -f "$src/RULE.md" ]; then kind=skill
+               elif [ -f "$src/RULE.md" ] && [ ! -f "$src/SKILL.md" ]; then kind=rule
+               else kind=malformed; fi ;;
+    live)      kind=$(live_kind "$repo" "$name")
+               case "$kind" in
+                 skill) src="$repo/.claude/skills/$name"; [ -d "$src" ] || die "no such live skill: $name" ;;
+                 rule)  src="$repo/.claude/rules/$name.md" ;;
+                 *)     die "no such live skill or rule: $name" ;;
+               esac ;;
+    *)         die "usage: cortex bury <name> --from candidate|live [--why \"reason\"]" ;;
+  esac
+  mkdir -p "$repo/.evolve/graveyard"
+  dest="$repo/.evolve/graveyard/$name"
+  [ -e "$dest" ] && dest="$dest-$(date +%Y%m%dT%H%M%S)"
+  [ -e "$dest" ] && die "graveyard entry exists: ${dest#"$repo"/} — retry in a second"
+  if [ -f "$src" ]; then            # a live rule is one file: bury it as <dest>/RULE.md
+    mkdir "$dest"
+    mv "$src" "$dest/RULE.md"
+  else
+    mv "$src" "$dest"
+  fi
+  printf '# Buried %s\n\nfrom: %s\nkind: %s\nwhy:  %s\n' "$(date -Is)" "$from" "$kind" "${why:-(no reason given)}" > "$dest/BURIED.md"
+  echo "buried $name ($kind) -> ${dest#"$repo"/}"
+}
+
+cmd_restore() {           # cortex restore <skill>  — legacy: undo an old-style park
+  local repo name="${1:-}"; repo="$(repo_root)"
+  valid_name "$name"
+  [ -d "$repo/.evolve/ablation/$name" ] || die "not parked: $name"
+  [ -e "$repo/.claude/skills/$name" ] && die "already live: $name"
+  [ -e "$repo/.claude/rules/$name.md" ] && die "a live rule is already called $name"
+  mv "$repo/.evolve/ablation/$name" "$repo/.claude/skills/$name"
+  echo "restored $name"
+}
+
+cmd_baseline() {          # cortex baseline --model <id>
+  local repo model=""
+  repo="$(repo_root)"
+  while [ $# -gt 0 ]; do
+    case "$1" in --model) model="$2"; shift 2 ;; *) shift ;; esac
+  done
+  [ -n "$model" ] || model=$(jq -r '.model // ""' "$repo/.evolve/config.json")
+  [ -n "$model" ] || model="unspecified"
+  local phase; phase=$("$CORTEX_HOME/bin/score.sh" 2>/dev/null | jq -r '.phase // ""' 2>/dev/null)
+  [ "$phase" != "screen" ] || die "the newest results are a screen (the theme's tasks at k=2): a baseline comes from a confirm, which measures every task at k_confirm"
+  # skills + rules + harness_files, paths included: moving a skill into a rule,
+  # or editing CLAUDE.md, is a different harness and must invalidate the baseline
+  local hash
+  hash=$(HARNESS hash) || die "cannot hash the harness"
+  # `live` is the arm that is the harness NOW: cand after a KEEP (promoted) or
+  # an ACCEPT (the removal happened), base otherwise. `failing` is what /evolve
+  # reads to pick screen tasks; no one should have to work out which arm is live.
+  "$CORTEX_HOME/bin/score.sh" \
+    | jq --arg m "$model" --arg h "$hash" --arg d "$(date -Is)" '
+        (if (.verdict == "KEEP" or .verdict == "ACCEPT") then "cand" else "base" end) as $arm
+        | {model:$m, skills_hash:$h, hash_v:2, measured:$d, live_arm:$arm,
+           live:    ((.per_task // []) | map({(.task): .[$arm]}) | add // {}),
+           failing: [ (.per_task // [])[] | select(.[$arm] < 1) | .task ],
+           scores:.}' \
+    > "$repo/.evolve/baseline.json"
+  echo "baseline written (model=$model skills_hash=$hash)"
+}
+
+cmd_skills() {            # cortex skills [--check] [--candidate n] [--replace "..."] [--tasks "..."] [--quiet]
+  repo_root >/dev/null
+  HARNESS check "$@"
+}
+
+cmd_clean() {             # cortex clean [--runs]   (--runs also deletes results)
+  local repo wt; repo="$(repo_root)"
+  wt=$(jq -r '.sandbox_root // .worktree_root // empty' "$repo/.evolve/config.json")
+  [ -n "$wt" ] || die "worktree_root unset in config.json"
+  # Safety no longer comes from a /tmp allowlist (snap docker cannot see /tmp):
+  # it comes from only ever deleting our own named subdirectories below.
+  case "$wt" in /|/tmp|/var|/home|/usr|/etc|"$HOME") die "refusing: sandbox_root is too shallow: $wt" ;; esac
+  [ "${wt#/}" != "$wt" ] || die "sandbox_root must be an absolute path: $wt"
+  wt="$wt/$(printf '%s' "$repo" | sha256sum | cut -c1-12)"    # this repository's own folder
+  rm -rf "$wt"/work "$wt"/work-* "$wt"/tmp-* "$wt"/load-* "$wt"/base "$wt"/cand "$wt"/preflight "$wt"/preflight-* \
+         "$wt"/harness-base "$wt"/harness-cand "$wt"/tasks "$wt"/queue \
+         "$wt"/rollout.out "$wt"/rollout-*.out 2>/dev/null
+  git -C "$repo" worktree prune 2>/dev/null || true
+  if [ "${1:-}" = "--runs" ]; then
+    rm -f "$repo/.evolve/runs/"*.jsonl "$repo/.evolve/runs/"*.log 2>/dev/null || true
+    echo "cleaned (sandboxes + results)"
+  else
+    echo "cleaned (sandboxes; results kept — use --runs to delete them)"
+  fi
+}
+
+case "${1:-}" in
+  init)      shift; cmd_init "$@" ;;
+  status)    cmd_status ;;
+  doctor)    cmd_doctor ;;
+  config)    shift; cmd_config "$@" ;;
+  cycle)     shift; cmd_cycle "$@" ;;
+  baseline)  shift; cmd_baseline "$@" ;;
+  skills)    shift; cmd_skills "$@" ;;
+  harness)   shift; exec python3 "$CORTEX_HOME/bin/harness.py" "$@" ;;
+  task)      shift; repo_root >/dev/null; exec python3 "$CORTEX_HOME/bin/harness.py" task "$@" ;;
+  phase)     shift; repo_root >/dev/null; exec python3 "$CORTEX_HOME/bin/harness.py" evolve-phase "$@" ;;
+  usage)     shift; repo_root >/dev/null; exec python3 "$CORTEX_HOME/bin/harness.py" usage "$@" ;;
+  prune)     shift; repo_root >/dev/null; exec python3 "$CORTEX_HOME/bin/harness.py" prune "$@" ;;
+  promote)   shift; cmd_promote "$@" ;;
+  bury)      shift; cmd_bury "$@" ;;
+  restore)   shift; cmd_restore "$@" ;;
+  clean)     shift; cmd_clean "$@" ;;
+  preflight) shift; exec "$CORTEX_HOME/bin/preflight.sh" "$@" ;;
+  sweep)     shift; exec "$CORTEX_HOME/bin/sweep.sh" "$@" ;;
+  score)     shift; exec "$CORTEX_HOME/bin/score.sh" "$@" ;;
+  ""|-h|--help|help) usage ;;
+  *) die "unknown command: $1" ;;
+esac

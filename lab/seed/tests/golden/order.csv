@@ -1,0 +1,4 @@
+order,date,customer,sku,qty,unit_price,line_total
+A-1001,2026-09-02,Rossi SRL,MUG-001,2,8.50,17.00
+A-1001,2026-09-02,Rossi SRL,TEA-001,1,5.20,5.20
+A-1002,2026-09-05,Studio Verde,LMP-001,1,39.00,39.00

@@ -1,0 +1,11 @@
+10:14:32  round 7: starting
+10:25:14  round 7: done — 
+10:25:14  round 8: starting
+11:12:14  round 9: starting
+11:41:42  round 9: done — 
+11:41:42  round 10: starting
+11:51:12  round 10: done — 
+11:51:12  benchmark: prepare (holdout scenarios onto the final code)
+11:51:13  benchmark: run (both arms, k=3)
+12:07:24  benchmark: report
+12:07:24  all done

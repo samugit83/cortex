@@ -1,0 +1,4 @@
+The user's ORIGINAL request, copied verbatim from the session.
+
+Do not paraphrase it, do not clean it up, do not add hints you only knew
+afterwards. The task is to reproduce what the agent actually faced.

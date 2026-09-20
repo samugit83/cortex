@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# run-rounds — the rest of the lab, unattended.
+#
+#   bin/run-rounds 7 10      rounds 7..10 (sessions + /evolve + my check), then
+#                            the benchmark: prepare, run both arms, write the report
+#
+# Each round is `bin/autopilot round N`: real Claude Code sessions in cortex-lab,
+# then /evolve until its cycle ends. Between rounds the barren streak is reset —
+# it means "three cycles found nothing new", and a round that just harvested new
+# tasks and lessons makes that false. Everything else is left to Cortex.
+set -uo pipefail
+HERE="$(cd "$(dirname "$0")" && pwd)"
+cd "$HERE/.."
+REPO="${LAB_REPO:-$(cd "$HERE/../.." && pwd)/cortex-lab}"
+from=${1:-7}; to=${2:-10}
+
+log() { printf '%s  %s\n' "$(date +%H:%M:%S)" "$*" | tee -a state/run-rounds.log; }
+
+# never start on top of a round that is still running
+while pgrep -f 'bin/autopilot round' >/dev/null; do sleep 20; done
+
+for r in $(seq "$from" "$to"); do
+  python3 - "$REPO" <<'P'
+import json, sys
+p = sys.argv[1] + "/.evolve/state.json"
+st = json.load(open(p)); st["barren_streak"] = 0
+json.dump(st, open(p, "w"), indent=1)
+P
+  log "round $r: starting"
+  bin/autopilot round "$r" >> state/autopilot-chain.out 2>&1
+  bin/roundcheck "$r" > "results/round-$(printf '%02d' "$r")-check.md" 2>&1
+  log "round $r: done — $(git -C "$REPO" log --oneline -1 | cut -c1-60)"
+done
+
+log "benchmark: prepare (holdout scenarios onto the final code)"
+python3 bench/bench.py prepare >> state/bench.out 2>&1 || log "benchmark: prepare FAILED"
+log "benchmark: run (both arms, k=3)"
+python3 bench/bench.py run --jobs auto >> state/bench.out 2>&1 || log "benchmark: some rollouts did not run — see state/bench.out"
+log "benchmark: report"
+python3 bench/bench.py report >> state/bench.out 2>&1 || log "benchmark: report FAILED"
+log "all done"

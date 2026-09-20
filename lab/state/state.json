@@ -1,0 +1,1115 @@
+{
+  "built": "2026-09-19T11:36:40+02:00",
+  "current": null,
+  "initial": "5c4340c2eb06c378abd32dcf704b718db62c816b",
+  "lessons_at": 17,
+  "scenarios": {
+    "A01": {
+      "attempts": [
+        {
+          "t": "2026-09-19T15:02:04+02:00",
+          "verdict": "A"
+        },
+        {
+          "t": "2026-09-19T15:02:15+02:00",
+          "verdict": "ok"
+        }
+      ],
+      "base": "556d19d4369426711a87ad792017a20f7952f765",
+      "commit": "fb57f3359bf378d973f0fd3b6dfb233a72980453",
+      "corrections": 1,
+      "done": "2026-09-19T15:02:48+02:00",
+      "injected": "2026-09-19T15:01:42+02:00",
+      "lessons_added": 1,
+      "lessons_before": 2,
+      "oracle": "ok",
+      "quarantined_now": [],
+      "round": 2,
+      "status": "done",
+      "tasks": [
+        "04"
+      ],
+      "tasks_before": [
+        "01",
+        "02",
+        "03"
+      ],
+      "verified": true,
+      "wrong_base": []
+    },
+    "A02": {
+      "attempts": [
+        {
+          "t": "2026-09-19T15:03:16+02:00",
+          "verdict": "A"
+        },
+        {
+          "t": "2026-09-19T15:03:30+02:00",
+          "verdict": "ok"
+        }
+      ],
+      "base": "d905d6e45834960d1ddce30f9e804f8dc455c672",
+      "commit": "797f853173b90054f544df2c2a8ad12e5823cc81",
+      "corrections": 1,
+      "done": "2026-09-19T15:04:22+02:00",
+      "injected": "2026-09-19T15:02:48+02:00",
+      "lessons_added": 1,
+      "lessons_before": 3,
+      "oracle": "ok",
+      "quarantined_now": [],
+      "round": 2,
+      "status": "done",
+      "tasks": [
+        "05"
+      ],
+      "tasks_before": [
+        "01",
+        "02",
+        "03",
+        "04"
+      ],
+      "verified": true,
+      "wrong_base": []
+    },
+    "A03": {
+      "attempts": [
+        {
+          "t": "2026-09-19T15:04:59+02:00",
+          "verdict": "A"
+        },
+        {
+          "t": "2026-09-19T15:05:10+02:00",
+          "verdict": "ok"
+        }
+      ],
+      "base": "0a342beb922c7b6b4a3cd15e4f6cd964a26e88a5",
+      "commit": "8a41183336adfc510bc58d87a49499888fb0187f",
+      "corrections": 1,
+      "done": "2026-09-19T15:05:47+02:00",
+      "injected": "2026-09-19T15:04:22+02:00",
+      "lessons_added": 1,
+      "lessons_before": 4,
+      "oracle": "ok",
+      "quarantined_now": [],
+      "round": 2,
+      "status": "done",
+      "tasks": [
+        "06"
+      ],
+      "tasks_before": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05"
+      ],
+      "verified": true,
+      "wrong_base": []
+    },
+    "A04": {
+      "attempts": [
+        {
+          "t": "2026-09-20T10:09:24+02:00",
+          "verdict": "A"
+        },
+        {
+          "t": "2026-09-20T10:09:34+02:00",
+          "verdict": "ok"
+        }
+      ],
+      "base": "66e07a25e01869ce22c7b15616c804acfe924f67",
+      "commit": "aa890a628160feacfa1e6b6131a180740c25cc5b",
+      "corrections": 1,
+      "done": "2026-09-20T10:10:00+02:00",
+      "injected": "2026-09-20T10:09:00+02:00",
+      "lessons_added": 1,
+      "lessons_before": 12,
+      "oracle": "ok",
+      "quarantined_now": [
+        "07"
+      ],
+      "round": 6,
+      "status": "done",
+      "tasks": [
+        "17"
+      ],
+      "tasks_before": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06",
+        "08",
+        "09",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16"
+      ],
+      "verified": true,
+      "wrong_base": []
+    },
+    "A05": {
+      "attempts": [
+        {
+          "t": "2026-09-20T10:15:08+02:00",
+          "verdict": "ok"
+        }
+      ],
+      "base": "b4afcad600f17b3462eeec48ba23220a601fdaab",
+      "commit": "0e0755190ebdda54bb979c1398012f2a1d4a4fed",
+      "corrections": 0,
+      "done": "2026-09-20T10:15:37+02:00",
+      "injected": "2026-09-20T10:14:32+02:00",
+      "lessons_added": 0,
+      "lessons_before": 13,
+      "oracle": "ok",
+      "quarantined_now": [
+        "07"
+      ],
+      "round": 7,
+      "status": "done",
+      "tasks": [
+        "20"
+      ],
+      "tasks_before": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06",
+        "08",
+        "09",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "19"
+      ],
+      "verified": true,
+      "wrong_base": []
+    },
+    "A06": {
+      "attempts": [
+        {
+          "t": "2026-09-20T11:12:46+02:00",
+          "verdict": "ok"
+        }
+      ],
+      "base": "35c9d7918944db6e39fbff12867bce6844b348b6",
+      "commit": "ed54eb83cdaa94c64d45dea3a972aa3d03fba445",
+      "corrections": 0,
+      "done": "2026-09-20T11:13:25+02:00",
+      "injected": "2026-09-20T11:12:14+02:00",
+      "lessons_added": 0,
+      "lessons_before": 16,
+      "oracle": "ok",
+      "quarantined_now": [
+        "07"
+      ],
+      "round": 9,
+      "status": "done",
+      "tasks": [
+        "25"
+      ],
+      "tasks_before": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06",
+        "08",
+        "09",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "19",
+        "20",
+        "21",
+        "22",
+        "23",
+        "24"
+      ],
+      "verified": true,
+      "wrong_base": []
+    },
+    "B01": {
+      "attempts": [
+        {
+          "t": "2026-09-19T12:47:46+02:00",
+          "verdict": "B"
+        },
+        {
+          "t": "2026-09-19T12:52:40+02:00",
+          "verdict": "ok"
+        }
+      ],
+      "base": "2b5173a457366e8812013c2a5337866d34407145",
+      "commit": "df1626045984e5902d1ba857ceef7f4110a03656",
+      "corrections": 1,
+      "done": "2026-09-19T13:17:44+02:00",
+      "injected": "2026-09-19T12:46:11+02:00",
+      "lessons_added": 1,
+      "lessons_before": 0,
+      "oracle": "ok",
+      "quarantined_now": [],
+      "round": 1,
+      "status": "done",
+      "tasks": [
+        "01"
+      ],
+      "tasks_before": [],
+      "verified": true,
+      "wrong_base": []
+    },
+    "B02": {
+      "attempts": [
+        {
+          "t": "2026-09-19T13:19:35+02:00",
+          "verdict": "ok"
+        }
+      ],
+      "base": "ea5ac0cd5eee4e2322521ad80809ddb219161c09",
+      "commit": "9d3959d55f2ec3a05ee320dccad31a6e19550eb4",
+      "corrections": 0,
+      "done": "2026-09-19T13:25:15+02:00",
+      "injected": "2026-09-19T13:18:41+02:00",
+      "lessons_added": 0,
+      "lessons_before": 1,
+      "oracle": "ok",
+      "quarantined_now": [],
+      "round": 1,
+      "status": "done",
+      "tasks": [
+        "02"
+      ],
+      "tasks_before": [
+        "01"
+      ],
+      "verified": true,
+      "wrong_base": []
+    },
+    "B03": {
+      "attempts": [
+        {
+          "t": "2026-09-19T13:35:51+02:00",
+          "verdict": "B"
+        },
+        {
+          "t": "2026-09-19T13:40:15+02:00",
+          "verdict": "ok"
+        }
+      ],
+      "base": "4f75953d31c599ec988f840255d73eb0b4b52f0a",
+      "commit": "1106c93f4dbb34b49947facc97e0e825876a9b57",
+      "corrections": 1,
+      "done": "2026-09-19T13:42:11+02:00",
+      "injected": "2026-09-19T13:32:47+02:00",
+      "late_harvest": "2026-09-19T14:01:19+02:00",
+      "lessons_added": 1,
+      "lessons_before": 1,
+      "oracle": "ok",
+      "quarantined_now": [],
+      "round": 1,
+      "status": "done",
+      "tasks": [
+        "03"
+      ],
+      "tasks_before": [
+        "01",
+        "02"
+      ],
+      "verified": true,
+      "wrong_base": []
+    },
+    "B04": {
+      "attempts": [
+        {
+          "t": "2026-09-20T10:10:33+02:00",
+          "verdict": "ok"
+        }
+      ],
+      "base": "ccb74dbd8cdea36ffc8b73de5a6204fe538c3047",
+      "commit": "8f7c334c070245f106e19a0ff380a2ee3d0545d7",
+      "corrections": 0,
+      "done": "2026-09-20T10:10:59+02:00",
+      "injected": "2026-09-20T10:10:00+02:00",
+      "lessons_added": 0,
+      "lessons_before": 13,
+      "oracle": "ok",
+      "quarantined_now": [
+        "07"
+      ],
+      "round": 6,
+      "status": "done",
+      "tasks": [
+        "18"
+      ],
+      "tasks_before": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06",
+        "08",
+        "09",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17"
+      ],
+      "verified": true,
+      "wrong_base": []
+    },
+    "B05": {
+      "attempts": [
+        {
+          "t": "2026-09-20T10:16:23+02:00",
+          "verdict": "B"
+        },
+        {
+          "t": "2026-09-20T10:16:42+02:00",
+          "verdict": "ok"
+        }
+      ],
+      "base": "21acd2b7d032509f43cf97fda24b44705934bf29",
+      "commit": "797fab5ee2a769b153f035ae61278e2fd7a824dc",
+      "corrections": 1,
+      "done": "2026-09-20T10:17:27+02:00",
+      "injected": "2026-09-20T10:15:37+02:00",
+      "lessons_added": 1,
+      "lessons_before": 13,
+      "oracle": "ok",
+      "quarantined_now": [
+        "07"
+      ],
+      "round": 7,
+      "status": "done",
+      "tasks": [
+        "21"
+      ],
+      "tasks_before": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06",
+        "08",
+        "09",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "19",
+        "20"
+      ],
+      "verified": true,
+      "wrong_base": []
+    },
+    "B06": {
+      "attempts": [
+        {
+          "t": "2026-09-20T11:15:10+02:00",
+          "verdict": "ok"
+        }
+      ],
+      "base": "09af348a4407647eb383a3773de36b07be1c3845",
+      "commit": "5112f66e8ee7f2cec1687ee77ed40d5027dc396e",
+      "corrections": 0,
+      "done": "2026-09-20T11:15:38+02:00",
+      "injected": "2026-09-20T11:13:25+02:00",
+      "lessons_added": 0,
+      "lessons_before": 16,
+      "oracle": "ok",
+      "quarantined_now": [
+        "07"
+      ],
+      "round": 9,
+      "status": "done",
+      "tasks": [
+        "26"
+      ],
+      "tasks_before": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06",
+        "08",
+        "09",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "19",
+        "20",
+        "21",
+        "22",
+        "23",
+        "24",
+        "25"
+      ],
+      "verified": true,
+      "wrong_base": []
+    },
+    "C01": {
+      "attempts": [
+        {
+          "t": "2026-09-19T16:26:19+02:00",
+          "verdict": "C"
+        },
+        {
+          "t": "2026-09-19T16:26:44+02:00",
+          "verdict": "ok"
+        }
+      ],
+      "base": "3f8319a3dae30540036bdea407dd99ff6db1620b",
+      "commit": "245b638840979c09b80c34f55efc717e85e8061f",
+      "corrections": 1,
+      "done": "2026-09-19T16:29:00+02:00",
+      "injected": "2026-09-19T16:25:38+02:00",
+      "late_harvest": "2026-09-19T16:42:53+02:00",
+      "lessons_added": 2,
+      "lessons_before": 5,
+      "oracle": "ok",
+      "quarantined_now": [],
+      "round": 3,
+      "status": "done",
+      "tasks": [
+        "09"
+      ],
+      "tasks_before": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06"
+      ],
+      "verified": true,
+      "wrong_base": []
+    },
+    "C02": {
+      "attempts": [
+        {
+          "t": "2026-09-19T16:29:50+02:00",
+          "verdict": "C"
+        },
+        {
+          "t": "2026-09-19T16:30:12+02:00",
+          "verdict": "ok"
+        }
+      ],
+      "base": "f912249edf507a36bbc1d5ae84a0366ff7386b70",
+      "commit": "8809bdff9b797423c54cb5b3441e4618bbcc6706",
+      "corrections": 1,
+      "done": "2026-09-19T16:33:31+02:00",
+      "injected": "2026-09-19T16:29:00+02:00",
+      "late_harvest": "2026-09-19T16:43:29+02:00",
+      "lessons_added": 1,
+      "lessons_before": 6,
+      "oracle": "ok",
+      "quarantined_now": [
+        "07"
+      ],
+      "round": 3,
+      "status": "done",
+      "tasks": [
+        "10"
+      ],
+      "tasks_before": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06"
+      ],
+      "verified": true,
+      "wrong_base": []
+    },
+    "C03": {
+      "attempts": [
+        {
+          "t": "2026-09-19T16:34:22+02:00",
+          "verdict": "C"
+        },
+        {
+          "t": "2026-09-19T16:34:46+02:00",
+          "verdict": "ok"
+        }
+      ],
+      "base": "b9a4acd5a689e375fe3b0bb5d805e78fc99c2c7f",
+      "commit": "7213abeb4da05e07c64b6ca88748899df476fb7c",
+      "corrections": 1,
+      "done": "2026-09-19T16:35:27+02:00",
+      "injected": "2026-09-19T16:33:31+02:00",
+      "late_harvest": "2026-09-19T16:43:45+02:00",
+      "lessons_added": 1,
+      "lessons_before": 6,
+      "oracle": "ok",
+      "quarantined_now": [
+        "07"
+      ],
+      "round": 3,
+      "status": "done",
+      "tasks": [
+        "08"
+      ],
+      "tasks_before": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06"
+      ],
+      "verified": true,
+      "wrong_base": []
+    },
+    "C04": {
+      "attempts": [
+        {
+          "t": "2026-09-20T10:12:09+02:00",
+          "verdict": "ok"
+        }
+      ],
+      "base": "d341029ec792ef001f24b3e2d75976fe4ab19920",
+      "commit": "17f1f390b1e69cd24ef1eda0c00e9f57b8c70e50",
+      "corrections": 0,
+      "done": "2026-09-20T10:12:57+02:00",
+      "injected": "2026-09-20T10:10:59+02:00",
+      "lessons_added": 0,
+      "lessons_before": 13,
+      "oracle": "ok",
+      "quarantined_now": [
+        "07"
+      ],
+      "round": 6,
+      "status": "done",
+      "tasks": [
+        "19"
+      ],
+      "tasks_before": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06",
+        "08",
+        "09",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18"
+      ],
+      "verified": true,
+      "wrong_base": []
+    },
+    "C05": {
+      "attempts": [
+        {
+          "t": "2026-09-20T10:26:10+02:00",
+          "verdict": "C"
+        },
+        {
+          "t": "2026-09-20T10:26:31+02:00",
+          "verdict": "ok"
+        }
+      ],
+      "base": "6bd3c47662bcbb0d5e09cb55946652ea60582d5d",
+      "commit": "264d0250b37ea03e587e0b3525433a1e68314ac8",
+      "corrections": 1,
+      "done": "2026-09-20T10:27:12+02:00",
+      "injected": "2026-09-20T10:25:14+02:00",
+      "lessons_added": 1,
+      "lessons_before": 15,
+      "oracle": "ok",
+      "quarantined_now": [
+        "07"
+      ],
+      "round": 8,
+      "status": "done",
+      "tasks": [
+        "23"
+      ],
+      "tasks_before": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06",
+        "08",
+        "09",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "19",
+        "20",
+        "21",
+        "22"
+      ],
+      "verified": true,
+      "wrong_base": []
+    },
+    "C06": {
+      "attempts": [
+        {
+          "t": "2026-09-20T11:43:10+02:00",
+          "verdict": "tampered"
+        },
+        {
+          "t": "2026-09-20T11:43:35+02:00",
+          "verdict": "ok"
+        }
+      ],
+      "base": "867e5f11e274b0b346501ceb38e8de83c1a740a1",
+      "commit": "9a5fa1cc5f0292299c2c6cb86d380b5513ececd9",
+      "corrections": 1,
+      "done": "2026-09-20T11:44:46+02:00",
+      "injected": "2026-09-20T11:41:42+02:00",
+      "lessons_added": 1,
+      "lessons_before": 16,
+      "oracle": "ok",
+      "quarantined_now": [
+        "07"
+      ],
+      "round": 10,
+      "status": "done",
+      "tasks": [
+        "27"
+      ],
+      "tasks_before": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06",
+        "08",
+        "09",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "19",
+        "20",
+        "21",
+        "22",
+        "23",
+        "24",
+        "25",
+        "26"
+      ],
+      "verified": true,
+      "wrong_base": []
+    },
+    "D01": {
+      "attempts": [
+        {
+          "t": "2026-09-20T09:51:27+02:00",
+          "verdict": "ok"
+        }
+      ],
+      "base": "e98f2e932bc752ad14f106c6d4604ac77cd38cfa",
+      "commit": "4ee8030ac0f0c38b1b2a8c007007c05e0bd58ca7",
+      "corrections": 0,
+      "done": "2026-09-20T09:51:57+02:00",
+      "injected": "2026-09-20T09:50:59+02:00",
+      "lessons_added": 0,
+      "lessons_before": 12,
+      "oracle": "ok",
+      "quarantined_now": [
+        "07"
+      ],
+      "round": 5,
+      "status": "done",
+      "tasks": [
+        "14"
+      ],
+      "tasks_before": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06",
+        "08",
+        "09",
+        "10",
+        "11",
+        "12",
+        "13"
+      ],
+      "verified": true,
+      "wrong_base": []
+    },
+    "D02": {
+      "attempts": [
+        {
+          "t": "2026-09-20T09:52:22+02:00",
+          "verdict": "ok"
+        }
+      ],
+      "base": "b03da3b1af0a939efe73bf12271736c585b02a73",
+      "commit": "7ccca2b3a1962bba1841743cb4df5ba5cfaa70b6",
+      "corrections": 0,
+      "done": "2026-09-20T09:52:53+02:00",
+      "injected": "2026-09-20T09:51:57+02:00",
+      "lessons_added": 0,
+      "lessons_before": 12,
+      "oracle": "ok",
+      "quarantined_now": [
+        "07"
+      ],
+      "round": 5,
+      "status": "done",
+      "tasks": [
+        "15"
+      ],
+      "tasks_before": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06",
+        "08",
+        "09",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14"
+      ],
+      "verified": true,
+      "wrong_base": []
+    },
+    "D03": {
+      "attempts": [
+        {
+          "t": "2026-09-20T09:53:20+02:00",
+          "verdict": "ok"
+        }
+      ],
+      "base": "92ce73bae4258e07b513600c4644099294587581",
+      "commit": "b2d14bea13250d789c9240d97cf523d6b64a7b47",
+      "corrections": 0,
+      "done": "2026-09-20T09:53:50+02:00",
+      "injected": "2026-09-20T09:52:53+02:00",
+      "lessons_added": 0,
+      "lessons_before": 12,
+      "oracle": "ok",
+      "quarantined_now": [
+        "07"
+      ],
+      "round": 5,
+      "status": "done",
+      "tasks": [
+        "16"
+      ],
+      "tasks_before": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06",
+        "08",
+        "09",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15"
+      ],
+      "verified": true,
+      "wrong_base": []
+    },
+    "D04": {
+      "attempts": [
+        {
+          "t": "2026-09-20T10:27:47+02:00",
+          "verdict": "ok"
+        }
+      ],
+      "base": "6a6a2f01b266268bf7a74a01d29a7b385da6848d",
+      "commit": "047def9fc51536f6037759be4ca03c7e07ed6187",
+      "corrections": 0,
+      "done": "2026-09-20T10:28:22+02:00",
+      "injected": "2026-09-20T10:27:12+02:00",
+      "lessons_added": 0,
+      "lessons_before": 16,
+      "oracle": "ok",
+      "quarantined_now": [
+        "07"
+      ],
+      "round": 8,
+      "status": "done",
+      "tasks": [
+        "24"
+      ],
+      "tasks_before": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06",
+        "08",
+        "09",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "19",
+        "20",
+        "21",
+        "22",
+        "23"
+      ],
+      "verified": true,
+      "wrong_base": []
+    },
+    "E01": {
+      "attempts": [
+        {
+          "t": "2026-09-20T09:02:44+02:00",
+          "verdict": "E"
+        },
+        {
+          "t": "2026-09-20T09:03:07+02:00",
+          "verdict": "ok"
+        }
+      ],
+      "base": "1fb372eb1518a788c50afadc5aa85862480c6247",
+      "commit": "b6963b69b2b99cbd99669e2c9fc9991a618bc865",
+      "corrections": 1,
+      "done": "2026-09-20T09:03:47+02:00",
+      "injected": "2026-09-20T09:02:12+02:00",
+      "lessons_added": 1,
+      "lessons_before": 9,
+      "oracle": "ok",
+      "quarantined_now": [
+        "07"
+      ],
+      "round": 4,
+      "status": "done",
+      "tasks": [
+        "11"
+      ],
+      "tasks_before": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06",
+        "08",
+        "09",
+        "10"
+      ],
+      "verified": true,
+      "wrong_base": []
+    },
+    "E02": {
+      "attempts": [
+        {
+          "t": "2026-09-20T09:04:21+02:00",
+          "verdict": "E"
+        },
+        {
+          "t": "2026-09-20T09:05:10+02:00",
+          "verdict": "ok"
+        }
+      ],
+      "base": "1523a9ee9b6c24a9821e6ce2029879e44821c1cd",
+      "commit": "3f301c5297a9eeb69c830ece2b2fb0910a0d2736",
+      "corrections": 1,
+      "done": "2026-09-20T09:06:02+02:00",
+      "injected": "2026-09-20T09:03:47+02:00",
+      "lessons_added": 1,
+      "lessons_before": 10,
+      "oracle": "ok",
+      "quarantined_now": [
+        "07"
+      ],
+      "round": 4,
+      "status": "done",
+      "tasks": [
+        "12"
+      ],
+      "tasks_before": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06",
+        "08",
+        "09",
+        "10",
+        "11"
+      ],
+      "verified": true,
+      "wrong_base": []
+    },
+    "E03": {
+      "attempts": [
+        {
+          "t": "2026-09-20T09:06:50+02:00",
+          "verdict": "E"
+        },
+        {
+          "t": "2026-09-20T09:07:24+02:00",
+          "verdict": "ok"
+        }
+      ],
+      "base": "69dc936dc9443804d88b4cb462e85adebc68d13f",
+      "commit": "0c0df8937f509f03e14cf0a13de3a8d64a268685",
+      "corrections": 1,
+      "done": "2026-09-20T09:08:55+02:00",
+      "injected": "2026-09-20T09:06:03+02:00",
+      "lessons_added": 1,
+      "lessons_before": 11,
+      "oracle": "ok",
+      "quarantined_now": [
+        "07"
+      ],
+      "round": 4,
+      "status": "done",
+      "tasks": [
+        "13"
+      ],
+      "tasks_before": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06",
+        "08",
+        "09",
+        "10",
+        "11",
+        "12"
+      ],
+      "verified": true,
+      "wrong_base": []
+    },
+    "E04": {
+      "attempts": [
+        {
+          "t": "2026-09-20T10:18:59+02:00",
+          "verdict": "tampered"
+        },
+        {
+          "t": "2026-09-20T10:19:29+02:00",
+          "verdict": "E"
+        },
+        {
+          "t": "2026-09-20T10:19:58+02:00",
+          "verdict": "ok"
+        }
+      ],
+      "base": "a7dec4e7b65ae90307655b61232a79426298625f",
+      "commit": "cc40355dfe23d2d5e1bb558b47e85df7cca5f739",
+      "corrections": 2,
+      "done": "2026-09-20T10:21:41+02:00",
+      "injected": "2026-09-20T10:17:27+02:00",
+      "lessons_added": 1,
+      "lessons_before": 14,
+      "oracle": "ok",
+      "quarantined_now": [
+        "07"
+      ],
+      "round": 7,
+      "status": "done",
+      "tasks": [
+        "22"
+      ],
+      "tasks_before": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06",
+        "08",
+        "09",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "19",
+        "20",
+        "21"
+      ],
+      "verified": true,
+      "wrong_base": []
+    }
+  }
+}

@@ -1,0 +1,700 @@
+#!/usr/bin/env python3
+"""lab — drive the Cortex end-to-end lab from a terminal.
+
+  lab status                 where we are: round, next session, what is done
+  lab next                   start the next session: a teammate's commit lands
+                             in cortex-lab, and the prompt to paste is printed
+  lab verify                 act as CI + the user: is the fix complete and does it
+                             follow the house rules? prints the reply to paste
+  lab done                   after /harvest: record the outcome and commit
+  lab done --late [ID]       attach a /harvest run AFTER `lab done` to that session
+  lab prompt [ID]            print a session's prompt again
+  lab commit                 after /evolve: commit what it changed (skills, journal)
+
+  (for the experimenter)
+  lab build [--force]        create cortex-lab from lab/seed with a realistic history
+  lab validate [ID ...]      prove each scenario: the test fails when injected, the
+                             reference fix passes the oracle, a rule-breaking fix does not
+  lab audit [ID ...]         does each harvested task's check.sh tell a house-rule fix
+                             from a rule-breaking one?
+
+The lab repository defaults to ../../cortex-lab next to the Cortex folder
+(override with LAB_REPO; LAB_STATE moves the state file, for rehearsals).
+"""
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+from datetime import datetime
+from pathlib import Path
+
+sys.dont_write_bytecode = True               # keep lab/bin free of __pycache__
+HERE = Path(__file__).resolve().parent
+LAB_HOME = HERE.parent                       # Cortex/lab
+sys.path.insert(0, str(HERE))
+import scenarios as S                        # noqa: E402
+
+REPO = Path(os.environ.get("LAB_REPO", LAB_HOME.parent.parent / "cortex-lab"))
+STATE = Path(os.environ.get("LAB_STATE", LAB_HOME / "state" / "state.json"))
+SEED = LAB_HOME / "seed"
+ENV = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
+
+
+# ------------------------------------------------------------------ helpers --
+def die(msg, code=1):
+    print(f"lab: {msg}", file=sys.stderr)
+    sys.exit(code)
+
+
+def run(cmd, cwd, check=False, env=None, capture=True):
+    r = subprocess.run(cmd, cwd=cwd, capture_output=capture, text=True, env=env or ENV)
+    if check and r.returncode != 0:
+        die(f"{' '.join(cmd)} failed:\n{r.stdout}{r.stderr}")
+    return r
+
+
+def git(repo, *args, check=True, env=None):
+    return run(["git", *args], repo, check=check, env=env).stdout.strip()
+
+
+def load_state():
+    if STATE.exists():
+        return json.loads(STATE.read_text())
+    return {"current": None, "scenarios": {}}
+
+
+def save_state(st):
+    STATE.parent.mkdir(parents=True, exist_ok=True)
+    tmp = STATE.with_suffix(".tmp")
+    tmp.write_text(json.dumps(st, indent=2, sort_keys=True) + "\n")
+    tmp.replace(STATE)
+
+
+def now():
+    return datetime.now().astimezone().isoformat(timespec="seconds")
+
+
+def round_of(sid):
+    for r, ids in S.ROUNDS.items():
+        if sid in ids:
+            return r
+    return None
+
+
+def author_env(author, when=None):
+    name, email = re.match(r"(.*) <(.*)>", author).groups()
+    env = dict(ENV, GIT_AUTHOR_NAME=name, GIT_AUTHOR_EMAIL=email,
+               GIT_COMMITTER_NAME=name, GIT_COMMITTER_EMAIL=email)
+    if when:
+        env.update(GIT_AUTHOR_DATE=when, GIT_COMMITTER_DATE=when)
+    return env
+
+
+def purge_caches(repo):
+    for d in Path(repo).rglob("__pycache__"):
+        shutil.rmtree(d, ignore_errors=True)
+
+
+# --------------------------------------------------------------- edit ops ---
+def _replace_once(path, old, new):
+    text = path.read_text(encoding="utf-8")
+    n = text.count(old)
+    if n != 1:
+        raise RuntimeError(f"{path.name}: expected the anchor exactly once, found {n}: {old[:60]!r}")
+    path.write_text(text.replace(old, new), encoding="utf-8")
+
+
+def _changelog(path, section, bullet):
+    lines = path.read_text(encoding="utf-8").splitlines()
+    start = lines.index("## [Unreleased]")
+    end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("## [")), len(lines))
+    head = next((i for i in range(start + 1, end) if lines[i].strip() == f"### {section}"), None)
+    if head is None:
+        block = [f"### {section}", f"- {bullet}", ""]
+        at = end
+        while at > start + 1 and lines[at - 1].strip() == "":
+            at -= 1
+        lines[at:at] = ([""] if lines[at - 1].strip() else []) + block
+    else:
+        at = head + 1
+        while at < end and lines[at].startswith("- "):
+            at += 1
+        lines.insert(at, f"- {bullet}")
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _register(path, name, module, cls):
+    text = path.read_text(encoding="utf-8")
+    imports = [m.end() for m in re.finditer(r"^from \.\w+ import \w+\n", text, re.M)]
+    text = text[:imports[-1]] + f"from .{module} import {cls}\n" + text[imports[-1]:]
+    close = text.index("}", text.index("EXPORTERS = {"))
+    text = text[:close] + f'    "{name}": {cls},\n' + text[close:]
+    path.write_text(text, encoding="utf-8")
+
+
+def _docs_row(path, name, ext, desc):
+    lines = path.read_text(encoding="utf-8").splitlines()
+    last = max(i for i, l in enumerate(lines) if l.startswith("|"))
+    lines.insert(last + 1, f"| {name} | {ext} | {desc} |")
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def apply_edits(repo, edits):
+    repo = Path(repo)
+    for op in edits:
+        kind = op[0]
+        if kind == "replace":
+            _replace_once(repo / op[1], op[2], op[3])
+        elif kind == "write":
+            (repo / op[1]).parent.mkdir(parents=True, exist_ok=True)
+            (repo / op[1]).write_text(op[2], encoding="utf-8")
+        elif kind == "write_append":
+            with open(repo / op[1], "a", encoding="utf-8") as fh:
+                fh.write(op[2])
+        elif kind == "changelog":
+            _changelog(repo / "CHANGELOG.md", op[1], op[2])
+        elif kind == "register":
+            _register(repo / "shop/plugins/registry.py", op[1], op[2], op[3])
+        elif kind == "docs_row":
+            _docs_row(repo / "docs/exporters.md", op[1], op[2], op[3])
+        elif kind == "golden":
+            run(["python3", "tools/golden.py"], repo, check=True)
+        else:
+            raise RuntimeError(f"unknown edit {kind}")
+
+
+def naive_edits(s):
+    """A plausible fix that breaks the family's house rule (None for the control family)."""
+    if s["naive"] is not None:
+        return s["naive"]
+    if s["family"] == "A":
+        return [e for e in s["solve"] if e[0] != "changelog"]
+    if s["family"] == "C":
+        return [e for e in s["solve"] if e[0] not in ("docs_row", "golden")]
+    return None
+
+
+# ------------------------------------------------------------------ oracle ---
+LINT_KIND = {"money": "B", "time": "E", "exporters": "C"}
+
+
+def oracle(repo, s, base):
+    """What CI and a careful reviewer see. Returns (verdict, detail): verdict is
+    'ok', 'test', 'suite', 'A' (no changelog) or a lint family 'B' / 'C' / 'E'."""
+    purge_caches(repo)
+    for rel, content in s["files"].items():          # QA's test is the spec: never weakened
+        p = Path(repo) / rel
+        if not p.exists() or p.read_text(encoding="utf-8") != content:
+            return "tampered", [f"{rel} differs from what QA committed"]
+    r = run(["python3", "-m", "unittest", s["test"]], repo)
+    if r.returncode != 0:
+        return "test", (r.stdout + r.stderr).strip().splitlines()[-1:]
+    r = run(["python3", "-m", "unittest", "discover", "-s", "tests", "-t", ".", "-q"], repo)
+    if r.returncode != 0:
+        tail = [l for l in (r.stdout + r.stderr).splitlines() if l.startswith(("FAIL:", "ERROR:"))]
+        return "suite", tail[:5] or ["make test fails"]
+    r = run(["python3", "tools/lint.py"], repo)
+    if r.returncode != 0:
+        problems = [l for l in r.stdout.splitlines() if ": " in l and not l.startswith("lint:")]
+        kind = "B"
+        for l in problems:
+            m = re.search(r": (money|time|exporters): ", l)
+            if m:
+                kind = LINT_KIND[m.group(1)]
+                break
+        return kind, problems[:5]
+    if s["family"] == "A":
+        diff = git(repo, "diff", base, "--", "CHANGELOG.md", check=False)
+        if not any(l.startswith("+- ") for l in diff.splitlines()):
+            return "A", ["CHANGELOG.md has no new line under [Unreleased]"]
+    return "ok", []
+
+
+def correction(verdict, s):
+    return S.CORRECTIONS[verdict].format(test=s["test"], file=", ".join(s["files"]))
+
+
+# ------------------------------------------------------------------- build ---
+HISTORY = [   # (date, author, message, paths) — the seed, committed as a team would have
+    ("2026-06-02T09:14:00+02:00", "Dana Kim <dana.kim@shopkit.dev>", "Initial commit: shopkit skeleton",
+     ["README.md", "pyproject.toml", ".gitignore", "Makefile", "shop/__init__.py", "shop/__main__.py",
+      "shop/util/", "tests/__init__.py", "tests/test_text.py", "tests/test_dates.py", "tests/test_validate.py"]),
+    ("2026-06-09T16:40:00+02:00", "Luca Ferri <luca.ferri@shopkit.dev>", "billing: integer-cent Money, tax, discounts, invoices",
+     ["shop/billing/__init__.py", "shop/billing/money.py", "shop/billing/rates.py", "shop/billing/credit.py",
+      "shop/billing/tax.py", "shop/billing/discount.py", "shop/billing/invoice.py", "tests/test_money.py",
+      "tests/test_rates.py", "tests/test_credit.py", "tests/test_tax.py", "tests/test_discount.py"]),
+    ("2026-06-20T11:05:00+02:00", "Dana Kim <dana.kim@shopkit.dev>", "catalog, carts and orders",
+     ["shop/catalog.py", "shop/cart.py", "shop/orders.py", "data/", "tests/fixtures/", "tests/support.py",
+      "tests/test_catalog.py", "tests/test_cart.py", "tests/test_orders.py", "tests/test_invoice.py"]),
+    ("2026-07-03T15:22:00+02:00", "Dana Kim <dana.kim@shopkit.dev>", "the shop CLI: list, show, cart, invoice, CSV export",
+     ["shop/cli.py", "shop/formatting.py", "shop/report.py", "shop/plugins/__init__.py", "shop/plugins/base.py",
+      "shop/plugins/csv_export.py", "examples/", "tests/test_cli.py", "tests/test_formatting.py"]),
+    ("2026-07-28T10:31:00+02:00", "Luca Ferri <luca.ferri@shopkit.dev>", "billing: shipping, refunds, FX, VAT, pricing, loyalty, installments",
+     ["shop/billing/shipping.py", "shop/billing/refunds.py", "shop/billing/fx.py", "shop/billing/vat.py",
+      "shop/billing/pricing.py", "shop/billing/loyalty.py", "shop/billing/installments.py",
+      "tests/test_shipping.py", "tests/test_refunds.py", "tests/test_fx.py", "tests/test_vat.py",
+      "tests/test_pricing.py", "tests/test_loyalty.py", "tests/test_installments.py"]),
+    ("2026-08-12T17:48:00+02:00", "Luca Ferri <luca.ferri@shopkit.dev>", "house rules: lint, clock, exporter registry, CONTRIBUTING",
+     ["tools/", "CONTRIBUTING.md", "shop/clock.py", "tests/test_clock.py", "shop/plugins/registry.py",
+      "shop/plugins/json_export.py", "docs/", "tests/golden/", "tests/test_exporters.py", "tests/test_report.py"]),
+    ("2026-08-28T12:00:00+02:00", "Dana Kim <dana.kim@shopkit.dev>", "release 0.9.0", ["CHANGELOG.md"]),
+    ("2026-09-01T09:02:00+02:00", "Dana Kim <dana.kim@shopkit.dev>", "Claude Code: allow make and python3 without asking",
+     [".claude/settings.json"]),
+]
+
+
+def cmd_build(args):
+    if REPO.exists():
+        if "--force" not in args:
+            die(f"{REPO} exists — `lab build --force` deletes and rebuilds it")
+        if not (REPO / "shop" / "billing" / "money.py").exists():
+            die(f"{REPO} does not look like the lab repository; refusing to delete it")
+        shutil.rmtree(REPO)
+    REPO.mkdir(parents=True)
+    git(REPO, "init", "-q", "-b", "main")
+    seed_files = sorted(p.relative_to(SEED).as_posix() for p in SEED.rglob("*")
+                        if p.is_file() and "__pycache__" not in p.parts)
+    committed = set()
+    for when, author, msg, paths in HISTORY:
+        take = [f for f in seed_files if any(f == p or (p.endswith("/") and f.startswith(p)) for p in paths)]
+        for f in take:
+            (REPO / f).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(SEED / f, REPO / f)
+        committed.update(take)
+        git(REPO, "add", "-A")
+        git(REPO, "commit", "-q", "-m", msg, env=author_env(author, when))
+    missing = sorted(set(seed_files) - committed)
+    if missing:
+        die(f"seed files not in any history commit: {missing}")
+    purge_caches(REPO)
+    r = run(["make", "verify"], REPO)
+    print(r.stdout.strip().splitlines()[-1] if r.returncode == 0 else r.stdout + r.stderr)
+    print(f"built {REPO}: {len(HISTORY)} commits, {len(seed_files)} files")
+    if STATE.exists() and "--force" in args:
+        STATE.rename(STATE.with_name(f"state-{int(time.time())}.json"))
+    save_state({"current": None, "scenarios": {}, "built": now(), "initial": git(REPO, "rev-parse", "HEAD")})
+
+
+# ---------------------------------------------------------------- validate ---
+def cmd_validate(args):
+    ids = args or [s["id"] for s in S.SCENARIOS]
+    ok = bad = 0
+    with tempfile.TemporaryDirectory(prefix="lab-validate-") as tmp:
+        base_repo = Path(tmp) / "base"
+        run(["git", "clone", "-q", str(REPO), str(base_repo)], tmp, check=True)
+        for sid in ids:
+            s = S.by_id(sid)
+            problems = []
+            for variant in ("solve", "naive"):
+                edits = s["solve"] if variant == "solve" else naive_edits(s)
+                if edits is None:
+                    continue
+                w = Path(tmp) / f"{sid}-{variant}"
+                shutil.rmtree(w, ignore_errors=True)
+                run(["git", "clone", "-q", str(base_repo), str(w)], tmp, check=True)
+                for rel, content in s["files"].items():
+                    (w / rel).write_text(content, encoding="utf-8")
+                git(w, "add", "-A")
+                git(w, "commit", "-q", "-m", s["message"], env=author_env(s["author"]))
+                base = git(w, "rev-parse", "HEAD")
+                if variant == "solve":
+                    v, _ = oracle(w, s, base)
+                    if v != "test":
+                        problems.append(f"injected state: expected the test to fail, oracle says {v}")
+                    lint = run(["python3", "tools/lint.py"], w)
+                    if lint.returncode != 0:
+                        problems.append("injected state: lint is already red")
+                try:
+                    apply_edits(w, edits)
+                except Exception as ex:                        # noqa: BLE001
+                    problems.append(f"{variant}: cannot apply: {ex}")
+                    continue
+                v, detail = oracle(w, s, base)
+                if variant == "solve" and v != "ok":
+                    problems.append(f"reference fix: oracle says {v} {detail}")
+                if variant == "naive":
+                    t = run(["python3", "-m", "unittest", s["test"]], w)
+                    if t.returncode != 0:
+                        problems.append("rule-breaking fix: its test should pass (so only the house rule catches it)")
+                    if v != s["family"]:
+                        problems.append(f"rule-breaking fix: oracle should say {s['family']}, says {v} {detail}")
+            if problems:
+                bad += 1
+                print(f"FAIL {sid} {s['title']}")
+                for p in problems:
+                    print(f"     {p}")
+            else:
+                ok += 1
+                print(f"ok   {sid} {s['title']}")
+    print(f"\n{ok} valid, {bad} broken")
+    return 1 if bad else 0
+
+
+# ------------------------------------------------------------ user commands --
+def clean_tree(repo):
+    # never .strip() porcelain output: the first line starts with a space (" M path")
+    out = run(["git", "status", "--porcelain"], repo).stdout
+    return [l for l in out.splitlines() if l.strip()]
+
+
+def next_scenario(st):
+    for r in sorted(S.ROUNDS):
+        for sid in S.ROUNDS[r]:
+            if st["scenarios"].get(sid, {}).get("status") not in ("done", "skipped"):
+                return sid
+    return None
+
+
+def print_session_header(sid, st):
+    s = S.by_id(sid)
+    r = round_of(sid)
+    ids = S.ROUNDS[r]
+    print(f"ROUND {r} — session {ids.index(sid) + 1} of {len(ids)}: {sid} {s['title']}")
+
+
+def cmd_next(args):
+    st = load_state()
+    cur = st.get("current")
+    if cur and st["scenarios"].get(cur, {}).get("status") == "open":
+        die(f"session {cur} is still open — finish it (`lab verify`, /harvest, `lab done`) first")
+    dirty = clean_tree(REPO)
+    if dirty:
+        die("cortex-lab has uncommitted changes:\n  " + "\n  ".join(dirty[:8]) +
+            "\ncommit them (or `lab done`) before starting the next session")
+    sid = next_scenario(st)
+    if sid is None:
+        print("All training sessions are done. Next: the benchmark (see lab/README.md).")
+        return 0
+    s = S.by_id(sid)
+    for rel, content in s["files"].items():
+        (REPO / rel).parent.mkdir(parents=True, exist_ok=True)
+        (REPO / rel).write_text(content, encoding="utf-8")
+    git(REPO, "add", "-A")
+    git(REPO, "commit", "-q", "-m", s["message"], env=author_env(s["author"]))
+    base = git(REPO, "rev-parse", "HEAD")
+    v, _ = oracle(REPO, s, base)
+    purge_caches(REPO)
+    rec = {"status": "open", "round": round_of(sid), "base": base, "injected": now(),
+           "tasks_before": sorted(p.name for p in (REPO / ".evolve" / "tasks").glob("[0-9]*") if p.is_dir()),
+           "lessons_before": _lesson_count(), "attempts": []}
+    if v != "test":
+        rec["status"] = "skipped"
+        rec["why"] = f"the test does not fail after injection (oracle: {v}) — the bug was fixed earlier"
+        st["scenarios"][sid] = rec
+        save_state(st)
+        die(f"{sid}: {rec['why']}; skipped. Run `lab next` again.")
+    st["scenarios"][sid] = rec
+    st["current"] = sid
+    save_state(st)
+    print_session_header(sid, st)
+    print(f"A teammate just pushed: {base[:7]} \"{s['message']}\" ({s['author'].split(' <')[0]})")
+    print(f"{s['test']} fails, as it should.\n")
+    print("1. Open a NEW Claude Code chat in cortex-lab (model: Haiku 4.5).")
+    print("2. Paste this prompt, exactly:\n")
+    print(_indent(s["prompt"]))
+    print("\n3. When Claude says it is done, run:  lab verify")
+    return 0
+
+
+def _indent(text):
+    import textwrap
+    return "\n".join("    " + l for l in textwrap.wrap(text, 88))
+
+
+def _lesson_count():
+    p = REPO / ".evolve" / "lessons.md"
+    if not p.exists():
+        return 0
+    return sum(1 for l in p.read_text(encoding="utf-8").splitlines() if l.startswith("20"))
+
+
+def current(st):
+    sid = st.get("current")
+    if not sid or st["scenarios"].get(sid, {}).get("status") != "open":
+        die("no session is open — `lab next` starts one")
+    return sid, S.by_id(sid), st["scenarios"][sid]
+
+
+def cmd_verify(args):
+    st = load_state()
+    sid, s, rec = current(st)
+    v, detail = oracle(REPO, s, rec["base"])
+    purge_caches(REPO)
+    rec["attempts"].append({"t": now(), "verdict": v})
+    save_state(st)
+    print_session_header(sid, st)
+    if v == "ok":
+        rec["verified"] = True
+        save_state(st)
+        print("✔ the test passes, `make test` and `make lint` are green"
+              + (", CHANGELOG updated" if s["family"] == "A" else ""))
+        print("\nThe fix is complete and follows the house rules.")
+        print("→ Now type  /harvest  in the SAME chat. When it has finished, run:  lab done")
+        return 0
+    print({"tampered": "✘ QA's test file was changed",
+           "test": f"✘ {s['test']} still fails",
+           "suite": "✘ other tests fail now",
+           "A": "✘ no CHANGELOG entry",
+           "B": "✘ make lint: float arithmetic on money",
+           "C": "✘ make lint: exporter not complete",
+           "E": "✘ make lint: reads the time directly"}[v])
+    for d in detail:
+        print(f"    {d}")
+    print("\n→ Paste this into the SAME Claude chat, then run  lab verify  again:\n")
+    print(_indent(correction(v, s)))
+    return 1
+
+
+def _check_bases(rec, tasks):
+    wrong = []
+    for t in tasks:
+        y = (REPO / ".evolve" / "tasks" / t / "task.yaml")
+        m = re.search(r"^base_sha:\s*(\S+)", y.read_text(encoding="utf-8"), re.M) if y.exists() else None
+        got = m.group(1) if m else ""
+        if len(got) < 7 or not (rec["base"].startswith(got) or got.startswith(rec["base"])):
+            wrong.append(f"task {t}: base_sha {got[:12] or '(none)'}, but the session started at {rec['base'][:12]}")
+    return wrong
+
+
+def done_late(st, args):
+    """A /harvest run after `lab done`: attach its task and lesson to that session."""
+    ids = [a for a in args if not a.startswith("--")]
+    done = [(v.get("done", ""), k) for k, v in st["scenarios"].items() if v.get("status") == "done"]
+    if not ids and not done:
+        die("no finished session to attach a late harvest to")
+    sid = ids[0] if ids else max(done)[1]
+    rec, s = st["scenarios"][sid], S.by_id(sid)
+    assigned = {t for k, v in st["scenarios"].items() if k != sid for t in v.get("tasks", [])}
+    tasks = sorted(p.name for p in (REPO / ".evolve" / "tasks").glob("[0-9]*") if p.is_dir())
+    new = [t for t in tasks if t not in rec["tasks_before"] and t not in assigned]
+    # lessons written since the last recorded session event are this harvest's:
+    # sessions run one at a time, and other sessions may have added their own since
+    added = _lesson_count() - st.get("lessons_at", rec["lessons_before"])
+    if not new and added <= 0:
+        die(f"no new task or lesson for {sid}: type /harvest in that session's chat first")
+    rec.update(tasks=sorted(set(rec.get("tasks", [])) | set(new)),
+               lessons_added=rec.get("lessons_added", 0) + max(added, 0),
+               late_harvest=now(), wrong_base=rec.get("wrong_base", []) + _check_bases(rec, new))
+    st["lessons_at"] = _lesson_count()
+    purge_caches(REPO)
+    git(REPO, "add", "-A")
+    if clean_tree(REPO):
+        git(REPO, "commit", "-q", "-m", f"harvest {sid}: {s['title']} (late)")
+    save_state(st)
+    print(f"{sid} updated: task(s) {new or 'none new'}, {max(added, 0)} lesson(s) added; committed "
+          f"{git(REPO, 'rev-parse', '--short', 'HEAD')}")
+    for w in _check_bases(rec, new):
+        print(f"  !! WRONG START: {w} — tell the experimenter")
+    return 0
+
+
+def cmd_done(args):
+    st = load_state()
+    if "--late" in args:
+        return done_late(st, args)
+    sid, s, rec = current(st)
+    v, _ = oracle(REPO, s, rec["base"])
+    if v != "ok" and "--force" not in args:
+        die(f"the fix is not complete (oracle: {v}) — `lab verify` shows what is missing "
+            f"(or `lab done --force` to record it anyway)")
+    tasks = sorted(p.name for p in (REPO / ".evolve" / "tasks").glob("[0-9]*") if p.is_dir())
+    new_tasks = [t for t in tasks if t not in rec["tasks_before"]]
+    if not new_tasks and "--no-task" not in args and "--force" not in args:
+        die("no task was harvested in this session. Type /harvest in the SAME Claude chat first, "
+            "then run `lab done` again.\n     (If /harvest answered \"nothing to harvest\", or quarantined "
+            "and deleted its task, record that with `lab done --no-task`.)")
+    quarantined = sorted(p.name for p in (REPO / ".evolve" / "tasks" / "_broken").glob("*") if p.is_dir())
+    rec.update(status="done", done=now(), oracle=v, tasks=new_tasks,
+               lessons_added=_lesson_count() - rec["lessons_before"],
+               corrections=sum(1 for a in rec["attempts"] if a["verdict"] != "ok"),
+               quarantined_now=quarantined)
+    # the harvested task must start where the session started: the teammate's commit
+    wrong_base = _check_bases(rec, new_tasks)
+    rec["wrong_base"] = wrong_base
+    purge_caches(REPO)
+    git(REPO, "add", "-A")
+    if clean_tree(REPO):
+        git(REPO, "commit", "-q", "-m", f"{s['title']} ({s['message'].split('(')[-1].rstrip(')')})")
+    rec["commit"] = git(REPO, "rev-parse", "HEAD")
+    st["current"] = None
+    st["lessons_at"] = _lesson_count()
+    save_state(st)
+    print(f"{sid} recorded: {len(new_tasks)} task(s) harvested {new_tasks or ''}, "
+          f"{rec['lessons_added']} lesson(s), {rec['corrections']} correction(s); committed {rec['commit'][:7]}")
+    for w in wrong_base:
+        print(f"  !! WRONG START: {w} — tell the experimenter")
+    if not new_tasks:
+        print("  !! no task was harvested in this session — tell the experimenter")
+    if rec["corrections"] and not rec["lessons_added"]:
+        print("  !! you corrected Claude, but /harvest wrote no lesson — tell the experimenter")
+    nxt = next_scenario(st)
+    r = round_of(sid)
+    if nxt is None or round_of(nxt) != r:
+        print(f"\nRound {r} sessions are done. Now run /evolve in a NEW chat (see lab/rounds/round-{r:02d}.md).")
+    else:
+        print("\nNext session:  lab next")
+    return 0
+
+
+def cmd_commit(args):
+    """Commit what /evolve changed (a promoted skill or rule, the journal, the
+    baseline), as the user would, so the next `lab next` starts from a clean tree."""
+    st = load_state()
+    if st.get("current") and st["scenarios"].get(st["current"], {}).get("status") == "open":
+        die(f"session {st['current']} is open — `lab done` first")
+    dirty = clean_tree(REPO)
+    if not dirty:
+        print("nothing to commit")
+        return 0
+    paths = [l[3:].strip().strip('"') for l in dirty]
+    outside = [p for p in paths if not p.startswith((".evolve/", ".claude/", "CLAUDE.md"))]
+    if outside and "--force" not in args:
+        die("changes outside .evolve/, .claude/ and CLAUDE.md — /evolve should not touch those:\n  "
+            + "\n  ".join(outside[:8]) + "\ntell the experimenter (or `lab commit --force`)")
+    done = [k for k, v in st["scenarios"].items() if v.get("status") == "done"]
+    r = max((round_of(k) for k in done), default=0)
+    git(REPO, "add", "-A")
+    git(REPO, "commit", "-q", "-m", f"cortex: evolve, round {r}")
+    print(f"committed {len(paths)} change(s) from /evolve: {git(REPO, 'rev-parse', '--short', 'HEAD')}")
+    return 0
+
+
+def cmd_prompt(args):
+    st = load_state()
+    sid = args[0] if args else st.get("current") or next_scenario(st)
+    print(S.by_id(sid)["prompt"])
+
+
+def cmd_status(args):
+    st = load_state()
+    print(f"lab repo  {REPO}")
+    done = [k for k, v in st["scenarios"].items() if v.get("status") == "done"]
+    for r in sorted(S.ROUNDS):
+        marks = []
+        for sid in S.ROUNDS[r]:
+            rec = st["scenarios"].get(sid, {})
+            mark = {"done": "✔", "open": "…", "skipped": "–"}.get(rec.get("status"), " ")
+            extra = ""
+            if rec.get("status") == "done":
+                extra = f" task {','.join(rec['tasks']) or '-'} · {rec['corrections']} corr"
+            marks.append(f"[{mark}] {sid}{extra}")
+        print(f"round {r:>2}  " + "   ".join(marks))
+    cur = st.get("current")
+    print(f"\n{len(done)} of {sum(len(v) for v in S.ROUNDS.values())} sessions done"
+          + (f"; open: {cur}" if cur else f"; next: {next_scenario(st)}"))
+
+
+def cmd_audit(args):
+    """Does each harvested task's check tell a house-rule fix from a rule-breaking one?"""
+    st = load_state()
+    ids = args or [k for k, v in st["scenarios"].items() if v.get("status") == "done"]
+    with tempfile.TemporaryDirectory(prefix="lab-audit-") as tmp:
+        for sid in ids:
+            rec = st["scenarios"].get(sid, {})
+            s = S.by_id(sid)
+            for tid in rec.get("tasks", []):
+                tdir = REPO / ".evolve" / "tasks" / tid
+                if not tdir.is_dir():
+                    tdir = REPO / ".evolve" / "tasks" / "_broken" / tid
+                if not (tdir / "check.sh").exists():
+                    print(f"{sid} task {tid}: no check.sh (quarantined or deleted)")
+                    continue
+                base = re.search(r"^base_sha:\s*(\S+)", (tdir / "task.yaml").read_text(), re.M)
+                base = base.group(1) if base else rec["base"]
+                res = {}
+                for variant in ("broken", "solve", "naive"):
+                    edits = None if variant == "broken" else s["solve"] if variant == "solve" else naive_edits(s)
+                    if variant == "naive" and edits is None:
+                        continue
+                    w = Path(tmp) / f"{sid}-{tid}-{variant}"
+                    run(["git", "clone", "-q", "--no-checkout", str(REPO), str(w)], tmp, check=True)
+                    git(w, "checkout", "-q", base)
+                    shutil.rmtree(w / ".evolve", ignore_errors=True)
+                    try:
+                        if edits:
+                            apply_edits(w, edits)
+                    except Exception as ex:                    # noqa: BLE001
+                        res[variant] = f"n/a ({ex})"[:40]
+                        continue
+                    purge_caches(w)
+                    r = run(["bash", str(tdir / "check.sh")], w)
+                    res[variant] = "pass" if r.returncode == 0 else "fail"
+                want = {"broken": "fail", "solve": "pass", "naive": "fail"}
+                verdict = "discriminates" if all(res.get(k) in (None, want[k]) for k in want if k in res) else "WEAK"
+                if res.get("naive") == "pass":
+                    verdict = "WEAK: passes a rule-breaking fix"
+                print(f"{sid} task {tid}: broken={res.get('broken')} house-fix={res.get('solve')} "
+                      f"rule-breaking={res.get('naive', 'n/a')}  -> {verdict}")
+
+
+EXPECT = {
+    1: "the money theme has only 1–2 lessons (B02 learned the rule from B01's fix in the code) → most likely **BARREN**, which is correct: nothing recurs yet",
+    2: "the changelog theme reaches three lessons in one round → the first skill: probably an **always-on** skill (\"before reporting done, add a CHANGELOG line\"), screened on this round's three tasks, then confirmed on all",
+    3: "the exporter theme reaches three → a **path-gated skill** (or a rule) on `shop/plugins/**`",
+    4: "the time theme: three lessons if the sessions need correcting → an always-on skill or a `CLAUDE.md` line; fewer if Haiku copies `clock` from E01's fix → BARREN",
+    5: "control tasks (plain bugs): no corrections, no lessons → **BARREN**; they join the suite as tasks every future change must not break",
+    6: "one session per family with the skills live: they should need **no** correction → BARREN",
+    7: "same → BARREN (after three quiet rounds in a row Cortex says STOP: the loop has converged)",
+    8: "same → BARREN",
+    9: "same → BARREN",
+    10: "the last training task; next is the benchmark",
+}
+
+FAMILY_NAME = {"A": "user-visible change", "B": "money", "C": "new exporter", "D": "control", "E": "time"}
+
+
+def cmd_rounds(args):
+    out = LAB_HOME / "rounds"
+    out.mkdir(exist_ok=True)
+    for r, ids in S.ROUNDS.items():
+        n = len(ids)
+        lines = [f"# Round {r} — {', '.join(ids)}", "",
+                 f"{n} sessions, then `/evolve`. Do them in order; `lab next` always picks the right one.", "",
+                 "## Each session", "",
+                 "1. In a terminal: `lab next`. A teammate's commit lands in cortex-lab, and the prompt is printed.",
+                 "2. Open a **new** Claude Code chat in cortex-lab and check the model is **Haiku 4.5**.",
+                 "   Paste the prompt exactly as printed. Let Claude work, and approve what it asks.",
+                 "3. When Claude says it is done: `lab verify`.",
+                 "   - `✘ …` + a reply → paste the reply into the **same** chat, let Claude fix, run `lab verify` again.",
+                 "   - `✔ …` → go on.",
+                 "4. Type `/harvest` in the **same** chat. Wait for its one-line report.",
+                 "5. `lab done`: it records the session and commits everything.", "",
+                 "Claude asks nothing: your global default is bypassPermissions. If it stalls or loops, stop it and tell me.", "",
+                 "## This round's sessions", "",
+                 "Here for reference: `lab next` prints the same text.", ""]
+        for sid in ids:
+            s = S.by_id(sid)
+            lines += [f"### {sid} — {s['title']} (family {s['family']}: {FAMILY_NAME[s['family']]})", "",
+                      f"> {s['prompt']}", ""]
+        lines += ["## Then `/evolve`", "",
+                  "1. Open a **new** chat (Haiku 4.5) and type `/evolve`.",
+                  "2. It runs preflight, reads the lessons and either stops (**BARREN**: nothing recurs yet) or",
+                  "   writes one candidate and launches a **screen** sweep in the background, then says it will be back.",
+                  "3. Wait for the sweep. In a terminal inside cortex-lab, "
+                  "`cortex score | jq -c '{phase,rollouts,finished}'` shows progress.",
+                  "   A screen is ~8–16 rollouts (10–20 min); a confirm is tasks × 6 rollouts.",
+                  "4. When `finished` is `true`, type `/evolve` again (same chat or a new one). It reads the result and",
+                  "   either stops (KILL) or launches the next sweep: the **confirm**, or a small **recheck**.",
+                  "5. Repeat 3–4 until it reports **KEEP**, **KILL** or **BARREN** and writes the journal.",
+                  "6. In a terminal: `lab commit` (commits the new skill or rule, the journal and the baseline).", "",
+                  f"**What should happen this round:** {EXPECT[r]}.", "",
+                  "If `/evolve` asks you a question, or something looks wrong, don't fix it by hand: tell me.", "",
+                  f"**Then tell me \"round {r} done\".** Don't start round {r + 1} before I have checked."
+                  if r < 10 else "**Then tell me \"round 10 done\"**: next is the benchmark.", ""]
+        (out / f"round-{r:02d}.md").write_text("\n".join(lines), encoding="utf-8")
+        print(f"wrote rounds/round-{r:02d}.md")
+
+
+COMMANDS = {"build": cmd_build, "validate": cmd_validate, "next": cmd_next, "verify": cmd_verify,
+            "done": cmd_done, "prompt": cmd_prompt, "status": cmd_status, "audit": cmd_audit,
+            "rounds": cmd_rounds, "commit": cmd_commit}
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2 or sys.argv[1] not in COMMANDS:
+        print(__doc__.strip())
+        sys.exit(2)
+    sys.exit(COMMANDS[sys.argv[1]](sys.argv[2:]) or 0)

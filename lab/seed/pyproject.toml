@@ -1,0 +1,5 @@
+[project]
+name = "shopkit"
+version = "0.9.0"
+description = "A small order and invoicing toolkit"
+requires-python = ">=3.10"

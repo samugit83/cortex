@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>How Cortex Works</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --bg:#f6f4ef; --panel:#fffdfa; --panel-2:#efece4;
+    --ink:#1b2230; --ink-soft:#5a6474; --line:#d5cfc2;
+    --harvest:#2f9e6f; --harvest-soft:#e3f3ec;
+    --evolve:#3b82c4;  --evolve-soft:#e2edf7;
+    --prune:#c0508a;   --prune-soft:#f7e6ef;
+    --amber:#c98a2b;   --amber-soft:#f7edda;
+    --keep:#2f9e6f; --kill:#c0392b;
+    --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+    --disp:'Space Grotesk',system-ui,sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+    --shadow:0 1px 2px rgba(20,25,40,.06),0 8px 24px rgba(20,25,40,.07);
+    --shadow-lg:0 2px 4px rgba(20,25,40,.08),0 18px 46px rgba(20,25,40,.12);
+    --radius:16px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0f1420; --panel:#161d2b; --panel-2:#1d2636;
+      --ink:#e8ecf3; --ink-soft:#9aa6b8; --line:#2b3547;
+      --harvest:#4cc191; --harvest-soft:#12312a;
+      --evolve:#5fa4e0;  --evolve-soft:#122436;
+      --prune:#e079b0;   --prune-soft:#331327;
+      --amber:#e0a94e;   --amber-soft:#33270f;
+      --keep:#4cc191; --kill:#e06457;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+      --shadow-lg:0 2px 6px rgba(0,0,0,.4),0 20px 50px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0f1420; --panel:#161d2b; --panel-2:#1d2636;
+    --ink:#e8ecf3; --ink-soft:#9aa6b8; --line:#2b3547;
+    --harvest:#4cc191; --harvest-soft:#12312a;
+    --evolve:#5fa4e0;  --evolve-soft:#122436;
+    --prune:#e079b0;   --prune-soft:#331327;
+    --amber:#e0a94e;   --amber-soft:#33270f;
+    --keep:#4cc191; --kill:#e06457;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+    --shadow-lg:0 2px 6px rgba(0,0,0,.4),0 20px 50px rgba(0,0,0,.5);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:var(--body); line-height:1.55;
+    -webkit-font-smoothing:antialiased; padding-block:0;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:0 20px}
+  b{font-weight:600; color:var(--ink)}
+
+  /* scroll progress */
+  .progress{position:fixed; top:0; left:0; height:3px; width:0%;
+    background:linear-gradient(90deg,var(--harvest),var(--evolve),var(--prune));
+    z-index:20; transition:width .1s linear}
+
+  /* theme toggle */
+  .toggle{
+    position:fixed; top:calc(12px + env(safe-area-inset-top,0px)); right:16px; z-index:30;
+    font-family:var(--mono); font-size:12px; padding:7px 12px; border-radius:999px;
+    border:1px solid var(--line); background:var(--panel); color:var(--ink-soft);
+    cursor:pointer; box-shadow:var(--shadow);
+  }
+  .toggle:hover{color:var(--ink); transform:translateY(-1px)}
+  .toggle{transition:transform .15s ease, color .15s ease}
+  .toggle:focus-visible{outline:2px solid var(--evolve); outline-offset:2px}
+
+  /* ---------- header ---------- */
+  header.top{padding:70px 0 30px; text-align:center}
+  .kicker{font-family:var(--mono); font-size:12px; letter-spacing:.22em;
+    text-transform:uppercase; color:var(--ink-soft); margin:0 0 14px}
+  h1{font-family:var(--disp); font-weight:700; font-size:clamp(34px,6.4vw,64px);
+    line-height:1.02; letter-spacing:-.02em; margin:0 0 16px; text-wrap:balance}
+  h1 .dot{color:var(--evolve); animation:blink 2.4s steps(1) infinite}
+  @keyframes blink{0%,70%{opacity:1}71%,100%{opacity:.25}}
+  .lede{max-width:60ch; margin:0 auto; font-size:clamp(16px,2.2vw,19px); color:var(--ink-soft)}
+
+  .thesis{max-width:920px; margin:34px auto 0; padding:22px 26px;
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow); font-family:var(--disp); font-weight:500;
+    font-size:clamp(16px,2.4vw,21px); line-height:1.5; text-align:center; text-wrap:balance}
+  .thesis .hl-h{color:var(--harvest); font-weight:600}
+  .thesis .hl-e{color:var(--evolve);  font-weight:600}
+  .thesis .hl-p{color:var(--prune);   font-weight:600}
+
+  .scrollcue{margin:30px auto 0; text-align:center; color:var(--ink-soft);
+    font-family:var(--mono); font-size:11px; letter-spacing:.15em; text-transform:uppercase}
+  .scrollcue .a{display:block; font-size:18px; margin-top:6px; animation:bob 1.6s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(-2px)}50%{transform:translateY(5px)}}
+
+  /* ---------- sticky nav ---------- */
+  nav.rail-nav{position:sticky; top:0; z-index:15; padding:12px 0;
+    background:color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter:blur(8px); border-bottom:1px solid transparent;
+    transition:border-color .2s}
+  nav.rail-nav.stuck{border-color:var(--line)}
+  .chips{display:flex; gap:10px; justify-content:center; flex-wrap:wrap}
+  .chip{display:inline-flex; align-items:center; gap:9px; padding:9px 15px;
+    border-radius:999px; border:1px solid var(--line); background:var(--panel);
+    font-size:13.5px; font-weight:500; font-family:var(--mono); cursor:pointer;
+    box-shadow:var(--shadow); transition:transform .15s, box-shadow .15s, border-color .2s}
+  .chip:hover{transform:translateY(-2px); box-shadow:var(--shadow-lg)}
+  .chip .swatch{width:10px; height:10px; border-radius:3px; transition:transform .15s}
+  .chip:hover .swatch{transform:scale(1.3)}
+  .chip.h .swatch{background:var(--harvest)} .chip.e .swatch{background:var(--evolve)} .chip.p .swatch{background:var(--prune)}
+  .chip .when{color:var(--ink-soft); font-family:var(--body)}
+  .chip.h.active{border-color:var(--harvest)} .chip.e.active{border-color:var(--evolve)} .chip.p.active{border-color:var(--prune)}
+  .chip.active{box-shadow:var(--shadow-lg)}
+
+  /* ---------- reveal (fail-safe: visible unless JS arms it) ---------- */
+  .will-reveal.armed{opacity:0; transform:translateY(22px); transition:opacity .6s ease, transform .6s cubic-bezier(.2,.7,.2,1)}
+  .will-reveal.armed.in{opacity:1; transform:none}
+
+  .rail{padding:34px 0 10px}
+  .rail-head{text-align:center; margin:26px 0 40px}
+  .rail-head h2{font-family:var(--disp); font-weight:600; font-size:clamp(22px,3vw,30px);
+    margin:0 0 8px; letter-spacing:-.01em}
+  .rail-head p{margin:0; color:var(--ink-soft); font-size:15px}
+
+  /* ---------- stage panel ---------- */
+  .stage{position:relative; margin:0 auto 30px; padding:26px 26px 30px; scroll-margin-top:78px;
+    background:var(--panel); border:1px solid var(--line); border-radius:20px;
+    box-shadow:var(--shadow); border-top:4px solid var(--accent)}
+  .stage.harvest{--accent:var(--harvest); --accent-soft:var(--harvest-soft)}
+  .stage.evolve{--accent:var(--evolve);  --accent-soft:var(--evolve-soft)}
+  .stage.prune{--accent:var(--prune);    --accent-soft:var(--prune-soft)}
+
+  .stage-head{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; margin-bottom:6px}
+  .badge{font-family:var(--mono); font-weight:500; font-size:14px; color:#fff;
+    background:var(--accent); padding:5px 12px; border-radius:8px}
+  .stage-head .role{font-family:var(--disp); font-weight:600; font-size:20px}
+  .stage-head .cadence{margin-left:auto; font-family:var(--mono); font-size:12px;
+    color:var(--accent); background:var(--accent-soft); padding:4px 10px; border-radius:999px; white-space:nowrap}
+  .stage-sub{color:var(--ink-soft); font-size:15px; margin:0 0 20px; max-width:70ch}
+
+  .flow{display:grid; align-items:stretch; grid-template-columns:1fr auto 1.15fr auto 1fr}
+  @media (max-width:760px){ .flow{grid-template-columns:1fr} }
+
+  .node{background:var(--bg); border:1px solid var(--line); border-radius:14px;
+    padding:16px; display:flex; flex-direction:column; gap:6px; min-height:100%;
+    transition:transform .15s, box-shadow .15s}
+  .node:hover{transform:translateY(-3px); box-shadow:var(--shadow-lg)}
+  .node.core{background:var(--accent-soft); border-color:var(--accent)}
+  .node.core{animation:breathe 3.4s ease-in-out infinite}
+  @keyframes breathe{0%,100%{box-shadow:0 0 0 0 transparent}50%{box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 18%, transparent)}}
+  .node .n-label{font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-soft)}
+  .node .n-title{font-family:var(--disp); font-weight:600; font-size:16px}
+  .node .n-body{font-size:13.5px; color:var(--ink-soft); line-height:1.5}
+  .node .n-body code, .file{font-family:var(--mono); font-size:12px; color:var(--ink);
+    background:var(--panel-2); padding:1px 6px; border-radius:5px; white-space:nowrap}
+  .node ul{margin:2px 0 0; padding-left:16px; font-size:13px; color:var(--ink-soft)}
+  .node li{margin:2px 0}
+
+  .conn{position:relative; min-width:64px; display:flex; align-items:center; justify-content:center}
+  @media (max-width:760px){ .conn{min-height:52px; width:100%} }
+  .conn svg{width:100%; height:56px; overflow:visible; display:block}
+  @media (max-width:760px){ .conn svg{height:52px; transform:rotate(90deg)} }
+  .conn .lbl{position:absolute; top:-4px; left:50%; transform:translateX(-50%);
+    font-family:var(--mono); font-size:10.5px; color:var(--accent); background:var(--panel);
+    padding:1px 6px; border-radius:6px; white-space:nowrap; border:1px solid var(--line)}
+  path.track{stroke:var(--line); stroke-width:2; fill:none}
+  path.beam{stroke:var(--accent); stroke-width:2.5; fill:none; stroke-dasharray:7 11; animation:flow 1.1s linear infinite}
+  @keyframes flow{to{stroke-dashoffset:-36}}
+  .arrowhead{fill:var(--accent)}
+  .movingdot{fill:var(--accent)}
+
+  .verdicts{display:flex; gap:10px; flex-wrap:wrap; margin-top:8px}
+  .vpill{font-family:var(--mono); font-size:12px; padding:4px 10px; border-radius:999px;
+    border:1px solid var(--line); display:inline-flex; gap:6px; align-items:center}
+  .vpill.keep{color:var(--keep); border-color:var(--keep)}
+  .vpill.kill{color:var(--kill); border-color:var(--kill)}
+  .vpill.rerun{color:var(--amber); border-color:var(--amber)}
+
+  .interlude{display:flex; align-items:center; gap:14px; justify-content:center; margin:0 auto 30px;
+    color:var(--ink-soft); font-size:13.5px; max-width:760px; text-align:center}
+  .interlude .down{font-family:var(--mono); font-size:20px; animation:bob 1.6s ease-in-out infinite}
+
+  .rule{margin-top:20px; padding:16px 18px; border-radius:12px; background:var(--amber-soft);
+    border:1px solid var(--amber); display:flex; gap:12px; align-items:flex-start; font-size:14px}
+  .rule .tag{font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--amber); font-weight:600; white-space:nowrap; padding-top:1px}
+
+  /* ---------- animated measurement meter (evolve) ---------- */
+  .meter{margin-top:20px; padding:18px 20px; background:var(--bg); border:1px solid var(--line); border-radius:14px}
+  .meter h4{font-family:var(--disp); margin:0 0 4px; font-size:15px}
+  .meter .cap{font-size:12.5px; color:var(--ink-soft); margin:0 0 16px}
+  .bar-row{display:grid; grid-template-columns:120px 1fr 56px; align-items:center; gap:12px; margin:10px 0}
+  @media (max-width:520px){ .bar-row{grid-template-columns:90px 1fr 48px} }
+  .bar-row .name{font-family:var(--mono); font-size:12.5px}
+  .bar-row .name .sub{color:var(--ink-soft); font-size:11px}
+  .track2{position:relative; height:20px; background:var(--panel-2); border-radius:999px; overflow:hidden}
+  .fill2{position:absolute; inset:0 auto 0 0; width:0; border-radius:999px; transition:width 1.1s cubic-bezier(.2,.7,.2,1)}
+  .fill2.base{background:var(--ink-soft)}
+  .fill2.cand{background:var(--evolve)}
+  .in .fill2.base{width:33%} .in .fill2.cand{width:100%}
+  .bar-row .pct{font-family:var(--mono); font-size:13px; font-weight:500; text-align:right; font-variant-numeric:tabular-nums}
+  .gainflag{margin-top:14px; display:inline-flex; align-items:center; gap:8px; font-family:var(--mono);
+    font-size:12.5px; color:var(--keep); background:var(--harvest-soft); border:1px solid var(--keep);
+    padding:5px 12px; border-radius:999px; opacity:0; transform:translateX(-8px); transition:opacity .5s .9s, transform .5s .9s}
+  .in .gainflag{opacity:1; transform:none}
+
+  /* =================== DEEP DIVE =================== */
+  .deep{padding:40px 0 10px}
+  .deep-head{text-align:center; max-width:70ch; margin:0 auto 10px}
+  .deep-head .kicker{margin-bottom:10px}
+  .deep-head h2{font-family:var(--disp); font-weight:700; font-size:clamp(26px,4vw,40px);
+    letter-spacing:-.02em; margin:0 0 12px}
+  .deep-head p{color:var(--ink-soft); font-size:16px; margin:0}
+
+  .dd{margin:44px auto 0; scroll-margin-top:78px}
+  .dd.harvest{--accent:var(--harvest); --accent-soft:var(--harvest-soft)}
+  .dd.evolve{--accent:var(--evolve);  --accent-soft:var(--evolve-soft)}
+  .dd.prune{--accent:var(--prune);    --accent-soft:var(--prune-soft)}
+  .dd-title{display:flex; align-items:center; gap:12px; margin-bottom:6px}
+  .dd-title .num{font-family:var(--mono); font-size:13px; color:#fff; background:var(--accent);
+    width:30px; height:30px; border-radius:9px; display:grid; place-items:center; flex:none}
+  .dd-title h3{font-family:var(--disp); font-weight:600; font-size:clamp(19px,2.6vw,24px); margin:0; letter-spacing:-.01em}
+  .dd-lede{color:var(--ink-soft); font-size:15px; margin:0 0 8px; max-width:74ch}
+
+  figure.fig{margin:22px 0 0; padding:22px; background:var(--panel); border:1px solid var(--line);
+    border-radius:16px; box-shadow:var(--shadow); color:var(--ink)}
+  figure.fig .figwrap{overflow-x:auto}
+  figure.fig svg{display:block; width:100%; height:auto; min-width:520px; margin:0 auto}
+  figure.fig figcaption{margin-top:14px; font-size:13px; color:var(--ink-soft); text-align:center; text-wrap:balance}
+  figure.fig figcaption b{color:var(--ink)}
+
+  /* file-tree card */
+  .tree{margin:22px 0 0; padding:22px; background:var(--panel); border:1px solid var(--line);
+    border-radius:16px; box-shadow:var(--shadow)}
+  .tree .root{font-family:var(--mono); font-size:13px; color:var(--ink); margin-bottom:10px}
+  .trow{display:grid; grid-template-columns:190px 1fr; gap:14px; padding:9px 0; border-top:1px solid var(--line); align-items:baseline}
+  @media (max-width:560px){ .trow{grid-template-columns:1fr; gap:2px} }
+  .trow .fn{font-family:var(--mono); font-size:13px; color:var(--accent); font-weight:500}
+  .trow .fd{font-size:13.5px; color:var(--ink-soft)}
+  .trow .fd b{color:var(--ink)}
+
+  .callout{margin:22px 0 0; padding:16px 18px; border-radius:12px; background:var(--accent-soft);
+    border:1px solid var(--accent); font-size:14px; color:var(--ink)}
+  .callout a{color:var(--accent); font-weight:600; text-decoration:none; display:inline-block; margin-top:8px}
+  .callout a:hover{text-decoration:underline}
+  .callout .tag{font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--accent); font-weight:600; display:block; margin-bottom:5px}
+
+  /* ---------- closing loop ---------- */
+  .loopwrap{margin:56px auto 10px; padding:30px; background:var(--panel); border:1px solid var(--line);
+    border-radius:22px; box-shadow:var(--shadow-lg); text-align:center}
+  .loopwrap h3{font-family:var(--disp); font-weight:600; font-size:22px; margin:0 0 6px}
+  .loopwrap p{color:var(--ink-soft); font-size:14.5px; margin:0 auto 18px; max-width:64ch}
+  .loopwrap svg{width:100%; max-width:520px; height:auto; margin:0 auto}
+  .rotor{transform-origin:260px 200px; animation:spin 9s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* memory grid */
+  .memory{margin:34px auto 10px; padding:26px; border:1px dashed var(--line); border-radius:20px; background:var(--panel)}
+  .memory h3{font-family:var(--disp); font-weight:600; margin:0 0 6px; font-size:18px}
+  .memory p{margin:0 0 20px; color:var(--ink-soft); font-size:14px; max-width:72ch}
+  .mgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:14px}
+  @media (max-width:760px){ .mgrid{grid-template-columns:repeat(2,1fr)} }
+  .mcell{background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:14px; transition:transform .15s, box-shadow .15s}
+  .mcell:hover{transform:translateY(-3px); box-shadow:var(--shadow-lg)}
+  .mcell .mf{font-family:var(--mono); font-size:12.5px; font-weight:500; margin-bottom:5px}
+  .mcell .md{font-size:12.5px; color:var(--ink-soft); line-height:1.45}
+  .mcell.h{border-left:3px solid var(--harvest)} .mcell.e{border-left:3px solid var(--evolve)} .mcell.p{border-left:3px solid var(--prune)}
+
+  footer.end{padding:44px 0 70px; text-align:center; color:var(--ink-soft); font-size:13px}
+  footer.end code{font-family:var(--mono); color:var(--ink)}
+  footer.end .labcta{display:inline-block; margin-top:16px; padding:11px 20px; border-radius:999px;
+    border:1px solid var(--evolve); background:var(--panel); color:var(--ink); text-decoration:none;
+    font-family:var(--mono); font-size:13px; box-shadow:var(--shadow); transition:transform .15s, box-shadow .15s}
+  footer.end .labcta:hover{transform:translateY(-2px); box-shadow:var(--shadow-lg)}
+  footer.end .labcta b{color:var(--evolve)}
+
+  /* SVG helpers */
+  .s-track{stroke:var(--line); stroke-width:2; fill:none}
+  .s-acc{stroke:var(--accent); fill:none}
+  .s-box{fill:var(--bg); stroke:var(--line); stroke-width:1.5}
+  .s-boxacc{fill:var(--accent-soft); stroke:var(--accent); stroke-width:1.5}
+  .t-ink{fill:var(--ink)} .t-soft{fill:var(--ink-soft)} .t-acc{fill:var(--accent)}
+  .mono{font-family:var(--mono)} .disp{font-family:var(--disp)}
+  .dashflow{stroke:var(--accent); stroke-width:2.5; fill:none; stroke-dasharray:7 10; animation:flow 1.1s linear infinite}
+
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto}
+    .beam,.dashflow{animation:none; stroke-dasharray:none}
+    .movingdot circle,.down,.a,.rotor,.node.core,h1 .dot{animation:none!important}
+    .will-reveal{opacity:1; transform:none; transition:none}
+    .fill2{transition:none} .gainflag{transition:none; opacity:1; transform:none}
+    .movingdot animate{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="progress" id="prog"></div>
+<button class="toggle" id="themeBtn" aria-label="Toggle light or dark theme">◑ theme</button>
+
+<div class="wrap">
+
+  <header class="top">
+    <p class="kicker">Cortex · self-improving skills for Claude Code</p>
+    <h1>Skills that earn their place<span class="dot">.</span></h1>
+    <p class="lede">
+      Cortex turns your everyday coding into a loop that <b>writes new skills</b>,
+      <b>measures whether they actually help</b>, and <b>deletes the ones that don't</b> —
+      using nothing but your own past work as the test. And it keeps each one
+      <b>loaded only where it matters</b>, so your context stays lean.
+    </p>
+    <p class="thesis">
+      <span class="hl-h">Collect</span> what keeps going wrong &nbsp;→&nbsp;
+      <span class="hl-e">measure</span> one fix against the real jobs &nbsp;→&nbsp;
+      <span class="hl-p">remove</span> whatever stopped pulling its weight.
+    </p>
+    <div class="scrollcue">scroll to explore<span class="a">↓</span></div>
+  </header>
+
+  <nav class="rail-nav" id="railnav">
+    <div class="chips">
+      <a class="chip h" data-target="s-harvest"><span class="swatch"></span>/harvest <span class="when">· every session</span></a>
+      <a class="chip e" data-target="s-evolve"><span class="swatch"></span>/evolve <span class="when">· weekly</span></a>
+      <a class="chip p" data-target="s-prune"><span class="swatch"></span>/prune <span class="when">· monthly</span></a>
+    </div>
+  </nav>
+
+  <section class="rail">
+    <div class="rail-head will-reveal">
+      <h2>Three commands, three jobs</h2>
+      <p>Each runs on its own rhythm. Together they form one closed loop.</p>
+    </div>
+
+    <!-- ============ HARVEST ============ -->
+    <div class="stage harvest will-reveal" id="s-harvest">
+      <div class="stage-head">
+        <span class="badge">/harvest</span>
+        <span class="role">Save what just happened</span>
+        <span class="cadence">end of every session · 0 rollouts</span>
+      </div>
+      <p class="stage-sub">
+        You just fixed a bug. The environment is still warm and you remember exactly what broke.
+        <b>Harvest freezes that moment into a reusable test</b> before you close the session — because rebuilding it later is ten times the work.
+      </p>
+      <div class="flow">
+        <div class="node">
+          <span class="n-label">Input</span><span class="n-title">Your session</span>
+          <span class="n-body">A real thing you fixed, or a correction you made to Claude — twice on the same point.</span>
+        </div>
+        <div class="conn"><span class="lbl">if worth it</span>
+          <svg viewBox="0 0 64 56" preserveAspectRatio="none" aria-hidden="true">
+            <path class="track" d="M2,28 H54"/><path class="beam" d="M2,28 H54"/>
+            <polygon class="arrowhead" points="54,22 64,28 54,34"/>
+            <g class="movingdot"><circle r="3" cy="28"><animate attributeName="cx" values="4;54" dur="1.1s" repeatCount="indefinite"/></circle></g>
+          </svg>
+        </div>
+        <div class="node core">
+          <span class="n-label">What it captures</span><span class="n-title">One task</span>
+          <span class="n-body">A few small files that let the bug be replayed forever:</span>
+          <ul>
+            <li><span class="file">task.yaml</span> — <span class="file">base_sha</span>, the broken commit</li>
+            <li><span class="file">prompt.txt</span> — what you asked</li>
+            <li><span class="file">check.sh</span> — the exact test</li>
+            <li><span class="file">fix.patch</span> — proof it's solvable</li>
+            <li><span class="file">notes.md</span> — what was wrong, and which skills cover that area</li>
+          </ul>
+        </div>
+        <div class="conn"><span class="lbl">saved to</span>
+          <svg viewBox="0 0 64 56" preserveAspectRatio="none" aria-hidden="true">
+            <path class="track" d="M2,28 H54"/><path class="beam" d="M2,28 H54"/>
+            <polygon class="arrowhead" points="54,22 64,28 54,34"/>
+            <g class="movingdot"><circle r="3" cy="28"><animate attributeName="cx" values="4;54" dur="1.1s" repeatCount="indefinite"/></circle></g>
+          </svg>
+        </div>
+        <div class="node">
+          <span class="n-label">Output</span><span class="n-title">The ruler grows</span>
+          <span class="n-body"><span class="file">.evolve/tasks/</span> gains a test. Corrections land in <span class="file">lessons.md</span>. The skills are re-checked (<code>cortex skills</code>). <b>No skill is written yet.</b></span>
+        </div>
+      </div>
+      <div class="rule">
+        <span class="tag">the filter</span>
+        <span><b>Most sessions produce nothing — and that's correct.</b> Harvest only keeps a session where something truly went broken → working. A pile of junk tests is worse than none.</span>
+      </div>
+    </div>
+
+    <div class="interlude will-reveal"><span class="down">▼</span>
+      <span>After a couple of weeks you have a handful of real tests. Now they can <b>measure</b> a new skill.</span></div>
+
+    <!-- ============ EVOLVE ============ -->
+    <div class="stage evolve will-reveal" id="s-evolve">
+      <div class="stage-head">
+        <span class="badge">/evolve</span>
+        <span class="role">Propose one skill, then measure it</span>
+        <span class="cadence">weekly · 8–38 rollouts</span>
+      </div>
+      <p class="stage-sub">
+        Evolve writes <b>one</b> new skill or rule aimed at what keeps recurring — in the tier the
+        evidence points to — then runs your tasks <b>both ways</b>, <b>without</b> it and <b>with</b> it,
+        several times each, inside throwaway clones of your repo — several at once, sized to your free RAM. The numbers decide, not opinion.
+      </p>
+      <div class="flow">
+        <div class="node">
+          <span class="n-label">Input</span><span class="n-title">Tasks + lessons</span>
+          <span class="n-body">Reads what recurs, picks <b>one</b> theme, writes a candidate — not yet live — and checks for free that a task can load it.</span>
+        </div>
+        <div class="conn"><span class="lbl">run twice</span>
+          <svg viewBox="0 0 64 56" preserveAspectRatio="none" aria-hidden="true">
+            <path class="track" d="M2,28 H54"/><path class="beam" d="M2,28 H54"/>
+            <polygon class="arrowhead" points="54,22 64,28 54,34"/>
+            <g class="movingdot"><circle r="3" cy="28"><animate attributeName="cx" values="4;54" dur="1.1s" repeatCount="indefinite"/></circle></g>
+          </svg>
+        </div>
+        <div class="node core">
+          <span class="n-label">The experiment</span><span class="n-title">base vs cand</span>
+          <span class="n-body">Same code, same tasks, one difference:</span>
+          <ul><li><b>base</b> — all your current skills &amp; rules</li><li><b>cand</b> — the same + the new one</li></ul>
+          <span class="n-body">Each fix attempt is a fresh, disposable Claude run, recording what loaded and what it cost.</span>
+        </div>
+        <div class="conn"><span class="lbl">score</span>
+          <svg viewBox="0 0 64 56" preserveAspectRatio="none" aria-hidden="true">
+            <path class="track" d="M2,28 H54"/><path class="beam" d="M2,28 H54"/>
+            <polygon class="arrowhead" points="54,22 64,28 54,34"/>
+            <g class="movingdot"><circle r="3" cy="28"><animate attributeName="cx" values="4;54" dur="1.1s" repeatCount="indefinite"/></circle></g>
+          </svg>
+        </div>
+        <div class="node">
+          <span class="n-label">Verdict</span><span class="n-title">Keep or kill</span>
+          <span class="n-body">It loaded, helped something, <b>and</b> broke nothing?</span>
+          <div class="verdicts">
+            <span class="vpill keep"><b>KEEP</b> → live</span>
+            <span class="vpill kill"><b>KILL</b> → graveyard</span>
+            <span class="vpill rerun"><b>RECHECK</b> → re-test one drop</span>
+            <span class="vpill rerun"><b>RERUN</b> → bad data</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="meter will-reveal">
+        <h4>What "measure" looks like</h4>
+        <p class="cap">Solve-rate across your tasks, run with and without the candidate skill. This is the whole decision.</p>
+        <div class="bar-row">
+          <span class="name">base<br><span class="sub">without skill</span></span>
+          <span class="track2"><span class="fill2 base"></span></span>
+          <span class="pct">33%</span>
+        </div>
+        <div class="bar-row">
+          <span class="name">cand<br><span class="sub">with skill</span></span>
+          <span class="track2"><span class="fill2 cand"></span></span>
+          <span class="pct">100%</span>
+        </div>
+        <span class="gainflag">▲ gain +67% · nothing regressed → KEEP</span>
+      </div>
+
+      <div class="rule">
+        <span class="tag">the one rule</span>
+        <span><b>Preserve &amp; extend.</b> A skill is kept only if it <b>improves at least one task</b> and <b>breaks none that already worked</b> — and it must actually have <b>loaded</b>, or the win was not its doing. Not "better on average" — <b>breaks nothing</b>. That single rule is why the skills folder never rots.</span>
+      </div>
+    </div>
+
+    <div class="interlude will-reveal"><span class="down">▼</span>
+      <span>Kept skills accumulate. Every always-on skill costs attention on every turn — so they must keep proving they're worth it, or move to a tier that loads only where it applies.</span></div>
+
+    <!-- ============ PRUNE ============ -->
+    <div class="stage prune will-reveal" id="s-prune">
+      <div class="stage-head">
+        <span class="badge">/prune</span>
+        <span class="role">Delete what stopped earning its place</span>
+        <span class="cadence">monthly · &amp; after every model upgrade</span>
+      </div>
+      <p class="stage-sub">
+        Every always-on skill sits in Claude's context on <b>every turn, forever</b>. Prune measures what
+        removing a skill or rule would really cost — on a throwaway copy, never touching your live ones —
+        and deletes only what costs nothing. It also <b>narrows</b>: a skill used in one area only moves to a
+        path-gated skill or rule that loads only when Claude touches that area. A new model may already
+        know what an old skill teaches. <b>Nothing runs until you approve the plan</b> — it shows the
+        rollouts, time, tokens and cost first.
+      </p>
+      <div class="flow">
+        <div class="node">
+          <span class="n-label">Input</span><span class="n-title">A plan you approve</span>
+          <span class="n-body">After a model change, <b>every</b> item; otherwise up to <code>prune.max_items</code> Claude doubts — overlaps, narrow wins, big always-on descriptions — read against your real usage. Items no task can measure are skipped. <b>You see the cost and say yes first.</b></span>
+        </div>
+        <div class="conn"><span class="lbl">measure without</span>
+          <svg viewBox="0 0 64 56" preserveAspectRatio="none" aria-hidden="true">
+            <path class="track" d="M2,28 H54"/><path class="beam" d="M2,28 H54"/>
+            <polygon class="arrowhead" points="54,22 64,28 54,34"/>
+            <g class="movingdot"><circle r="3" cy="28"><animate attributeName="cx" values="4;54" dur="1.1s" repeatCount="indefinite"/></circle></g>
+          </svg>
+        </div>
+        <div class="node core">
+          <span class="n-label">The experiment</span><span class="n-title">base vs cand</span>
+          <span class="n-body">One item of difference, only on the tasks where it can load:</span>
+          <ul><li><b>base</b> — your skills &amp; rules as they are now</li><li><b>cand</b> — the same, without that one</li></ul>
+          <span class="n-body">Every run records what actually loaded, and what it cost.</span>
+        </div>
+        <div class="conn"><span class="lbl">decide</span>
+          <svg viewBox="0 0 64 56" preserveAspectRatio="none" aria-hidden="true">
+            <path class="track" d="M2,28 H54"/><path class="beam" d="M2,28 H54"/>
+            <polygon class="arrowhead" points="54,22 64,28 54,34"/>
+            <g class="movingdot"><circle r="3" cy="28"><animate attributeName="cx" values="4;54" dur="1.1s" repeatCount="indefinite"/></circle></g>
+          </svg>
+        </div>
+        <div class="node">
+          <span class="n-label">Verdict</span><span class="n-title">Delete or keep</span>
+          <span class="n-body">It fired, <b>and</b> removing it cost nothing?</span>
+          <div class="verdicts">
+            <span class="vpill kill"><b>ACCEPT</b> → graveyard</span>
+            <span class="vpill keep"><b>REJECT</b> → stays</span>
+            <span class="vpill rerun"><b>UNMEASURED</b> → stays</span>
+            <span class="vpill rerun"><b>RERUN</b> → bad data</span>
+          </div>
+        </div>
+      </div>
+      <div class="rule">
+        <span class="tag">the one rule</span>
+        <span><b>Deleted only on evidence.</b> A skill goes only when it <b>fired</b> during the tests and removing it <b>cost nothing</b>. Not because it hasn't been used lately — your usage only decides <em>what gets tested</em> — and a skill no task exercises is <b>unmeasured</b>, and it stays.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== THE IDEAS =================== -->
+  <section class="deep">
+    <div class="deep-head will-reveal">
+      <p class="kicker">the thinking behind it</p>
+      <h2>Three simple ideas</h2>
+      <p>The overview showed the workflow. These are the ideas that make it trustworthy — each one is something you already understand from everyday life.</p>
+    </div>
+
+    <!-- IDEA 1 : harvest -->
+    <div class="dd harvest will-reveal">
+      <div class="dd-title"><span class="num">1</span><h3>A test is a bug you can replay</h3></div>
+      <p class="dd-lede">Like a checkpoint in a video game. When you fix something, Cortex saves the "before" — so it can drop any skill back into that exact broken moment and see if it copes, as many times as it likes.</p>
+
+      <figure class="fig">
+        <div class="figwrap">
+          <svg viewBox="0 0 760 190" role="img" aria-label="Something is broken, then you fix it. Cortex saves the broken moment as a checkpoint it can reload again and again.">
+            <!-- broken -->
+            <rect class="s-box" x="50" y="66" width="180" height="66" rx="14"/>
+            <text class="disp t-ink" x="140" y="96" font-size="15" text-anchor="middle" font-weight="600">something breaks</text>
+            <text x="140" y="117" font-size="12.5" text-anchor="middle" fill="var(--kill)">✗ the test is red</text>
+            <!-- you fix it -->
+            <line class="dashflow" x1="238" y1="99" x2="308" y2="99"/><polygon class="t-acc" points="308,93 320,99 308,105"/>
+            <text class="t-soft" x="279" y="86" font-size="12" text-anchor="middle">you fix it</text>
+            <!-- fixed -->
+            <rect class="s-box" x="330" y="66" width="180" height="66" rx="14"/>
+            <text class="disp t-ink" x="420" y="96" font-size="15" text-anchor="middle" font-weight="600">it works</text>
+            <text x="420" y="117" font-size="12.5" text-anchor="middle" fill="var(--keep)">✓ the test is green</text>
+            <!-- saved as replayable -->
+            <line class="dashflow" x1="518" y1="99" x2="588" y2="99"/><polygon class="t-acc" points="588,93 600,99 588,105"/>
+            <text class="t-acc mono" x="553" y="86" font-size="11" text-anchor="middle">saved</text>
+            <rect class="s-boxacc" x="610" y="66" width="130" height="66" rx="14"/>
+            <text class="disp t-ink" x="675" y="93" font-size="14" text-anchor="middle" font-weight="600">a checkpoint</text>
+            <text class="t-acc" x="675" y="114" font-size="12.5" text-anchor="middle">↺ replay anytime</text>
+          </svg>
+        </div>
+        <figcaption>A saved test is only trusted if it's <b>red before the fix and green after</b> — proof it actually catches the bug. Anything else is quietly dropped.</figcaption>
+      </figure>
+
+      <div class="callout">
+        <span class="tag">why it matters</span>
+        These saved checkpoints become the <b>ruler</b> everything else measures against. No ruler, no way to tell a good skill from a bad one — which is why collecting comes first.
+        <br><a href="timeline.html">Why the tests rewind to the broken commit, while the skills stay at today →</a>
+      </div>
+    </div>
+
+    <!-- IDEA 2 : evolve -->
+    <div class="dd evolve will-reveal">
+      <div class="dd-title"><span class="num">2</span><h3>Judge a skill like a fair taste test</h3></div>
+      <p class="dd-lede">Two identical plates. One has the new spice, one doesn't — everything else is the same. If the spiced plate wins, it was the spice. That's exactly how a new skill is judged: the same jobs, run with it and without it, side by side.</p>
+
+      <figure class="fig">
+        <div class="figwrap">
+          <svg viewBox="0 0 760 250" role="img" aria-label="The same jobs are run in two identical worlds, one without the new skill and one with it, then the two scores are compared.">
+            <!-- same jobs -->
+            <rect class="s-box" x="40" y="96" width="130" height="58" rx="12"/>
+            <text class="disp t-ink" x="105" y="122" font-size="13.5" text-anchor="middle" font-weight="600">the same jobs</text>
+            <text class="t-soft" x="105" y="140" font-size="11.5" text-anchor="middle">your saved tests</text>
+            <!-- split to two worlds -->
+            <line class="dashflow" x1="176" y1="120" x2="250" y2="70"/><polygon class="t-acc" points="250,64 262,68 251,77"/>
+            <line class="dashflow" x1="176" y1="130" x2="250" y2="180"/><polygon class="t-acc" points="251,173 262,182 250,186"/>
+            <!-- world A: without -->
+            <rect class="s-box" x="270" y="44" width="210" height="58" rx="12"/>
+            <text class="disp t-ink" x="375" y="70" font-size="13.5" text-anchor="middle" font-weight="600">without the new skill</text>
+            <text class="t-soft" x="375" y="88" font-size="11.5" text-anchor="middle">your skills as they are today</text>
+            <!-- world B: with -->
+            <rect x="270" y="148" width="210" height="58" rx="12" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+            <text class="disp t-ink" x="375" y="174" font-size="13.5" text-anchor="middle" font-weight="600">with the new skill added</text>
+            <text class="t-acc" x="375" y="192" font-size="11.5" text-anchor="middle">the only difference</text>
+            <!-- compare -->
+            <line class="dashflow" x1="486" y1="73" x2="560" y2="112"/><polygon class="t-acc" points="558,106 566,116 552,116"/>
+            <line class="dashflow" x1="486" y1="177" x2="560" y2="138"/><polygon class="t-acc" points="552,134 566,134 558,144"/>
+            <rect class="s-boxacc" x="580" y="96" width="150" height="58" rx="12"/>
+            <text class="disp t-ink" x="655" y="122" font-size="14" text-anchor="middle" font-weight="600">compare scores</text>
+            <text class="t-soft" x="655" y="140" font-size="11.5" text-anchor="middle">did it help?</text>
+          </svg>
+        </div>
+        <figcaption>Because <b>only one thing changes</b> between the two worlds, any difference in the score can only be the new skill — never luck or a coincidence.</figcaption>
+      </figure>
+
+      <div class="callout">
+        <span class="tag">the one rule that matters</span>
+        A skill is kept only if it <b>helps at least one job and makes none of the already-working jobs worse</b>. Not "better on average" — <b>nothing you rely on is allowed to break</b>. That single rule is why your skill set never quietly rots.
+      </div>
+    </div>
+
+    <!-- IDEA 3 : prune -->
+    <div class="dd prune will-reveal">
+      <div class="dd-title"><span class="num">3</span><h3>Keep only what would be missed</h3></div>
+      <p class="dd-lede">Take an ingredient out of the recipe. If the dish tastes exactly the same, it wasn't doing anything — so drop it. Skills get the same treatment, because every always-on one you keep costs the agent a little attention on every single task.</p>
+
+      <figure class="fig">
+        <div class="figwrap">
+          <svg viewBox="0 0 760 210" role="img" aria-label="One skill is removed on a copy and the jobs are run again. If it was used and nothing gets worse it is deleted; if things get worse it is kept.">
+            <!-- take one out -->
+            <rect class="s-box" x="40" y="78" width="150" height="58" rx="12"/>
+            <text class="disp t-ink" x="115" y="104" font-size="13.5" text-anchor="middle" font-weight="600">take one skill out</text>
+            <text class="t-soft" x="115" y="122" font-size="11.5" text-anchor="middle">on a throwaway copy</text>
+            <!-- re-run -->
+            <line class="dashflow" x1="196" y1="107" x2="266" y2="107"/><polygon class="t-acc" points="266,101 278,107 266,113"/>
+            <text class="t-soft" x="231" y="94" font-size="11.5" text-anchor="middle">run the jobs again</text>
+            <rect class="s-boxacc" x="288" y="78" width="150" height="58" rx="12"/>
+            <text class="disp t-ink" x="363" y="104" font-size="13.5" text-anchor="middle" font-weight="600">anyone miss it?</text>
+            <text class="t-soft" x="363" y="122" font-size="11.5" text-anchor="middle">compare the score</text>
+            <!-- outcomes -->
+            <line class="dashflow" x1="444" y1="92" x2="520" y2="66"/><polygon class="t-acc" points="520,60 532,64 520,72"/>
+            <line class="dashflow" x1="444" y1="122" x2="520" y2="148"/><polygon class="t-acc" points="520,144 532,152 520,156"/>
+            <rect x="540" y="42" width="200" height="50" rx="11" fill="var(--bg)" stroke="var(--kill)" stroke-width="1.5"/>
+            <text class="disp" x="640" y="65" font-size="13" text-anchor="middle" font-weight="600" fill="var(--kill)">used, nothing lost → drop it</text>
+            <text class="t-soft" x="640" y="83" font-size="11.5" text-anchor="middle">it ran, but was dead weight</text>
+            <rect x="540" y="122" width="200" height="50" rx="11" fill="var(--bg)" stroke="var(--keep)" stroke-width="1.5"/>
+            <text class="disp" x="640" y="145" font-size="13" text-anchor="middle" font-weight="600" fill="var(--keep)">score dropped → keep it</text>
+            <text class="t-soft" x="640" y="163" font-size="11.5" text-anchor="middle">it was pulling its weight</text>
+          </svg>
+        </div>
+        <figcaption>A new model may already know what an old skill teaches — so this is run again after every upgrade, to sweep out skills that have quietly become redundant.</figcaption>
+      </figure>
+
+      <div class="callout">
+        <span class="tag">never used ≠ useless</span>
+        A skill the agent <b>never reaches for</b> during the tests is <b>not</b> deleted: the tests simply can't see it, so it stays and is marked <b>unmeasured</b>. How long ago a skill was last used never decides a deletion — it only helps choose what is worth testing.
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CLOSING LOOP ============ -->
+  <div class="loopwrap will-reveal">
+    <h3>It's a loop, not a line</h3>
+    <p>Harvest feeds evolve, evolve feeds prune, and the whole thing keeps turning — every week your agent gets a little sharper, and never heavier.</p>
+    <svg viewBox="0 0 520 400" role="img" aria-label="A circular loop: harvest leads to evolve leads to prune and back to harvest, turning continuously.">
+      <!-- ring -->
+      <circle cx="260" cy="200" r="130" fill="none" stroke="var(--line)" stroke-width="2" stroke-dasharray="4 8"/>
+      <!-- rotating dot -->
+      <g class="rotor"><circle cx="260" cy="70" r="7" fill="var(--evolve)"/></g>
+      <!-- nodes -->
+      <g>
+        <circle cx="260" cy="70" r="42" fill="var(--harvest-soft)" stroke="var(--harvest)" stroke-width="2"/>
+        <text class="mono" x="260" y="66" font-size="13" text-anchor="middle" font-weight="700" fill="var(--harvest)">harvest</text>
+        <text x="260" y="82" font-size="10.5" text-anchor="middle" fill="var(--ink-soft)">collect</text>
+      </g>
+      <g>
+        <circle cx="373" cy="265" r="42" fill="var(--evolve-soft)" stroke="var(--evolve)" stroke-width="2"/>
+        <text class="mono" x="373" y="261" font-size="13" text-anchor="middle" font-weight="700" fill="var(--evolve)">evolve</text>
+        <text x="373" y="277" font-size="10.5" text-anchor="middle" fill="var(--ink-soft)">measure</text>
+      </g>
+      <g>
+        <circle cx="147" cy="265" r="42" fill="var(--prune-soft)" stroke="var(--prune)" stroke-width="2"/>
+        <text class="mono" x="147" y="261" font-size="13" text-anchor="middle" font-weight="700" fill="var(--prune)">prune</text>
+        <text x="147" y="277" font-size="10.5" text-anchor="middle" fill="var(--ink-soft)">remove</text>
+      </g>
+      <!-- directional arrowheads on the ring -->
+      <polygon points="352,150 366,150 359,163" fill="var(--ink-soft)"/>
+      <polygon points="260,336 267,323 253,323" fill="var(--ink-soft)"/>
+      <polygon points="168,150 154,150 161,163" fill="var(--ink-soft)"/>
+    </svg>
+  </div>
+
+  <!-- memory grid -->
+  <section class="memory will-reveal">
+    <h3>What ties it together</h3>
+    <p>Each command is a fresh session with no memory of the last. These files on disk <b>are</b> the memory — written by one command, read by the next.</p>
+    <div class="mgrid">
+      <div class="mcell h"><div class="mf">.evolve/tasks/</div><div class="md">The ruler. Real bugs, replayable forever. Grown by <b>harvest</b>, used by <b>evolve</b> &amp; <b>prune</b>.</div></div>
+      <div class="mcell h"><div class="mf">lessons.md</div><div class="md">One line per correction. Written by <b>harvest</b>, mined by <b>evolve</b> to find what recurs.</div></div>
+      <div class="mcell e"><div class="mf">journal.md</div><div class="md">Every verdict, kept or killed. So next week's <b>evolve</b> never retries a dead idea.</div></div>
+      <div class="mcell e"><div class="mf">.evolve/runs/</div><div class="md">One results file per sweep: every rollout's pass or fail, what loaded, and its tokens, cost and time. Read by <b>cortex score</b>, and by the next plan's estimate.</div></div>
+      <div class="mcell p"><div class="mf">prune-plan.json</div><div class="md">The <b>prune</b> pass you approved: which items, on which tasks, the estimate, and what was decided — so a pass resumes across turns.</div></div>
+      <div class="mcell p"><div class="mf">.claude/skills/ &amp; rules/</div><div class="md">The live set, in tiers: always-on skills, path-gated skills and rules that load only when Claude touches their <code>paths</code>. Grown by <b>evolve</b>, trimmed and narrowed by <b>prune</b>, checked by <code>cortex skills</code>.</div></div>
+    </div>
+  </section>
+
+  <footer class="end">
+    <p>Nothing here changes the model. Cortex evolves only the <b>harness</b> around it — and every gain is a diff you can read. &nbsp;·&nbsp; <code>cortex init</code> to begin.</p>
+    <a class="labcta" href="lab.html">Does it actually work? &nbsp;→&nbsp; <b>the lab</b>, step by step</a>
+  </footer>
+
+</div>
+
+<script>
+  (function(){
+    var root=document.documentElement;
+    /* theme toggle */
+    var btn=document.getElementById('themeBtn');
+    function current(){var t=root.getAttribute('data-theme'); if(t) return t;
+      return matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}
+    btn.addEventListener('click',function(){
+      var next=current()==='dark'?'light':'dark';
+      root.setAttribute('data-theme',next);
+      btn.textContent=next==='dark'?'☀ light':'☾ dark';
+    });
+
+    var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /* scroll progress + sticky nav border */
+    var prog=document.getElementById('prog');
+    var nav=document.getElementById('railnav');
+    function onScroll(){
+      var h=document.documentElement;
+      var max=h.scrollHeight-h.clientHeight;
+      prog.style.width=(max>0?(h.scrollTop/max*100):0)+'%';
+      nav.classList.toggle('stuck', h.scrollTop>360);
+    }
+    addEventListener('scroll',onScroll,{passive:true}); onScroll();
+
+    /* reveal on scroll — fail-safe: content is visible by default; JS arms the
+       hide only when it can guarantee a reveal, and a fallback timer un-hides
+       anything the observer never reached, so a section can never get stuck. */
+    var reveals=[].slice.call(document.querySelectorAll('.will-reveal'));
+    if(!reduce && ('IntersectionObserver' in window)){
+      reveals.forEach(function(el){el.classList.add('armed');});
+      var io=new IntersectionObserver(function(entries){
+        entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });
+      },{threshold:.12, rootMargin:'0px 0px -6% 0px'});
+      reveals.forEach(function(el){io.observe(el);});
+      /* safety net: if anything is still armed-but-unrevealed shortly after
+         load (observer quirk, print, or capture), just show it. */
+      setTimeout(function(){
+        reveals.forEach(function(el){
+          if(el.classList.contains('armed') && !el.classList.contains('in')){
+            var r=el.getBoundingClientRect();
+            if(r.top < innerHeight*1.2) el.classList.add('in');
+          }
+        });
+      },600);
+    }
+    /* without JS or with reduced motion: nothing armed → everything visible */
+
+    /* chip nav: smooth-scroll + active state */
+    var chips=[].slice.call(document.querySelectorAll('.chip'));
+    chips.forEach(function(c){
+      c.addEventListener('click',function(){
+        var el=document.getElementById(c.getAttribute('data-target'));
+        if(el) el.scrollIntoView({behavior:reduce?'auto':'smooth', block:'start'});
+      });
+    });
+    var stages=['s-harvest','s-evolve','s-prune'].map(function(id){return document.getElementById(id);});
+    if('IntersectionObserver' in window){
+      var so=new IntersectionObserver(function(entries){
+        entries.forEach(function(e){
+          if(e.isIntersecting){
+            var id=e.target.id;
+            chips.forEach(function(c){c.classList.toggle('active', c.getAttribute('data-target')===id);});
+          }
+        });
+      },{threshold:.5});
+      stages.forEach(function(s){ if(s) so.observe(s); });
+    }
+  })();
+</script>
+</body>
+</html>
