@@ -4,8 +4,7 @@ This document explains the reasoning behind Cortex's design. It describes only
 what the code actually does. Every principle names the file that implements
 it, so you can check it. The README tells you how to use Cortex; this document
 tells you why it works the way it does. Ideas that come from other work are
-credited in [Where the ideas come from](#where-the-ideas-come-from), and a full
-comparison with related work is in [`paper/concept-audit.md`](../paper/concept-audit.md).
+credited in [Where the ideas come from](#where-the-ideas-come-from).
 
 ---
 
@@ -414,8 +413,7 @@ reading too much into a KEEP is the main risk.
   separated from run-to-run noise even with 20+ tasks (Skill Issue). On 3–10
   tasks, Cortex can reliably see large, repository-specific effects (tens of
   points on the tasks a skill touches) and will mostly miss small ones. A KEEP
-  of a small effect is weak evidence. (A rough simulation is in
-  `paper/concept-audit.md` §7. Measuring it properly is planned.)
+  of a small effect is weak evidence. (Measuring it properly is planned.)
 - **RECHECK is asymmetric.** Regression-only kills are replicated; marginal
   KEEPs are not. This leans towards keeping.
 - **The suite is the proxy.** Cycle after cycle on the same few tasks, the
@@ -502,9 +500,7 @@ theme, all measured on one model. It is a strong lead, not a law, and
 
 ## Where the ideas come from
 
-Cortex adapts ideas from other work and adds its own. A concept-by-concept
-comparison with more than twenty papers is in
-[`paper/concept-audit.md`](../paper/concept-audit.md). In short:
+Cortex adapts ideas from other work and adds its own. In short:
 
 | Idea in Cortex | Status | Source |
 |---|---|---|

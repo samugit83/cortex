@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+"""scrub-data — strip personal paths from the shipped rows (brief §7.4).
+
+  scrub-data [--check]      --check: report what would change, change nothing
+
+The rows under lab/reports/data/ record where each run lived on the machine that
+ran it: absolute paths under the operator's home directory. They are not needed to
+rebuild anything — the §5.1 exclusions travel inside each run's row — so they are
+replaced by stable placeholders:
+
+  <home>/Progetti didattici/   ->  <workspace>/
+  <home>/                      ->  ~/
+  the user name, anywhere else ->  <user>
+
+Run it once, after the last export: any later export writes real paths again.
+Exit 1 with --check when something is left to scrub.
+"""
+import getpass
+import json
+import os
+import sys
+from pathlib import Path
+
+DATA = Path(__file__).resolve().parents[1] / "reports" / "data"
+HOME = str(Path.home())
+USER = getpass.getuser()
+RULES = [(HOME + "/Progetti didattici/", "<workspace>/"), (HOME + "/", "~/"), (HOME, "~")]
+
+
+def scrub(text):
+    for a, b in RULES:
+        text = text.replace(a, b)
+    return text.replace(f"/{USER}/", "/<user>/")
+
+
+def files():
+    """The shipped rows, and the report's own Markdown (DEVIATIONS, RESUME, …)."""
+    return (sorted(DATA.glob("*.json*")) + sorted(DATA.glob("*.md"))
+            + sorted(DATA.parent.glob("*.md")))
+
+
+def main():
+    check = "--check" in sys.argv[1:]
+    left = 0
+    for f in files():
+        old = f.read_text(encoding="utf-8")
+        new = scrub(old)
+        if new == old:
+            continue
+        # every line must still parse: a placeholder must never break a row
+        if f.suffix == ".jsonl":
+            for line in new.splitlines():
+                if line.strip():
+                    json.loads(line)
+        elif f.suffix == ".json":
+            json.loads(new)
+        n = sum(1 for a, b in zip(old.splitlines(), new.splitlines()) if a != b)
+        left += n
+        print(f"{'would scrub' if check else 'scrubbed'} {n:4} line(s)  {f.name}")
+        if not check:
+            f.write_text(new, encoding="utf-8")
+    remaining = [f.name for f in files() if USER in f.read_text(encoding="utf-8")]
+    if remaining and not check:
+        print(f"still mentions the user name: {', '.join(remaining)}", file=sys.stderr)
+        return 1
+    return 1 if (check and left) else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,188 @@
+[
+ {
+  "id": "H0",
+  "hypothesis": "Without a harness the agent breaks A/B/C/E often and passes D",
+  "test": "`none` arm, holdout",
+  "estimate": "A0% B26% C2% D100% E55%",
+  "interval": "\u2014",
+  "margin": "D at or above 90%, and at least three of A/B/C/E below 50%",
+  "verdict": "SUPPORTED",
+  "evidence": "F1, T4 \u00b7 the stricter reading, all four below 50%, is not met \u00b7 the margin is the rule the analysis code applies (DEVIATIONS D-22)"
+ },
+ {
+  "id": "H1",
+  "hypothesis": "PRIMARY. On holdout tasks `evolved` beats `none`, A+B+C+E pooled",
+  "test": "paired by task, two-way bootstrap over runs and tasks",
+  "estimate": "+55.0 points",
+  "interval": "[+34.1, +74.1]",
+  "margin": "lower bound above 0",
+  "verdict": "SUPPORTED",
+  "evidence": "T4, F2, F3 \u00b7 permutation p = 9.999e-05 \u00b7 92 complete-case scenario-run pairs (23 scenarios) \u00b7 all-valid set: +56.5 [+35.4, +75.0]"
+ },
+ {
+  "id": "H2",
+  "hypothesis": "PRIMARY. Family D is not harmed, and no spurious item is kept",
+  "test": "family D, paired, two-way bootstrap; plus the kept-item list",
+  "estimate": "-0.8 points; 0 spurious item(s)",
+  "interval": "[-5.0, +0.0]",
+  "margin": "lower bound above -10 and no spurious item",
+  "verdict": "SUPPORTED",
+  "evidence": "T4, T6, F2"
+ },
+ {
+  "id": "H3",
+  "hypothesis": "Each kept item lands in a defensible tier and fires in its own area",
+  "test": "the three-part rubric of PREREGISTRATION.md \u00a711.2",
+  "estimate": "15 of 18 items scored 3/3",
+  "interval": "\u2014",
+  "margin": "every kept item scores 3/3",
+  "verdict": "NOT SUPPORTED",
+  "evidence": "T6, F9"
+ },
+ {
+  "id": "H4",
+  "hypothesis": "Corrections fall once an item is live, beyond the control runs",
+  "test": "corrections per session, evaluation against control, permutation over runs",
+  "estimate": "-0.31 corrections per session",
+  "interval": "see T9",
+  "margin": "evaluation below control",
+  "verdict": "SUPPORTED",
+  "evidence": "T9, F5"
+ },
+ {
+  "id": "H5",
+  "hypothesis": "Gates are calibrated: placebos rarely kept, harmful killed, positives kept",
+  "test": "29 candidates with a known right answer through the real pipeline",
+  "estimate": "false KEEP 0/20; harmful kept 0/5 (score.sh: 2 KILL, 3 RERUN); positives kept 2/4",
+  "interval": "false KEEP [0%, 17%]",
+  "margin": "false-KEEP upper bound below 25%, every harmful killed, at least 3 of 4 positives kept",
+  "verdict": "NOT SUPPORTED",
+  "evidence": "T8, F10 \u00b7 a harmful candidate counts as killed when score.sh killed it (DEVIATIONS D-22)"
+ },
+ {
+  "id": "H6",
+  "hypothesis": "Gates add value: `accept-all` is not better than `evolved`",
+  "test": "`accept-all` \u2212 `evolved`, paired, two-way bootstrap",
+  "estimate": "-8.9 points",
+  "interval": "[-16.1, -1.7]",
+  "margin": "upper bound below +5",
+  "verdict": "SUPPORTED",
+  "evidence": "T7, F8"
+ },
+ {
+  "id": "H7",
+  "hypothesis": "Tiers add value: `flat` costs more always-on context without gaining pass rate",
+  "test": "`flat` \u2212 `evolved`, paired, two-way bootstrap",
+  "estimate": "-12.5 points; always-on 559 \u2192 1688 chars",
+  "interval": "[-28.3, +1.7]",
+  "margin": "upper bound below +5 and it costs more always-on characters",
+  "verdict": "SUPPORTED",
+  "evidence": "T7, F8"
+ },
+ {
+  "id": "H8",
+  "hypothesis": "Efficiency: `evolved` approaches `kitchen` and `ideal` at far lower cost",
+  "test": "`evolved` against the better ceiling arm (`kitchen`), paired",
+  "estimate": "evolved is 11.1 points AHEAD OF `kitchen` \u00b7 always-on 559 vs kitchen 2519, ideal 728",
+  "interval": "[-22.5, +0.0] (kitchen \u2212 evolved)",
+  "margin": "evolved within 10 points of the better ceiling arm, and cheaper in always-on characters",
+  "verdict": "SUPPORTED",
+  "evidence": "T7, F8"
+ },
+ {
+  "id": "H9",
+  "hypothesis": "Independent runs learn the same families, in similar forms",
+  "test": "which families each run kept an item for",
+  "estimate": "4 of 4 families learned in every run",
+  "interval": "\u2014",
+  "margin": "at least half the families learned anywhere are learned in every run",
+  "verdict": "SUPPORTED",
+  "evidence": "F7, T6"
+ },
+ {
+  "id": "H13",
+  "hypothesis": "D0 replicates: the development run's finding holds on the frozen version",
+  "test": "D0's pooled gain, re-measured on the replicates' holdout with their tooling, against the evaluation runs' interval",
+  "estimate": "D0 +42.5 (on its own 15-task holdout: +50.0), replicates +56.5",
+  "interval": "[+35.4, +75.0]",
+  "margin": "D0's estimate inside the replicates' interval",
+  "verdict": "SUPPORTED",
+  "evidence": "T4, F3"
+ },
+ {
+  "id": "H10",
+  "hypothesis": "/prune deletes planted useless items that fired, keeps needed ones, and never deletes one that never fired",
+  "test": "planted items with a known right answer through `autopilot prune`",
+  "estimate": "6 of 8 matched",
+  "interval": "\u2014",
+  "margin": "every planted item matches, and nothing that never fired is deleted",
+  "verdict": "NOT SUPPORTED",
+  "evidence": "T10"
+ },
+ {
+  "id": "H11",
+  "hypothesis": "The form matters",
+  "verdict": "INCONCLUSIVE",
+  "evidence": "the `swapped` arm has not run"
+ },
+ {
+  "id": "H12",
+  "hypothesis": "The description hypothesis: a skill's description alone carries much of its effect",
+  "test": "`desc-only` \u2212 `none` as a share of `evolved` \u2212 `none`",
+  "estimate": "79% of the gain recovered \u00b7 items actually rewritten \u2014 R1: 1 of 4",
+  "interval": "[58%, 100%]",
+  "margin": "at least 50%, with the lower bound above 0 \u2014 READ THE CAVEAT: this arm rewrote under half the harness, so most of what it recovers is items it did not touch",
+  "verdict": "INCONCLUSIVE",
+  "evidence": "F15, T7 \u00b7 the arm is too weak on this harness to decide"
+ },
+ {
+  "id": "H14",
+  "hypothesis": "After a model upgrade, re-measurement changes which items earn their place",
+  "test": "/prune under claude-sonnet-5 on a copy of R1, every item tested; the same harness's holdout gain under each model beside it",
+  "estimate": "2 of 4 decided item(s) removable (exporter-checklist, billing-helpers); the same harness gains +66.7 under Haiku (R1) and +5.6 under claude-sonnet-5",
+  "interval": "[-2.8, +13.9]",
+  "margin": "at least one item the weaker model needed becomes removable",
+  "verdict": "SUPPORTED",
+  "evidence": "T15, F16"
+ },
+ {
+  "id": "H15",
+  "hypothesis": "The loop also helps on a repository nobody in this project built",
+  "test": "its own 4 holdout tasks at k=5 \u2014 but the loop kept nothing, so `evolved` is byte-identical to `none` and the benchmark is an A/A",
+  "estimate": "A/A difference +5.0 points (noise by construction)",
+  "interval": "[+0.0, +15.0] (task bootstrap, 4 tasks)",
+  "margin": "a positive gain from an evolved harness",
+  "verdict": "INCONCLUSIVE",
+  "evidence": "T17 \u00b7 /evolve was BARREN: nothing recurred often enough to learn"
+ },
+ {
+  "id": "H16",
+  "hypothesis": "Pre-sweep relevance separates KEPT from BURIED-on-regression where breadth does not",
+  "test": "lowest KEPT against highest BURIED-on-regression, with breadth as the control; on the evaluation runs, a candidate is buried on a regression when score.sh killed it on gate 2 or 3 (DEVIATIONS D-22)",
+  "estimate": "relevance: lowest KEPT 17% vs highest BURIED 75% \u00b7 breadth: 8% vs 58% \u00b7 18 kept, 2 buried on a regression",
+  "interval": "see T19",
+  "margin": "relevance separates and breadth does not",
+  "verdict": "NOT SUPPORTED",
+  "evidence": "T19, F18 \u00b7 the development run is in T19, not pooled"
+ },
+ {
+  "id": "H17",
+  "hypothesis": "The judge's predicted fire rate tracks the measured one",
+  "test": "predicted against measured invocation rate, per live gated skill",
+  "estimate": "check-changelog-on-shop-edits predicted 60% vs measured 6%; complete-exporter-setup predicted 100% vs measured 74%; exporter-checklist predicted 100% vs measured 100%; exporter-checklist predicted 100% vs measured 83%",
+  "interval": "n = 4 items",
+  "margin": "rank order preserved (no correlation is quoted at this n)",
+  "verdict": "SUPPORTED",
+  "evidence": "F19, T19 \u00b7 largest miss: check-changelog-on-shop-edits, 54 points"
+ },
+ {
+  "id": "H18",
+  "hypothesis": "Counting every lesson and transcript chooses a different theme than a sample",
+  "test": "one Jev-on run against the Jev-off runs",
+  "estimate": "\u2014",
+  "interval": "\u2014",
+  "margin": "descriptive only",
+  "verdict": "NOT TESTABLE",
+  "evidence": "DEVIATIONS.md D-01: dropped. It is one ordinary run's cost and was the first block to cut; the judge was unavailable when the budget was set and the runs were already committed when it returned."
+ }
+]

@@ -1,6 +1,6 @@
 # Cortex
 
-**Evolve your Claude Code skills by measurement instead of by guessing.**
+*Skill engineering, powered by neuroplasticity.*
 
 Cortex watches you work, notices what keeps going wrong, proposes one fix,
 **measures whether it actually helps**, and keeps it only if it does. It also
@@ -11,6 +11,34 @@ the repo load **only when Claude touches that part**, and Cortex measures which
 tier each one belongs in.
 
 It is small and practical on purpose: built for what one person can actually run.
+
+### Does it work? There is a report
+
+`lab/reports/` is an evaluation of Cortex that tries to falsify it rather than
+demonstrate it: replicate runs on a **frozen** Cortex, a control arm with the loop
+switched off, ablations that remove one part at a time, placebo candidates pushed
+through the real gates to see whether they survive, and a second repository nobody
+here built.
+
+| Read | For |
+|---|---|
+| [`lab/reports/SUMMARY.md`](lab/reports/SUMMARY.md) | one page: the claim, the numbers, the three limits |
+| [`lab/reports/REPORT.md`](lab/reports/REPORT.md) | the whole thing, with every hypothesis's verdict |
+| [`lab/reports/PREREGISTRATION.md`](lab/reports/PREREGISTRATION.md) | what was promised, before the data existed |
+| [`lab/reports/DEVIATIONS.md`](lab/reports/DEVIATIONS.md) | every departure from it, and whether data had been seen |
+| [`lab/reports/REPRODUCE.md`](lab/reports/REPRODUCE.md) | rebuild every number offline, no API key, in about two minutes |
+
+Two things worth knowing before you read any of it. **The defect catalogue
+([`T16`](lab/reports/tables/T16-defects.md)) is part of the result**, not an
+apology: a measurement instrument that has never been wrong has never been
+checked. And **Cortex ships an optional judge** in its proposal layer whose own
+validation gate failed at its original threshold and passed only after that
+threshold was lowered — `DEVIATIONS.md` D-07 says so plainly, and every primary
+number in the report was produced with the judge switched off.
+
+```bash
+lab/reports/analysis/run.sh     # rebuilds every table and figure from the shipped rows
+```
 
 ---
 
@@ -350,8 +378,7 @@ reasoning, each principle tied to the file that implements it, its limits, and
 where each idea comes from. Several principles here (a fixed model with an
 evolving harness, avg@k, "win something and break nothing", a cheap screen
 before a strict confirmation) are adapted from DarwinX (Zhang et al., arXiv
-2608.07545). [paper/concept-audit.md](paper/concept-audit.md) compares Cortex
-with related work concept by concept.
+2608.07545).
 
 ---
 
@@ -1853,18 +1880,15 @@ scope: shop-clock-usage  (rule, paths: shop/**)
   It is advisory: nothing here blocks the sweep, and no gate reads it.
 ```
 
-That is the exact shape of the most expensive failure in the recorded history:
-one house rule, four attempts, 694 rollouts, $77.70, nothing landed, every one
-killed by gate 3 for breaking things it was never meant to touch. All three
-attempts scored ≤20% here **before their sweeps ran**, and all three items that
-were kept scored 100%.
+That is the shape of the most expensive failure in the development run's history:
+one house rule, four attempts, nothing landed.
 
-The free version of this check does not work. Cortex can already compute
-*breadth* — what fraction of the suite the glob reaches — for nothing, and it
-cannot discriminate: 100% breadth appears in both the kept group and the
-regression-killed group. The quantity that separates them is the *ratio of
-relevant to total* injections, and its numerator is the one thing here that
-needs a judge.
+Whether this number predicts a verdict was measured afterwards, and it does not.
+On the four evaluation runs (`lab/reports/REPORT.md` §13b, H16), relevance did not
+separate the candidates the gates kept from those they killed on a regression, and
+neither did *breadth*, the fraction of the suite a glob reaches, which Cortex
+computes for nothing. That is why the check is advisory: it says where a candidate
+will load and how much of that it is about, not whether it will pass.
 
 With Jev off it prints the deterministic half and `relevance: unavailable`, exits
 0, and A5 continues — that line is not an error. For a **skill** it also predicts,
@@ -3176,17 +3200,13 @@ Cortex/
 │   └── timeline.html          "Skills Across Time" — why every task rewinds to its broken commit
 │                                   while the skills stay at today
 │
-├── docs/
-│   ├── THEORY.md              the design rationale: each principle, the file that
-│   │                               implements it, its limits, and where each idea comes from
-│   ├── JEV.md                 the optional judge: what runs when it is off, why the
-│   │                               artifacts are interchangeable, every question verbatim,
-│   │                               and exactly what leaves your machine
-│   └── TROUBLESHOOTING.md     every failure mode and its fix
-│
-└── paper/
-    ├── concept-audit.md       what Cortex borrows, what is new, and the citations
-    └── plan.md                the plan for writing the paper
+└── docs/
+    ├── THEORY.md              the design rationale: each principle, the file that
+    │                               implements it, its limits, and where each idea comes from
+    ├── JEV.md                 the optional judge: what runs when it is off, why the
+    │                               artifacts are interchangeable, every question verbatim,
+    │                               and exactly what leaves your machine
+    └── TROUBLESHOOTING.md     every failure mode and its fix
 ```
 
 ### What each script does

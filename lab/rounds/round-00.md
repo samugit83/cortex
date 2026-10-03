@@ -22,7 +22,7 @@ for the whole lab.)
 ## 0.2 The lab helper
 
 ```bash
-ln -sf "/home/samuele/Progetti didattici/Cortex/lab/bin/lab" ~/.local/bin/lab
+ln -sf "<workspace>/Cortex/lab/bin/lab" ~/.local/bin/lab
 lab status                  # ten rounds, nothing done yet
 ```
 
@@ -31,7 +31,7 @@ lab status                  # ten rounds, nothing done yet
 This is exactly what Cortex's README tells a new user to do:
 
 ```bash
-cd "/home/samuele/Progetti didattici/cortex-lab"
+cd "<workspace>/cortex-lab"
 cortex doctor               # every tool found, version >= 2.1.276
 cortex init
 ```
@@ -51,7 +51,7 @@ Open `.evolve/config.yaml` and change these, or paste the block below:
 | `environment.rollout_env` | — | add `DISABLE_AUTOUPDATER: "1"` | the pinned CLI must never update itself |
 
 ```bash
-cd "/home/samuele/Progetti didattici/cortex-lab"
+cd "<workspace>/cortex-lab"
 sed -i 's/model: ""  /model: claude-haiku-4-5-20251001  /' .evolve/config.yaml
 sed -i 's/max_runs_per_cycle: 60 /max_runs_per_cycle: 200 /' .evolve/config.yaml
 sed -i 's/stop_after_barren_cycles: 2 /stop_after_barren_cycles: 3 /' .evolve/config.yaml
@@ -76,7 +76,7 @@ the model. Every Claude Code chat opened in `cortex-lab` then uses Haiku 4.5; pr
 settings override your user default only in this repository:
 
 ```bash
-cd "/home/samuele/Progetti didattici/cortex-lab"
+cd "<workspace>/cortex-lab"
 python3 - <<'EOF'
 import json
 p = ".claude/settings.json"; d = json.load(open(p))

@@ -1,0 +1,11 @@
+# T9 · Corrections per session, evaluation against control
+
+The control runs the SAME sessions with no /evolve at all, so its fall is what the agent learns from the code it has already written. Only the difference is evidence for H4.
+
+| family | what it is | evaluation (corrections/sessions) | control | development (D0) | evaluation rate | control rate | difference |
+|---|---|---|---|---|---|---|---|
+| A | user-visible change (CHANGELOG) | 14/24 | 6/6 | 4/6 | 0.58 | 1.00 | -0.42 |
+| B | money (billing) | 15/24 | 5/6 | 3/6 | 0.62 | 0.83 | -0.21 |
+| C | new exporter | 19/24 | 6/6 | 5/6 | 0.79 | 1.00 | -0.21 |
+| D | control (plain bugs) | 0/16 | 1/4 | 0/4 | 0.00 | 0.25 | -0.25 |
+| E | time (clock) | 12/16 | 5/4 | 5/4 | 0.75 | 1.25 | -0.50 |

@@ -1,0 +1,186 @@
+{
+ "written": "2026-09-27T02:45:53",
+ "system_under_test": {
+  "tag": "v1.0-eval",
+  "commit": "23bd5e45dd8ab09ef8df73fc6068baebde132e38",
+  "note": "every evaluation, control, gate, prune, model-change and second-repository process ran on this tag"
+ },
+ "analysis_commit": "3d756544f27ed6359db72b7a762777a7a558a34d",
+ "paper_tag": "v1.0-paper",
+ "models": {
+  "rollouts": "claude-haiku-4-5-20251001",
+  "model_change": "claude-sonnet-5",
+  "judge": "typesafe-ai/jev (proposal layer only; every primary run Jev-off)",
+  "rollout_model_counts": {
+   "claude-haiku-4-5-20251001": 2802
+  }
+ },
+ "claude_code": [
+  "2.1.278 (Claude Code)"
+ ],
+ "dates": {
+  "first_row": "2026-09-20T11:51:38",
+  "last_row": "2026-09-27T01:31:33"
+ },
+ "permissions": {
+  "rollouts": "--permission-mode acceptEdits",
+  "lab_sessions": "--permission-mode bypassPermissions, with sudo, git push, curl, wget, ssh, web fetch/search and scheduling tools disallowed",
+  "home_directory": "the programme changed no setting or skill in ~/.claude; Claude Code itself keeps a record of each session there"
+ },
+ "environment": {
+  "os": "Linux 7.0.0-34-generic",
+  "python": "3.12.3",
+  "cpus": 12,
+  "ram_gb": 31.0
+ },
+ "cost_usd": {
+  "programme_measured": 1195.75,
+  "cap": 1500.0,
+  "per_block": {
+   "(usage probes)": 0.47,
+   "C1": 37.98,
+   "D0R": 60.05,
+   "GATE": 110.88,
+   "M1": 213.29,
+   "PILOT": 5.04,
+   "PRUNE": 130.48,
+   "R1": 167.99,
+   "R2": 121.72,
+   "R3": 207.95,
+   "R4": 116.81,
+   "X1": 18.95,
+   "stale": 4.14
+  },
+  "development_run_D0": 155.45,
+  "source": "usage-guard: every session, sweep and benchmark row, each counted once, and the one sweep whose record the /prune agent deleted, from Claude Code's session records"
+ },
+ "runs": [
+  {
+   "run": "D0",
+   "kind": "development",
+   "of": null,
+   "rollout_model": null,
+   "cli_version": null,
+   "cortex": null,
+   "cortex_version": null,
+   "jev": {
+    "enabled": null
+   },
+   "rollouts": 1230,
+   "cost_usd": 155.45
+  },
+  {
+   "run": "R1",
+   "kind": "evaluation",
+   "of": null,
+   "rollout_model": "claude-haiku-4-5-20251001",
+   "cli_version": "2.1.278 (Claude Code)",
+   "cortex": "<workspace>/cortex-eval-v1.0/bin/cortex",
+   "cortex_version": null,
+   "jev": {
+    "base_url": null,
+    "enabled": false,
+    "model": null
+   },
+   "rollouts": 1160,
+   "cost_usd": 167.99
+  },
+  {
+   "run": "R2",
+   "kind": "evaluation",
+   "of": null,
+   "rollout_model": "claude-haiku-4-5-20251001",
+   "cli_version": "2.1.278 (Claude Code)",
+   "cortex": "<workspace>/cortex-eval-v1.0/bin/cortex",
+   "cortex_version": null,
+   "jev": {
+    "base_url": null,
+    "enabled": false,
+    "model": null
+   },
+   "rollouts": 782,
+   "cost_usd": 121.72
+  },
+  {
+   "run": "R3",
+   "kind": "evaluation",
+   "of": null,
+   "rollout_model": "claude-haiku-4-5-20251001",
+   "cli_version": "2.1.278 (Claude Code)",
+   "cortex": "<workspace>/cortex-eval-v1.0/bin/cortex",
+   "cortex_version": null,
+   "jev": {
+    "base_url": null,
+    "enabled": false,
+    "model": null
+   },
+   "rollouts": 1422,
+   "cost_usd": 207.95
+  },
+  {
+   "run": "R4",
+   "kind": "evaluation",
+   "of": null,
+   "rollout_model": "claude-haiku-4-5-20251001",
+   "cli_version": "2.1.278 (Claude Code)",
+   "cortex": "<workspace>/cortex-eval-v1.0/bin/cortex",
+   "cortex_version": null,
+   "jev": {
+    "base_url": null,
+    "enabled": false,
+    "model": null
+   },
+   "rollouts": 808,
+   "cost_usd": 116.81
+  },
+  {
+   "run": "C1",
+   "kind": "control",
+   "of": null,
+   "rollout_model": "claude-haiku-4-5-20251001",
+   "cli_version": "2.1.278 (Claude Code)",
+   "cortex": "<workspace>/cortex-eval-v1.0/bin/cortex",
+   "cortex_version": null,
+   "jev": {
+    "base_url": null,
+    "enabled": false,
+    "model": null
+   },
+   "rollouts": 228,
+   "cost_usd": 37.98
+  },
+  {
+   "run": "D0R",
+   "kind": "remeasure",
+   "of": "D0",
+   "rollout_model": null,
+   "cli_version": null,
+   "cortex": "<workspace>/cortex-eval-v1.0/bin/cortex",
+   "cortex_version": null,
+   "jev": {
+    "enabled": false,
+    "model": null,
+    "source": "the benchmark script exports JEV_ENABLED=0; no proposal layer runs in a benchmark"
+   },
+   "rollouts": 456,
+   "cost_usd": 60.05
+  },
+  {
+   "run": "M1",
+   "kind": "model-change",
+   "of": "R1",
+   "rollout_model": null,
+   "cli_version": null,
+   "cortex": "<workspace>/cortex-eval-v1.0/bin/cortex",
+   "cortex_version": null,
+   "jev": {
+    "enabled": false,
+    "model": null,
+    "source": "the benchmark script exports JEV_ENABLED=0; no proposal layer runs in a benchmark"
+   },
+   "rollouts": 336,
+   "cost_usd": 73.75
+  }
+ ],
+ "rollouts": 6462
+}

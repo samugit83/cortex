@@ -1,0 +1,403 @@
+#!/usr/bin/env python3
+"""usage-guard — stop the programme before it spends what it may not, or measures
+what it cannot run.
+
+  usage-guard probe [--model M]          is Claude usable right now? (one tiny call)
+  usage-guard spend [--json]             the programme's MEASURED spend, per run
+  usage-guard budget --reserve USD [--step NAME]
+                                         exit 4 if spend + reserve would pass the cap
+  usage-guard infra --since EPOCH        rollouts/sessions that could not run since then
+  usage-guard m1-reserve [--prune-only]  what the rest of the Sonnet study will cost,
+                                         from the pilot's measured per-rollout price
+  usage-guard jev                        does the judge answer? (scope-replay needs it)
+  usage-guard jev-rows FILE...           did it answer for every row that needed it?
+
+Why this exists. Every rollout runs on the operator's Claude login. When usage runs
+out, `claude -p` fails in seconds. Cortex handles that correctly by design — a
+rollout that could not run is INVALID and never scored — but nothing stopped the
+CHAIN: each step would "finish", earn its marker, and the programme would race
+through the gate testbed, the prune experiment, structlog and the Sonnet study
+writing INVALID rows and RERUN verdicts. The operator's standing instruction is the
+opposite: stop, and ask for a recharge. The brief's is the same for money: "spend
+is within BUDGET_CAP_USD, or the user approved going over".
+
+The spend is measured, never estimated: every session, sweep rollout and benchmark
+row the programme wrote under cortex-eval/, each counted once. A repository copied
+from another run carries that run's sweep files (M1 and PRUNE start from R1, D0R
+from D0), and they are the same spend, so a sweep is keyed by its first line — its
+start event: timestamp, candidate, harness hashes — and counted once. D0's own
+sweeps are the development run's, which predates the programme and its cap.
+
+Exit codes: 0 fine · 3 Claude unusable (usage limit, auth) · 4 over budget.
+"""
+import argparse
+import hashlib
+import json
+import os
+import re
+import subprocess
+import sys
+import tempfile
+import time
+from collections import defaultdict
+from datetime import datetime
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+CORTEX = HERE.parent.parent
+EVAL = CORTEX.parent / "cortex-eval"
+D0_REPO = CORTEX.parent / "cortex-lab"
+BRIEF = CORTEX / "lab" / "BRIEF.md"
+PROBES = EVAL / "logs" / "usage-probes.jsonl"
+HAIKU = "claude-haiku-4-5-20251001"
+# PREREGISTRATION.md §12's figure for the whole model-change block: the reserve used
+# only if the pilot has not measured anything to project from
+M1_PREREGISTERED = 120.0
+
+
+def jsonl(p):
+    out = []
+    try:
+        for line in Path(p).read_text(errors="replace").splitlines():
+            line = line.strip()
+            if line:
+                try:
+                    out.append(json.loads(line))
+                except ValueError:
+                    pass
+    except OSError:
+        pass
+    return out
+
+
+def jload(p):
+    try:
+        return json.loads(Path(p).read_text())
+    except (OSError, ValueError):
+        return None
+
+
+def num(x):
+    return x if isinstance(x, (int, float)) and not isinstance(x, bool) else 0.0
+
+
+def cap():
+    """BUDGET_CAP_USD from the brief ("the user may change this line")."""
+    try:
+        m = re.search(r"BUDGET_CAP_USD\s*=\s*([0-9][0-9_,.]*)", BRIEF.read_text())
+        if m:
+            return float(m.group(1).replace("_", "").replace(",", ""))
+    except OSError:
+        pass
+    return 1500.0
+
+
+def sweep_key(p):
+    try:
+        with open(p, "rb") as fh:
+            return hashlib.sha256(fh.readline()).hexdigest()
+    except OSError:
+        return None
+
+
+def sweep_files():
+    """Every sweep file, the runs' own repositories first: a testbed copied from R1
+    holds R1's sweeps too, and the spend belongs to the run that made them."""
+    # runs-interrupted/: a sweep killed mid-way and moved aside so Cortex does not
+    # wait forever for its "done" event — not a result any more, but real spend
+    fs = list(EVAL.glob("runs/*/*/.evolve/runs/*.jsonl")) + \
+        list(EVAL.glob("runs/*/*/.evolve/runs-interrupted/*.jsonl")) + \
+        list(EVAL.glob("scratch/*/.evolve/runs/*.jsonl")) + \
+        list(EVAL.glob("stale/*/*/.evolve/runs/*.jsonl"))
+    return sorted(fs, key=lambda p: (not re.fullmatch(r"[RC]\d+", run_of(p)), str(p)))
+
+
+def run_of(p):
+    rel = Path(p).relative_to(EVAL).parts
+    return rel[1] if rel[0] == "runs" else rel[0]
+
+
+# ---------------------------------------------------------------- spend --
+def spend():
+    d0 = {sweep_key(p) for p in (D0_REPO / ".evolve" / "runs").glob("*.jsonl")}
+    per = defaultdict(lambda: defaultdict(float))
+    seen = set()
+    for p in sweep_files():
+        k = sweep_key(p)
+        if k is None or k in d0 or k in seen:
+            continue
+        seen.add(k)
+        for r in jsonl(p):
+            if r.get("v") is not None:
+                per[run_of(p)]["sweeps"] += num(r.get("cost_usd"))
+    for p in sorted(EVAL.glob("runs/*/autopilot.json")):
+        for e in (jload(p) or []):
+            if isinstance(e, dict) and e.get("what") != "manifest":
+                key = ("session", e.get("session"), e.get("what"), e.get("t"))
+                if key not in seen:
+                    seen.add(key)
+                    per[run_of(p)]["sessions"] += num(e.get("cost"))
+    # the external run's sessions — and a run set aside under stale/ still cost money
+    for p in sorted(EVAL.glob("runs/*/turns.json")) + sorted(EVAL.glob("stale/*/turns.json")):
+        for e in jsonl(p):
+            per[run_of(p)]["sessions"] += num(e.get("cost"))
+    for p in sorted(EVAL.glob("runs/*/bench/results.jsonl")) + sorted(EVAL.glob("runs/*/bench.jsonl")):
+        for r in jsonl(p):
+            per[run_of(p)]["bench"] += num(r.get("cost_usd"))
+    for r in jsonl(PROBES):
+        per["(usage probes)"]["probes"] += num(r.get("cost_usd"))
+    # a sweep whose record an agent deleted is on no disk, but it cost money: its cost is
+    # read from Claude Code's own records of its rollouts (lab/reports/analysis/extract_transcripts.py
+    # writes it to transcripts-coverage.json, `deleted`)
+    cov = jload(CORTEX / "lab" / "reports" / "data" / "transcripts-coverage.json") or {}
+    for g in cov.get("deleted", []) if isinstance(cov, dict) else []:
+        per[g["run"]]["sweeps_deleted"] += num(g.get("cost_usd"))
+    total = sum(sum(v.values()) for v in per.values())
+    return total, {k: dict(v) for k, v in sorted(per.items())}
+
+
+def cmd_spend(a):
+    total, per = spend()
+    if a.json:
+        print(json.dumps({"total": round(total, 2), "cap": cap(), "per_run": per}, indent=1))
+        return 0
+    print(f"{'run':16}{'sessions':>10}{'sweeps':>10}{'bench':>10}{'other':>9}{'total':>10}")
+    for run, v in per.items():
+        other = v.get("probes", 0.0)
+        print(f"{run:16}{v.get('sessions', 0):10.2f}{v.get('sweeps', 0):10.2f}"
+              f"{v.get('bench', 0):10.2f}{other:9.2f}{sum(v.values()):10.2f}")
+    print(f"{'programme':16}{'':39}{total:10.2f}   of the ${cap():,.0f} cap "
+          f"(${cap() - total:,.2f} left)")
+    return 0
+
+
+def cmd_budget(a):
+    total, _ = spend()
+    c = cap()
+    if total + a.reserve > c:
+        print(f"BUDGET: {a.step or 'this step'} reserves ${a.reserve:,.2f} on top of "
+              f"${total:,.2f} measured — ${total + a.reserve:,.2f}, over the ${c:,.0f} cap. "
+              f"The brief: stop and ask the user.")
+        return 4
+    print(f"budget: ${total:,.2f} spent + ${a.reserve:,.2f} reserved for "
+          f"{a.step or 'this step'} = ${total + a.reserve:,.2f} of ${c:,.0f}")
+    return 0
+
+
+# ---------------------------------------------------------------- probe --
+def probe_once(model):
+    with tempfile.TemporaryDirectory() as d:
+        env = dict(os.environ, DISABLE_AUTOUPDATER="1")
+        try:
+            p = subprocess.run(["claude", "-p", "Reply with the single word OK.", "--model", model,
+                                "--output-format", "json", "--max-turns", "1"],
+                               cwd=d, capture_output=True, text=True, timeout=180, env=env)
+        except subprocess.TimeoutExpired:
+            return False, "no answer in 180 s", None
+    try:
+        out = json.loads(p.stdout)
+    except ValueError:
+        out = {}
+    ok = p.returncode == 0 and not out.get("is_error")
+    why = str(out.get("result") or p.stderr or p.stdout or "").strip()[-300:]
+    return ok, why, out.get("total_cost_usd")
+
+
+def cmd_probe(a):
+    """Two tries a minute apart, so one stray 5xx cannot stop the programme."""
+    for attempt in (1, 2):
+        ok, why, cost = probe_once(a.model)
+        PROBES.parent.mkdir(parents=True, exist_ok=True)
+        with open(PROBES, "a") as fh:
+            fh.write(json.dumps({"t": datetime.now().isoformat(timespec="seconds"),
+                                 "model": a.model, "ok": ok, "why": why[-200:],
+                                 "cost_usd": cost}) + "\n")
+        if ok:
+            print(f"probe: {a.model} answers")
+            return 0
+        if attempt == 1:
+            time.sleep(60)
+    print(f"USAGE: {a.model} does not answer: {why or 'no message'}")
+    return 3
+
+
+# ---------------------------------------------------------------- infra --
+def epoch(t):
+    try:
+        return datetime.fromisoformat(str(t)).timestamp()
+    except ValueError:
+        return None
+
+
+def infra_since(since):
+    """Rollouts and sessions that could not run at all, written since `since`.
+
+    The signatures come from the programme's own history: across 437 sessions and
+    ~5,000 rollouts before this existed, the only failed sessions were turn-cap hits
+    and one timeout, and the only invalid sweep rows were `reset_failed`. None of
+    those is counted; an agent that exited with an error having spent nothing is.
+    """
+    n, what = 0, []
+    for p in sorted(EVAL.glob("runs/*/bench/results.jsonl")) + sorted(EVAL.glob("runs/*/bench.jsonl")):
+        if p.stat().st_mtime < since:
+            continue
+        for r in jsonl(p):
+            t = epoch(r.get("t"))
+            if t is not None and t >= since and r.get("valid") == 0:
+                n += 1
+                what.append(f"{run_of(p)} bench {r.get('task')} {r.get('arm')}: {r.get('why') or 'rc=' + str(r.get('rc'))}")
+    for p in sweep_files():
+        if p.stat().st_mtime < since:
+            continue
+        rows = jsonl(p)
+        start = next((r for r in rows if r.get("event") == "start"), {})
+        if num(start.get("epoch")) < since:
+            continue
+        for r in rows:
+            if r.get("v") is not None and r.get("valid") == 0 and \
+                    str(r.get("why") or "").startswith("agent_rc_"):
+                n += 1
+                what.append(f"{run_of(p)} sweep {r.get('v')} task {r.get('t')}: {r.get('why')}")
+    for p in sorted(EVAL.glob("runs/*/autopilot.json")):
+        if p.stat().st_mtime < since:
+            continue
+        for e in (jload(p) or []):
+            if not isinstance(e, dict) or e.get("what") == "manifest":
+                continue
+            t = epoch(e.get("t"))
+            if t is None or t < since:
+                continue
+            if e.get("rc") not in (0, 124, None) and not e.get("hit_turn_cap") and not num(e.get("cost")):
+                n += 1
+                what.append(f"{run_of(p)} session {e.get('what')}: rc={e.get('rc')}")
+    for p in sorted(EVAL.glob("runs/*/turns.json")):
+        if p.stat().st_mtime < since:
+            continue
+        for e in jsonl(p):
+            t = epoch(e.get("t"))
+            if t is not None and t >= since and e.get("rc") not in (0, 124, None) and not num(e.get("cost")):
+                n += 1
+                what.append(f"{run_of(p)} session {e.get('what')}: rc={e.get('rc')}")
+    return n, what
+
+
+def cmd_infra(a):
+    n, what = infra_since(a.since)
+    print(n)
+    for w in what[-5:]:
+        print(f"  {w}", file=sys.stderr)
+    return 0
+
+
+# ------------------------------------------------------------------ jev --
+def cmd_jev(_a):
+    """`cortex jev doctor` exits 0 when Jev is merely OFF, and scope-replay then
+    quietly reports only its deterministic half — H16 and H17 would lose the judge
+    without anyone noticing. Healthy is exit 0 AND a gateway that answered."""
+    # asked the way scope-replay will use it: Jev enabled explicitly, from a directory
+    # with no .env of its own, the key file pointed to — run from the Cortex repo the
+    # doctor found the repo's .env and answered while the replay's judge was off
+    env = dict(os.environ, JEV_ENABLED="1",
+               JEV_ENV_FILE=os.environ.get("JEV_ENV_FILE") or str(CORTEX / ".env"))
+    try:
+        with tempfile.TemporaryDirectory() as d:
+            p = subprocess.run(["cortex", "jev", "doctor"], capture_output=True, text=True,
+                               timeout=120, cwd=d, env=env)
+    except (OSError, subprocess.TimeoutExpired) as ex:
+        print(f"JEV: doctor did not run: {ex}")
+        return 3
+    out = p.stdout + p.stderr
+    line = next((l.strip() for l in out.splitlines() if l.strip().startswith("jev ")),
+                out.strip()[-300:])
+    if p.returncode == 0 and "answered in" in out:
+        print(f"jev: {line}")
+        return 0
+    print(f"JEV: not usable — {line}")
+    return 3
+
+
+def cmd_jev_rows(a):
+    """After the scope replay: a judge that failed part-way leaves rows with no model
+    and no reason (`jev` and `error` both null) on items that were injected somewhere.
+    Every legitimate null carries its reason ("always-on: scope does not apply", "not
+    recoverable"). scope-replay falls back to its deterministic half without failing,
+    so this is the only place a half-judged replay can be caught."""
+    bad, n = [], 0
+    for f in a.files:
+        for r in jsonl(f):
+            n += 1
+            if r.get("jev") is None and r.get("error") is None and num(r.get("injected")) > 0:
+                bad.append(f"{Path(f).name}: {r.get('candidate')}")
+    if bad:
+        print(f"JEV: {len(bad)} of {n} rows were not judged, with no reason given — the judge "
+              f"stopped answering part-way: {', '.join(bad[:6])}")
+        return 3
+    print(f"jev-rows: every one of {n} rows judged, or not applicable with its reason")
+    return 0
+
+
+# ----------------------------------------------------------- m1-reserve --
+def cmd_m1_reserve(a):
+    """The rest of the Sonnet study, priced at what the pilot measured.
+
+    PREREGISTRATION.md §9: the pilot is "recorded before committing to the rest".
+    This is that commitment made mechanical: M1-bench reserves the WHOLE remainder
+    — its own rollouts and the prune pass after it — so the programme cannot find
+    out halfway through the study that the second half does not fit.
+    """
+    rows = [r for r in jsonl(EVAL / "runs" / "M1" / "bench" / "results.jsonl") if r.get("valid")]
+    costs = [num(r.get("cost_usd")) for r in rows if num(r.get("cost_usd"))]
+    if not costs:
+        print(f"{M1_PREREGISTERED:.2f}")
+        print("m1-reserve: the pilot measured nothing; using the pre-registered figure",
+              file=sys.stderr)
+        return 0
+    rate = sum(costs) / len(costs)
+    excl = (jload(EVAL / "runs" / "R1" / "excluded.json") or {}).get("excluded") or []
+    bench_left = 0 if a.prune_only else max(0, (30 - len(excl)) * 2 * 3 - len(rows))
+    # the Haiku prune pass on the same repository is the best measure of how many
+    # rollouts /prune takes there; it tested more items (four plants), so it is an
+    # upper bound. Before it has run, 300.
+    man = jload(EVAL / "runs" / "R1" / "manifest.json") or {}
+    inherited = {f.name for f in (Path(man.get("repo", "/nonexistent")) / ".evolve" / "runs").glob("*.jsonl")}
+    prune_rows = sum(1 for f in (EVAL / "runs" / "PRUNE" / "cortex-lab-PRUNE" / ".evolve" / "runs").glob("*.jsonl")
+                     if f.name not in inherited for r in jsonl(f) if r.get("v") is not None)
+    prune_n = prune_rows or 300
+    reserve = (bench_left + prune_n) * rate * 1.10 + 5.0      # +10 % and the sessions
+    print(f"{reserve:.2f}")
+    print(f"m1-reserve: ${rate:.4f}/rollout measured on {len(costs)} Sonnet rollouts · "
+          f"{bench_left} bench + {prune_n} prune rollouts left · ${reserve:.2f} with 10 % margin",
+          file=sys.stderr)
+    return 0
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    p = sub.add_parser("probe")
+    p.add_argument("--model", default=HAIKU)
+    p.set_defaults(fn=cmd_probe)
+    p = sub.add_parser("spend")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(fn=cmd_spend)
+    p = sub.add_parser("budget")
+    p.add_argument("--reserve", type=float, required=True)
+    p.add_argument("--step", default="")
+    p.set_defaults(fn=cmd_budget)
+    p = sub.add_parser("infra")
+    p.add_argument("--since", type=float, required=True)
+    p.set_defaults(fn=cmd_infra)
+    p = sub.add_parser("jev")
+    p.set_defaults(fn=cmd_jev)
+    p = sub.add_parser("jev-rows")
+    p.add_argument("files", nargs="+")
+    p.set_defaults(fn=cmd_jev_rows)
+    p = sub.add_parser("m1-reserve")
+    p.add_argument("--prune-only", action="store_true")
+    p.set_defaults(fn=cmd_m1_reserve)
+    a = ap.parse_args()
+    return a.fn(a)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

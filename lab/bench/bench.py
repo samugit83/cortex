@@ -6,7 +6,8 @@
   bench.py arms [--arms ...]  build each named arm's harness under BENCH_OUT/harness
                               and write arms.json (what each one is, and what it
                               costs in always-on characters)
-  bench.py run [--k 3] [--arms none,evolved] [--only ID,ID] [--jobs auto|N]
+  bench.py run [--k 5] [--train-k 3] [--split holdout] [--arms none,evolved]
+               [--only ID,ID] [--jobs auto|N]
                               run every task k times per arm, interleaved, in clean
                               sandboxes; judge each rollout with the lab's oracle.
                               --jobs: rollouts at once, each in its own sandbox; auto
@@ -83,7 +84,10 @@ RESULTS = OUT / "results.jsonl"
 SANDBOX = Path(os.environ.get("BENCH_SANDBOX", "/tmp/cortex-lab-bench"))
 HARNESSES = HERE / "harnesses"                            # the hand-written arms
 ARMS_JSON = OUT / "arms.json"
-MODEL = "claude-haiku-4-5-20251001"
+# The rollout model. BENCH_MODEL overrides it for the model-change study (§4.8),
+# which is the only place in the programme another model is allowed; every row
+# records what it ran on, so two models can never be pooled by accident.
+MODEL = os.environ.get("BENCH_MODEL") or "claude-haiku-4-5-20251001"
 TIMEOUT = 600
 ENV = dict(os.environ, PYTHONDONTWRITEBYTECODE="1", DISABLE_AUTOUPDATER="1")
 
@@ -130,6 +134,7 @@ def cmd_prepare(_args):
     meta = {"prepared": datetime.now().isoformat(timespec="seconds"), "head": head,
             "claude_md_install_commit": first[0] if first else install_commit,
             "provenance": provenance(), "tasks": tasks}
+    TASKS.parent.mkdir(parents=True, exist_ok=True)
     TASKS.write_text(json.dumps(meta, indent=1))
     print(f"{len(tasks)} tasks: {sum(t['split'] == 'train' for t in tasks)} train, "
           f"{sum(t['split'] == 'holdout' for t in tasks)} holdout -> {TASKS}")
@@ -312,6 +317,25 @@ BUILDERS = {"none": build_none, "none2": build_none2, "evolved": build_evolved,
             "flat": build_flat, "desc-only": build_desc_only}
 
 
+def diff_count(a, b):
+    """{"changed": n, "only_a": n, "only_b": n} over the two harnesses' files."""
+    fa = {str(p.relative_to(a)): p.read_bytes() for p in a.rglob("*") if p.is_file()}
+    fb = {str(p.relative_to(b)): p.read_bytes() for p in b.rglob("*") if p.is_file()}
+    return {"changed": sum(1 for k in fa.keys() & fb.keys() if fa[k] != fb[k]),
+            "only_evolved": len(fa.keys() - fb.keys()),
+            "only_here": len(fb.keys() - fa.keys())}
+
+
+def fingerprint(h):
+    """A content hash of a harness: CLAUDE.md plus every skill and rule, by path."""
+    import hashlib
+    acc = hashlib.sha256()
+    for f in sorted(p for p in h.rglob("*") if p.is_file()):
+        acc.update(str(f.relative_to(h)).encode())
+        acc.update(f.read_bytes())
+    return acc.hexdigest()[:16]
+
+
 def always_on_chars(h):
     """What this arm costs on EVERY turn, by Cortex's own accounting.
 
@@ -343,7 +367,27 @@ def snapshot_arms(meta, want=("none", "evolved"), root=None):
         skills = sorted(d.name for d in (h / "skills").glob("*") if (d / "SKILL.md").is_file())
         rules = sorted(f.stem for f in (h / "rules").glob("*.md"))
         record[arm] = {"kind": "derived" if arm in DERIVED else "hand-written",
-                       "dir": str(h), "skills": skills, "rules": rules, **always_on_chars(h)}
+                       "dir": str(h), "skills": skills, "rules": rules,
+                       "fingerprint": fingerprint(h), **always_on_chars(h)}
+    # Two arms can come out byte-identical for a reason that is itself a result:
+    # `accept-all` is `evolved` plus everything the run buried, and a run that
+    # buried nothing makes them the same harness. Measuring one against the other
+    # then yields a difference of exactly zero that looks like a finding and is
+    # not one. Say so here, so the analysis can refuse to report it.
+    # How much each derived arm actually perturbs `evolved`, file by file. It
+    # matters because `desc-only` only rewrites SKILL bodies: on a harness that is
+    # mostly rules it changes almost nothing, and H12 would then be answered by an
+    # arm that barely differs from the one it is compared against.
+    base = record.get("evolved", {}).get("dir")
+    for arm, rec in record.items():
+        same = sorted(o for o, r in record.items()
+                      if o != arm and r.get("fingerprint") == rec.get("fingerprint"))
+        rec["identical_to"] = same
+        if base and arm != "evolved":
+            rec["differs_from_evolved"] = diff_count(Path(base), Path(rec["dir"]))
+        if same and arm not in ("none", "none2"):
+            print(f"bench: NOTE — `{arm}` is byte-identical to {', '.join(same)}. "
+                  f"Any comparison between them measures nothing.")
     ARMS_JSON.parent.mkdir(parents=True, exist_ok=True)
     prev = json.loads(ARMS_JSON.read_text()) if ARMS_JSON.exists() else {}
     prev.update(record)
@@ -433,10 +477,36 @@ def cmd_run(args):
     if RESULTS.exists():
         for line in RESULTS.read_text().splitlines():
             row = json.loads(line)
-            done.add((row["task"], row["arm"], row["r"]))
-    # every rollout still to run, in the order they start: arms interleaved
-    jobs = [(t, arm, r) for t in meta["tasks"] if not only or t["id"] in only
-            for r in range(1, args.k + 1) for arm in want_arms if (t["id"], arm, r) not in done]
+            # A rollout that could not run (usage limit, auth, 5xx: rc outside 0/124)
+            # stays in the file as a record of the outage, but it is not a measurement,
+            # so a restart must measure it again rather than count it as done.
+            if row.get("valid", 1):
+                done.add((row["task"], row["arm"], row["r"]))
+    # Every rollout still to run, in the order they start: arms interleaved.
+    #
+    # k is per SPLIT, because the pre-registration sets them apart: the holdout is
+    # the inference and gets k=5, the training set is description and gets k=3.
+    # One k for both quietly turns a 456-rollout benchmark into a 560-rollout one,
+    # and for the eight-arm run it was the difference between $66 and $225.
+    def k_for(split):
+        return args.train_k if split == "train" and args.train_k else args.k
+
+    tasks = [t for t in meta["tasks"] if not only or t["id"] in only]
+    if args.split:
+        tasks = [t for t in tasks if t["split"] == args.split]
+    # PREREGISTRATION.md §5.1: a scenario that fails validation on THIS run's final
+    # code is excluded from this run's benchmark, identically in every arm. It was
+    # being recorded and not applied, which is the worst of both — a file that says
+    # a task was excluded, and a results set in which it was not.
+    drop = {x.strip() for x in (args.exclude or "").split(",") if x.strip()}
+    if drop:
+        before = len(tasks)
+        tasks = [t for t in tasks if t["id"] not in drop]
+        print(f"bench: excluding {len(drop)} task(s) that failed validation on this "
+              f"run's final code: {' '.join(sorted(drop))} ({before} -> {len(tasks)})")
+    jobs = [(t, arm, r) for t in tasks
+            for r in range(1, k_for(t["split"]) + 1)
+            for arm in want_arms if (t["id"], arm, r) not in done]
     if not jobs:
         print("bench: nothing left to run")
         return
@@ -448,6 +518,14 @@ def cmd_run(args):
         todo.put(j)
     lock = threading.Lock()
     failed = []                                        # rollouts that could not run at all
+    # Usage running out does not look like a crash: `claude -p` exits 1 in seconds
+    # and the rollout is written as INVALID, then the next one does the same, and a
+    # whole benchmark "finishes" in minutes having measured nothing. BREAK rollouts
+    # in a row that could not run stop the bench with exit 3, which the programme
+    # reads as "stop and ask for a recharge". One stray 5xx resets on the next pass.
+    BREAK = 5
+    streak = [0]
+    halt = threading.Event()
 
     def one(k, t, arm, r):
         w = sandbox(k)
@@ -473,13 +551,23 @@ def cmd_run(args):
                "cost_usd": seen.get("cost_usd"), "skills": seen.get("skills"),
                "rules": seen.get("rules"), "visible": seen.get("visible"), "w": k,
                "turns": seen.get("turns"), "tool_calls": seen.get("tool_calls"),
-               "read_contributing": seen.get("read_contributing"),
+               "read_contributing": seen.get("read_contributing"), "model": MODEL,
                "t": datetime.now().isoformat(timespec="seconds")}
+        if not row["valid"]:
+            row["why"] = stream_error(stream)
         stream.unlink(missing_ok=True)
         with lock:
             with open(RESULTS, "a") as fh:
                 fh.write(json.dumps(row) + "\n")
-            print(f"{t['id']:4} {t['split']:7} {arm:8} r{r} -> {'PASS' if row['pass'] else 'fail ' + verdict} "
+            if row["valid"]:
+                streak[0] = 0
+            else:
+                streak[0] += 1
+                if streak[0] >= BREAK and not halt.is_set():
+                    halt.set()
+                    print(f"bench: {streak[0]} rollouts in a row could not run "
+                          f"(rc={rc}: {row.get('why') or 'no message'}) — stopping", flush=True)
+            print(f"{t['id']:4} {t['split']:7} {arm:8} r{r} -> {('INVALID rc=' + str(rc)) if not row['valid'] else 'PASS' if row['pass'] else 'fail ' + verdict} "
                   f"({secs}s ${seen.get('cost_usd')})" + (f" [w{k}]" if n > 1 else ""), flush=True)
 
     def worker(k):
@@ -489,6 +577,8 @@ def cmd_run(args):
             with lock:
                 print(f"bench: worker {k} cannot prepare its sandbox: {ex}", flush=True)
         while True:
+            if halt.is_set():
+                return
             try:
                 t, arm, r = todo.get_nowait()
             except queue.Empty:
@@ -511,11 +601,32 @@ def cmd_run(args):
     for th in threads:
         th.join()
     print(f"bench: done in {round(time.time() - t0)} s", flush=True)
+    if halt.is_set():
+        print(f"\nbench: STOPPED — {streak[0]} rollouts in a row could not run. Usage limit or "
+              f"auth? Nothing more was started; `bench.py run` again measures the rest, "
+              f"including the rollouts that could not run.", flush=True)
+        sys.exit(3)
     if failed:
         print(f"\nbench: {len(failed)} rollout(s) DID NOT RUN (no row written; `bench.py run` again retries them):")
         for f in failed:
             print(f"  - {f}")
         sys.exit(1)
+
+
+def stream_error(stream):
+    """The CLI's own words when a rollout could not run ("usage limit reached",
+    "invalid API key", ...), from the last result event it streamed."""
+    try:
+        for line in reversed(Path(stream).read_text(errors="replace").splitlines()):
+            try:
+                ev = json.loads(line)
+            except ValueError:
+                continue
+            if ev.get("type") == "result":
+                return str(ev.get("result") or ev.get("subtype") or "")[-200:]
+    except OSError:
+        pass
+    return ""
 
 
 # ------------------------------------------------------------------ report --
@@ -676,9 +787,16 @@ def cmd_report(_args):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=["prepare", "arms", "run", "report"])
-    ap.add_argument("--k", type=int, default=3)
+    ap.add_argument("--k", type=int, default=3,
+                    help="rollouts per task per arm (the holdout's k)")
+    ap.add_argument("--train-k", type=int, default=0,
+                    help="a different k for the TRAIN split (0 = same as --k)")
+    ap.add_argument("--split", default="", choices=["", "holdout", "train"],
+                    help="measure only this split — the ablation arms are holdout-only")
     ap.add_argument("--arms", default="none,evolved")
     ap.add_argument("--only", default="")
+    ap.add_argument("--exclude", default="",
+                    help="task ids to leave out, identically in every arm (§5.1)")
     ap.add_argument("--jobs", default="auto", help="rollouts at once: auto (default) or a number")
     args = ap.parse_args()
     if args.cmd in ("prepare", "run"):

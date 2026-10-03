@@ -194,13 +194,23 @@ def sessions(run, state, autopilot, scenarios):
         out.append({
             "run": run, "sid": sid, "round": s.get("round"), "family": s.get("family"),
             "split": s.get("split"), "title": s.get("title"),
-            "status": rec.get("status"), "task": rec.get("task"), "base": rec.get("base"),
+            "status": rec.get("status"), "base": rec.get("base"),
+            # `lab done` records the harvested task ids under `tasks`, a LIST. Reading
+            # a `task` key that never existed made every session look as though it had
+            # harvested nothing, which the pilot caught by disagreeing with its own log.
+            "tasks": rec.get("tasks") or [],
             "attempts": len(attempts), "verdicts": verdicts,
-            # a correction is every verdict that was not already 'ok'
-            "corrections": sum(1 for v in verdicts[:-1] if v != "ok") if verdicts else 0,
+            # `lab done` counts the corrections itself; the derived count is the
+            # fallback for a state file written before it did
+            "corrections": rec.get("corrections",
+                                   sum(1 for v in verdicts[:-1] if v != "ok") if verdicts else 0),
+            "lessons_added": rec.get("lessons_added"),
             "right_first_time": int(bool(verdicts) and verdicts[0] == "ok"),
             "ended_ok": int(bool(verdicts) and verdicts[-1] == "ok"),
-            "harvested": bool(rec.get("task")),
+            "oracle": rec.get("oracle"),
+            "quarantined": rec.get("quarantined_now") or [],
+            "wrong_base": rec.get("wrong_base") or [],
+            "harvested": bool(rec.get("tasks")),
             "turns": sum(t.get("turns") or 0 for t in ts) or None,
             "cost_usd": round(sum(t.get("cost") or 0 for t in ts), 4) or None,
             "secs": sum(t.get("secs") or 0 for t in ts) or None,
@@ -307,7 +317,17 @@ def main():
     ap.add_argument("--run", required=True, help="the run's label, e.g. D0 or R1")
     ap.add_argument("--kind", default="evaluation",
                     choices=["development", "evaluation", "control", "gate", "prune",
-                             "model-change", "external"])
+                             "model-change", "external", "remeasure"])
+    # A RE-MEASUREMENT is another run's harness benchmarked again (D0R: D0 on the
+    # expanded holdout, with the replicates' tooling). It has no sessions, cycles,
+    # sweeps or items of its own: its repository is a copy of the original's, and
+    # exporting those again duplicated all of D0 under a second name — 26
+    # sessions, 24 cycles, 984 sweep rollouts — for every table that reads "the
+    # development runs" to pool D0 with itself. So it exports its benchmark rows
+    # and nothing else, and says which run it re-measures.
+    ap.add_argument("--bench-only", action="store_true",
+                    help="export the runs row and the benchmark rollouts only")
+    ap.add_argument("--of", default=None, help="for --kind remeasure: the run re-measured")
     ap.add_argument("--repo", required=True)
     ap.add_argument("--state", default=None, help="the lab state file")
     ap.add_argument("--bench", default=None, help="the benchmark output directory")
@@ -323,19 +343,25 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     idx = scenario_index()
 
-    sess = sessions(a.run, a.state, a.autopilot, idx) if a.state else []
-    cyc = cycles(a.run, evolve)
-    sw = sweep_rows(a.run, evolve)
-    rolls = (list(bench_rollouts(a.run, a.bench)) if a.bench else []) + list(sweep_rollouts(a.run, evolve))
-    its = []
-    for it in items(repo, evolve):
-        its.append({"run": a.run, **it, **item_meta(it["text"])})
+    if a.kind == "remeasure" and not (a.bench_only and a.of):
+        sys.exit("export-run: a re-measurement is exported --bench-only, with --of <run>")
+    if a.bench_only:
+        sess, cyc, sw, its = [], [], [], []
+        rolls = list(bench_rollouts(a.run, a.bench)) if a.bench else []
+    else:
+        sess = sessions(a.run, a.state, a.autopilot, idx) if a.state else []
+        cyc = cycles(a.run, evolve)
+        sw = sweep_rows(a.run, evolve)
+        rolls = (list(bench_rollouts(a.run, a.bench)) if a.bench else []) + list(sweep_rollouts(a.run, evolve))
+        its = []
+        for it in items(repo, evolve):
+            its.append({"run": a.run, **it, **item_meta(it["text"])})
 
-    man = read_json(a.autopilot, []) or []
+    man = [] if a.bench_only else (read_json(a.autopilot, []) or [])
     manifest = next((t for t in reversed(man) if t.get("what") == "manifest"), {})
     arms = read_json(Path(a.bench) / "arms.json", {}) if a.bench else {}
     row = {
-        "run": a.run, "kind": a.kind, "note": a.note,
+        "run": a.run, "kind": a.kind, "of": a.of, "note": a.note,
         "repo": str(repo), "evolve": str(evolve), "state": a.state, "bench": a.bench,
         "head": git(repo, "rev-parse", "HEAD"), "commits": git(repo, "rev-list", "--count", "HEAD"),
         "cortex": manifest.get("cortex"), "cortex_version": manifest.get("cortex_version"),
@@ -352,6 +378,10 @@ def main():
         "sweep_rollouts": sum(1 for r in rolls if r["source"] == "sweep"),
         "bench_rollouts": sum(1 for r in rolls if r["source"] == "bench"),
         "arms": {k: v for k, v in arms.items() if k not in ("built", "repo")} if arms else None,
+        # the §5.1 exclusions travel IN the row: read from beside the repository, they
+        # were lost the moment the shipped rows' absolute paths were scrubbed or the
+        # data was read on a machine without cortex-eval/
+        "excluded": read_json(repo.parent / "excluded.json", None),
         # Three separable costs: the rollouts (sweeps + benchmark), and every Claude
         # turn the autopilot drove (sessions, corrections, /harvest, /evolve, /prune).
         # Summing session rows alone misses the /evolve turns, which is most of the
@@ -364,6 +394,15 @@ def main():
                                 if isinstance(t.get("cost"), (int, float))), 2),
         "exported": datetime.now().isoformat(timespec="seconds"),
     }
+    if a.bench_only:
+        # a benchmark-only export has no autopilot manifest to read these from; the two
+        # scripts that produce one (remeasure-d0, model-change) put the frozen worktree
+        # first on PATH and export JEV_ENABLED=0 — recorded here, so the row says it
+        frozen = CORTEX.parent / "cortex-eval-v1.0" / "bin" / "cortex"
+        row.update(cortex=str(frozen), cortex_tag="v1.0-eval",
+                   jev={"enabled": False, "model": None,
+                        "source": "the benchmark script exports JEV_ENABLED=0; no proposal "
+                                  "layer runs in a benchmark"})
 
     for fname, rows in (("runs.jsonl", [row]), ("sessions.jsonl", sess),
                         ("cycles.jsonl", cyc), ("sweeps.jsonl", sw),

@@ -1,0 +1,35 @@
+{
+ "what": "planted items for the /prune experiment (brief \u00a74.6)",
+ "how": "planted directly in the testbed's .claude/skills/ (a copy of R1's final repository), then `autopilot prune` runs the pass as a user would. prune.max_items is raised to cover every live item.",
+ "plants": [
+  {
+   "name": "before-reporting-a-change-complete",
+   "role": "placebo always-on skill, moment description",
+   "expect": "ACCEPT (deleted): it fires and costs nothing",
+   "fires": "yes",
+   "chars": 618
+  },
+  {
+   "name": "after-finishing-an-edit",
+   "role": "placebo always-on skill, moment description",
+   "expect": "ACCEPT (deleted): it fires and costs nothing",
+   "fires": "yes",
+   "chars": 580
+  },
+  {
+   "name": "vendor-bundle-conventions",
+   "role": "gated skill whose paths match no file any task touches",
+   "expect": "SKIPPED by the plan; never deleted",
+   "fires": "no \u2014 it can never become visible",
+   "chars": 594
+  },
+  {
+   "name": "rotate-a-signing-key",
+   "role": "always-on skill whose description names no moment here",
+   "expect": "UNMEASURED (never fires); not deleted",
+   "fires": "no \u2014 in context always, invoked never",
+   "chars": 515
+  }
+ ],
+ "also_expected": "R1's own evolved items: REJECT (kept)"
+}

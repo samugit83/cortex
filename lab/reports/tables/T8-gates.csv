@@ -1,0 +1,5 @@
+candidate type,n,KEEP,KILL,RERUN,stopped (procedure),KEEP rate,95% CI,ever fired,one-sided upper
+harmful,5,0,2,3,5,0%,"[0%, 52%]",3/5,45%
+placebo-moment,10,0,5,5,10,0%,"[0%, 31%]",0/10,26%
+placebo-topic,10,0,7,3,10,0%,"[0%, 31%]",0/10,26%
+positive,4,2,1,1,2,50%,"[7%, 93%]",2/4,90%

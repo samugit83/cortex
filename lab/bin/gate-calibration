@@ -1,0 +1,531 @@
+#!/usr/bin/env python3
+"""gate-calibration — push candidates with a KNOWN right answer through the real gates.
+
+  gate-calibration --from C1 [--only placebo-topic,harmful] [--dry-run]
+  gate-calibration --from C1 --report          rebuild gates.jsonl's summary only
+
+The gates have never been tested against known answers. Everything else in this
+programme measures what the loop *did*; this measures whether the thing that
+decides is calibrated, by feeding it 29 candidates whose right verdict was written
+down before any of them ran (`lab/bench/gate-candidates/MANIFEST.json`):
+
+  placebo-topic   10  plausible advice about something this repo does not care about
+  placebo-moment  10  the same, with a description that WILL be invoked
+  harmful          5  advice that contradicts a house rule
+  positive         4  the four hand-written `ideal` items, one at a time
+
+**The testbed is a copy**, made after a run ends, with its harvested tasks and no
+live items. It is reset to the same commit before every candidate, and
+`cortex promote` is never run there: nothing a candidate does can affect anything
+else, and no candidate is ever made live.
+
+**Jev is off**, and it would not matter: `cortex score`, `preflight.sh` and
+`sweep.sh` contain no Jev code — Cortex's own suite asserts the string appears
+nowhere in them — so the false-KEEP rate measured here is a property of the gates
+alone, before and after the judge existed. That is worth one sentence in the
+report rather than leaving it implicit.
+
+**The procedure is `/evolve`'s own, applied through the CLI so it is deterministic**
+(PREREGISTRATION.md §7):
+
+  1. screen at k=2 on that candidate's screen tasks;
+  2. stop if gain <= 0 or it never fired -> KILL (screen);
+  3. otherwise confirm at k=3 over every valid task; run the recheck when asked;
+  4. record the verdict and every field of `cortex score`.
+
+Screen tasks, fixed in advance and never chosen with a candidate's text in view:
+  * positives and harmful -> the tasks of the family the candidate is about that
+    are FAILING at the testbed's baseline;
+  * placebos -> the four lowest-numbered tasks failing at the baseline, measured
+    once before any candidate is screened and used unchanged for all twenty.
+
+Output: `reports/data/gates.jsonl`, one row per candidate.
+"""
+import argparse
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import time
+from datetime import datetime
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+import guard                                            # noqa: E402
+
+CORTEX = HERE.parent.parent
+WORKSPACE = CORTEX.parent / "cortex-eval"
+CANDIDATES = CORTEX / "lab" / "bench" / "gate-candidates"
+DATA = CORTEX / "lab" / "reports" / "data"
+# Which family each candidate is about, for choosing its screen tasks. Written
+# here, beside the candidates, and never derived from a result.
+FAMILY_OF = {
+    "changelog-for-user-visible-changes": "A", "billing-money": "B",
+    "complete-the-exporter": "C", "use-shop-clock": "E",
+    "floats-are-fine-for-amounts": "B", "do-not-run-the-linter": None,
+    "make-the-test-match-the-code": None, "small-changes-need-no-changelog": "A",
+    "datetime-now-is-fine-in-shop": "E",
+}
+
+
+def redirect_sandbox(cfg_path, sandbox, why):
+    """Point environment.sandbox_root at `sandbox`, keeping the original indent.
+
+    The indent is read from the line being replaced. Writing four spaces into a
+    file that uses two produces YAML that parses as a deeper block, and the next
+    key at the original depth ends the mapping early — `cortex config` then
+    refuses, hours later, for a reason that looks nothing like its cause.
+    """
+    text = cfg_path.read_text(encoding="utf-8")
+    out, changed = [], False
+    for line in text.splitlines():
+        m = re.match(r"(\s*)sandbox_root:", line)
+        if m:
+            out.append(f"{m.group(1)}sandbox_root: {sandbox}   # {why}")
+            changed = True
+        else:
+            out.append(line)
+    if not changed:
+        raise SystemExit(f"{cfg_path}: no environment.sandbox_root to redirect")
+    cfg_path.write_text("\n".join(out) + "\n", encoding="utf-8")
+
+
+def sh(cmd, cwd, env, timeout=None, quiet=False):
+    p = subprocess.run(cmd, cwd=cwd, env=env, capture_output=True, text=True, timeout=timeout)
+    if not quiet and p.returncode != 0:
+        print(f"    ! {' '.join(str(c) for c in cmd)} -> {p.returncode}: "
+              f"{(p.stderr or p.stdout).strip().splitlines()[-1:] or ''}", flush=True)
+    return p
+
+
+def cortex_env(cortex_home, testbed):
+    env = dict(os.environ)
+    env["PATH"] = f"{cortex_home / 'bin'}{os.pathsep}" + env.get("PATH", "")
+    env["JEV_ENABLED"] = "0"
+    env["JEV_API_KEY"] = ""                       # the gates contain no Jev code anyway
+    env["DISABLE_AUTOUPDATER"] = "1"
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+    return env
+
+
+def score(testbed, env):
+    p = sh(["cortex", "score"], testbed, env, quiet=True)
+    try:
+        return json.loads(p.stdout)
+    except ValueError:
+        return {"verdict": None, "error": (p.stderr or p.stdout)[-400:]}
+
+
+# The candidate whose sweep measures the testbed's baseline (PREREGISTRATION.md §7:
+# "the four lowest-numbered tasks that fail at the testbed's baseline, measured once
+# before any candidate is screened"). C1 never ran /evolve, so its repository has no
+# sweep to read a baseline from — and without one, every task would be "fair game"
+# and the placebos would be screened on tasks that already pass, where they cannot
+# show a spurious gain: the exact thing §7 says they must be able to do.
+#
+# `sweep.sh` has no base-only mode, so the baseline is the BASE arm of one confirm
+# sweep, and the base arm is always the live harness — here, empty — whatever the
+# candidate says. The candidate is therefore only a ticket: a neutral note that
+# instructs nothing, and whose own arm is never read. It has to be able to LOAD:
+# Cortex refuses a candidate that no task could ever load ("the sweep would measure
+# nothing"), which is how a first, truly inert version was caught before it ran.
+PROBE = "gate-baseline-probe"
+PROBE_RULE = """---
+paths:
+  - "shop/**"
+---
+
+# Baseline probe
+
+This note carries no instruction. It exists so that one confirm sweep can measure
+the gate testbed's empty harness: only that sweep's base arm is ever read.
+"""
+
+
+def sweep_files(testbed):
+    d = testbed / ".evolve" / "runs"
+    return {f.name for f in d.glob("*.jsonl")} if d.is_dir() else set()
+
+
+def read_sweep(f):
+    hdr, rows = None, []
+    for line in f.read_text(errors="replace").splitlines():
+        try:
+            r = json.loads(line)
+        except ValueError:
+            continue
+        if r.get("event") == "start":
+            hdr = r
+        elif r.get("v"):
+            rows.append(r)
+    return hdr, rows
+
+
+def new_sweep(testbed, before, name, phase):
+    """The sweep this candidate just ran — or stop.
+
+    If `cortex sweep` is refused (a lock, its budget, a candidate it will not load),
+    no file is written and `cortex score` prints the PREVIOUS sweep's scores. Recorded
+    under this candidate's name, those would be another candidate's result.
+    """
+    d = testbed / ".evolve" / "runs"
+    for fname in sorted(sweep_files(testbed) - before, reverse=True):
+        hdr, rows = read_sweep(d / fname)
+        if hdr and hdr.get("candidate") == name and hdr.get("phase") == phase:
+            return hdr, rows
+    raise SystemExit(f"gate-calibration: the {phase} sweep for {name} wrote no results — "
+                     f"refused or crashed (see the testbed's .evolve/runs/sweep.log). "
+                     f"Stopping rather than record another sweep's scores under its name.")
+
+
+def usage_stop(msg):
+    """Exit 3: the programme reads it as "stop and ask for a recharge", not a bug."""
+    print(f"gate-calibration: {msg}; stopping.", file=sys.stderr, flush=True)
+    sys.exit(3)
+
+
+def infra_invalid(rows):
+    """Rollouts where the agent could not run at all: usage limit, auth, 5xx."""
+    return sum(1 for r in rows if r.get("valid") == 0
+               and str(r.get("why") or "").startswith("agent_rc_"))
+
+
+def json_lines(f):
+    out = []
+    if f.is_file():
+        for line in f.read_text().splitlines():
+            try:
+                out.append(json.loads(line))
+            except ValueError:
+                continue
+    return out
+
+
+def valid_tasks(testbed):
+    d = testbed / ".evolve" / "tasks"
+    return sorted(p.name for p in d.glob("*") if p.is_dir() and p.name[0].isdigit()) if d.is_dir() else []
+
+
+# Which family a task EXERCISES, from what its own fix touches. This is
+# membership, not a partition: an exporter task also edits CHANGELOG.md, and for a
+# changelog candidate's screen tasks that is exactly right — it is a task where
+# that rule has something to do. Reading the title instead found one family-A task
+# of three, because a title says what the feature was, not which house rule the
+# fix had to obey.
+FAMILY_TOUCHES = {
+    "A": lambda fs: any(f.endswith("CHANGELOG.md") for f in fs),
+    "B": lambda fs: any(f.startswith("shop/billing/") for f in fs),
+    "C": lambda fs: any(f.startswith(("shop/plugins/", "docs/exporters", "tests/golden/"))
+                        for f in fs),
+    "E": lambda fs: any("clock" in f for f in fs),
+}
+
+
+def patch_files(testbed, tid):
+    f = testbed / ".evolve" / "tasks" / tid / "fix.patch"
+    if not f.is_file():
+        return []
+    return sorted({l[6:].strip() for l in f.read_text(errors="replace").splitlines()
+                   if l.startswith("+++ b/")})
+
+
+def patch_text(testbed, tid):
+    f = testbed / ".evolve" / "tasks" / tid / "fix.patch"
+    return f.read_text(errors="replace")[:40000] if f.is_file() else ""
+
+
+def tasks_for_family(testbed, fam, tids):
+    """Every task whose fix exercises this family's house rule."""
+    test = FAMILY_TOUCHES.get(fam)
+    if test is None:
+        return []
+    out = []
+    for t in tids:
+        # family E rarely shows in a path: the fix imports `clock` instead
+        if test(patch_files(testbed, t)) or (fam == "E" and "clock" in patch_text(testbed, t)):
+            out.append(t)
+    return out
+
+
+def measure_baseline(testbed, env, commit):
+    """One confirm sweep of the probe over every task, k=3. Costs rollouts once."""
+    reset(testbed, env, commit)
+    d = testbed / ".evolve" / "candidate" / PROBE
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "RULE.md").write_text(PROBE_RULE, encoding="utf-8")
+    print(f"  baseline: measuring the empty harness — probe sweep, confirm, k=3, "
+          f"{len(valid_tasks(testbed))} tasks", flush=True)
+    before = sweep_files(testbed)
+    sh(["cortex", "sweep", "--candidate", PROBE, "--phase", "confirm", "--k", "3"],
+       testbed, env, timeout=7200)
+    hdr, rows = new_sweep(testbed, before, PROBE, "confirm")
+    bad = infra_invalid(rows)
+    if bad:
+        usage_stop(f"{bad} baseline rollout(s) could not run (usage limit or auth?) — "
+                   f"the baseline is not measured")
+    reset(testbed, env, commit)
+
+
+def baseline_failing(testbed, env, out, commit=None, dry_run=False):
+    """The tasks failing at the testbed's baseline: measured ONCE, by the probe sweep.
+
+    The baseline is the empty harness, so it is read from the BASE arm of the probe's
+    own confirm sweep and nothing else. An inherited sweep will not do: its base arm
+    measured the source run's live items as they were then, never the empty harness,
+    and C1 — the pre-registered source — has no sweeps at all. A task counts as
+    failing when the base arm did not pass every time, as in Cortex's own
+    `baseline.json`.
+
+    Fixed before any candidate is screened, so no placebo's text can influence which
+    tasks it is screened on. A dry run neither measures nor caches: caching the
+    provisional answer once made a later real run reuse it.
+    """
+    cache = out / "baseline-failing.json"
+    if cache.is_file():
+        return json.loads(cache.read_text())
+    runs = testbed / ".evolve" / "runs"
+
+    def probes():
+        out_ = []
+        for f in sorted(sweep_files(testbed)):
+            hdr, rows = read_sweep(runs / f)
+            if hdr and hdr.get("candidate") == PROBE and hdr.get("phase") == "confirm" and rows:
+                out_.append((f, rows))
+        return out_
+
+    if not probes():
+        if dry_run:
+            n = len(valid_tasks(testbed))
+            print(f"  baseline: NOT MEASURED YET — the real run first measures it with the "
+                  f"baseline probe: {n} tasks x k=3 x 2 arms = {n * 6} rollouts.\n"
+                  f"  The screen tasks below are PROVISIONAL (every task counts as failing).")
+            return {"failing": valid_tasks(testbed), "how": "provisional (dry run)"}
+        measure_baseline(testbed, env, commit)
+    newest, rows = probes()[-1]
+    per = {}
+    for r in rows:
+        if not r.get("valid") or r.get("v") != "base":
+            continue
+        d = per.setdefault(r["t"], [0, 0])
+        d[0] += r["pass"]
+        d[1] += 1
+    valid = valid_tasks(testbed)
+    failing = sorted(t for t, (k, n) in per.items() if n and k < n and t in valid)
+    how = f"base arm of {newest}, the baseline probe's confirm sweep (k=3, every task)"
+    if not failing:
+        failing, how = valid, how + " — nothing failed, so every task is fair game"
+    doc = {"failing": failing, "how": how,
+           "per_task": {t: v for t, v in sorted(per.items())},
+           "at": datetime.now().isoformat(timespec="seconds")}
+    cache.write_text(json.dumps(doc, indent=1))
+    print(f"  baseline: {how}\n  failing: {' '.join(failing)}")
+    return doc
+
+
+def screen_tasks(kind, name, testbed, env, base):
+    """PREREGISTRATION.md §7, applied without ever reading the candidate's text."""
+    tasks = valid_tasks(testbed)
+    failing = [t for t in base["failing"] if t in tasks] or tasks
+    if kind.startswith("placebo"):
+        return failing[:4]                      # the fixed four, identical for all twenty
+    fam = FAMILY_OF.get(name)
+    if fam is None:
+        return failing[:4]                      # a harmful candidate about no one family
+    own = tasks_for_family(testbed, fam, failing)
+    if len(own) < 2:                  # too thin to screen on: widen to the whole family
+        own = tasks_for_family(testbed, fam, tasks)
+    return own[:4] or failing[:4]
+
+
+def reset(testbed, env, commit):
+    sh(["git", "checkout", "-q", "-f", commit], testbed, env, quiet=True)
+    sh(["git", "clean", "-qfd", "--", ".claude"], testbed, env, quiet=True)
+    shutil.rmtree(testbed / ".evolve" / "candidate", ignore_errors=True)
+    (testbed / ".evolve" / "candidate").mkdir(parents=True, exist_ok=True)
+    for d in (testbed / ".claude" / "skills", testbed / ".claude" / "rules"):
+        if d.is_dir():
+            for child in d.glob("*"):
+                shutil.rmtree(child, ignore_errors=True) if child.is_dir() else child.unlink()
+
+
+def plant(testbed, src, name):
+    dest = testbed / ".evolve" / "candidate" / name
+    shutil.rmtree(dest, ignore_errors=True)
+    shutil.copytree(src, dest)
+    return dest
+
+
+def one_candidate(kind, name, src, testbed, env, commit, base, out):
+    reset(testbed, env, commit)
+    plant(testbed, src, name)
+    tasks = screen_tasks(kind, name, testbed, env, base)
+    row = {"type": kind, "name": name, "expected": "KEEP" if kind == "positive" else "KILL",
+           "screen_tasks": tasks, "started": datetime.now().isoformat(timespec="seconds")}
+    print(f"  {kind:15} {name:38} screen on {' '.join(tasks)}", flush=True)
+
+    t0 = time.time()
+    # `.evolve/runs/` is never cleared between candidates (and the testbed inherits
+    # the source run's sweeps), so summing every file there would charge each
+    # candidate with all the ones before it. Only the files this candidate adds count.
+    mine = sweep_files(testbed)
+    before = set(mine)
+    sh(["cortex", "sweep", "--candidate", name, "--tasks", " ".join(tasks),
+        "--phase", "screen", "--k", "2"], testbed, env, timeout=3600)
+    new_sweep(testbed, before, name, "screen")
+    s = score(testbed, env)
+    row["screen"] = s
+    fired = s.get("candidate_fired_runs")
+    gain = s.get("gain")
+    if (isinstance(gain, (int, float)) and gain <= 0) or fired == 0:
+        row.update(verdict="KILL", stage="screen", net_runs=s.get("net_runs"),
+                   gain=gain, fired_runs=fired,
+                   why=f"screen: gain {gain}, fired {fired}")
+    else:
+        before = sweep_files(testbed)
+        sh(["cortex", "sweep", "--candidate", name, "--phase", "confirm", "--k", "3"],
+           testbed, env, timeout=7200)
+        new_sweep(testbed, before, name, "confirm")
+        c = score(testbed, env)
+        row["confirm"] = c
+        # a confirm that asks for a recheck gets one, exactly as /evolve would
+        if c.get("verdict") == "RECHECK" and c.get("recheck_tasks"):
+            before = sweep_files(testbed)
+            sh(["cortex", "sweep", "--candidate", name, "--phase", "recheck",
+                "--tasks", " ".join(c["recheck_tasks"]), "--k", "3"], testbed, env, timeout=3600)
+            new_sweep(testbed, before, name, "recheck")
+            c = score(testbed, env)
+            row["recheck"] = c
+        row.update(verdict=c.get("verdict"), stage="confirm", net_runs=c.get("net_runs"),
+                   gain=c.get("gain"), regression=c.get("regression"),
+                   worst_drop=c.get("worst_drop"), fired_runs=c.get("candidate_fired_runs"),
+                   visible_runs=c.get("candidate_visible_runs"),
+                   gates_failed=c.get("gates_failed"), why=c.get("verdict_because"))
+    row["secs"] = round(time.time() - t0)
+    row["matches"] = bool(row.get("verdict") == row["expected"])
+    rollouts, cost, bad = 0, 0.0, 0
+    for fname in sorted(sweep_files(testbed) - mine):
+        _, rows = read_sweep(testbed / ".evolve" / "runs" / fname)
+        rollouts += len(rows)
+        cost += sum(r.get("cost_usd") or 0 for r in rows)
+        bad += infra_invalid(rows)
+    row["rollouts"] = rollouts
+    row["cost_usd"] = round(cost, 4)
+    row["sweeps"] = sorted(sweep_files(testbed) - mine)
+    # a candidate measured while rollouts could not run is not a result: the next
+    # invocation measures it again, and its row replaces this one
+    row["infra_invalid"] = bad
+    print(f"    -> {row['verdict']} ({row['stage']}) expected {row['expected']} "
+          f"{'OK' if row['matches'] else 'MISMATCH'} · {rollouts} rollouts ${cost:.2f} "
+          f"· {row['secs']}s", flush=True)
+    return row
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--from", dest="src_run", required=True,
+                    help="the run whose final repository becomes the testbed (C1)")
+    ap.add_argument("--only", default="", help="comma-separated types to run")
+    ap.add_argument("--cortex", default=str(CORTEX.parent / "cortex-eval-v1.0"))
+    ap.add_argument("--out", default=str(DATA))
+    ap.add_argument("--force", action="store_true")
+    ap.add_argument("--dry-run", action="store_true",
+                    help="build the testbed and print what each candidate would be "
+                         "screened on, without spending a rollout")
+    a = ap.parse_args()
+
+    src = WORKSPACE / "runs" / a.src_run
+    man = json.loads((src / "manifest.json").read_text())
+    testbed_dir = WORKSPACE / "runs" / "GATE"
+    testbed = testbed_dir / "cortex-lab-GATE"
+    guard.protect(testbed_dir, "build the gate testbed at")
+    if testbed_dir.exists() and a.force:
+        shutil.rmtree(testbed_dir)
+    cortex_home = Path(a.cortex).resolve()
+    env = cortex_env(cortex_home, testbed)
+
+    # A testbed records which run it was built from. One built during a rehearsal
+    # from R1 once sat here and would have been reused by `--from C1` — measured on
+    # R1's repository and recorded as C1's, with a baseline read from R1's sweeps.
+    prov = testbed_dir / "testbed.json"
+    if testbed.exists():
+        built = json.loads(prov.read_text()).get("from_run") if prov.is_file() else None
+        if built != a.src_run:
+            raise SystemExit(f"gate-calibration: the testbed at {testbed} was built from "
+                             f"{built or 'an unrecorded run'}, not {a.src_run}. "
+                             f"Pass --force to rebuild it from {a.src_run}.")
+    if not testbed.exists():
+        testbed_dir.mkdir(parents=True, exist_ok=True)
+        print(f"building the testbed from {a.src_run}: {man['repo']}")
+        shutil.copytree(man["repo"], testbed, symlinks=False)
+        # its own sandbox root, so it can never share a worktree with a live run
+        redirect_sandbox(testbed / ".evolve" / "config.yaml",
+                         testbed_dir / "sandbox", "the gate testbed only")
+        sh(["cortex", "config"], testbed, env)
+        sh(["git", "add", "-A"], testbed, env, quiet=True)
+        sh(["git", "commit", "-q", "-m", "gate testbed: reset point"], testbed, env, quiet=True)
+        prov.write_text(json.dumps({"from_run": a.src_run, "repo": man["repo"],
+                                    "built": datetime.now().isoformat(timespec="seconds")},
+                                   indent=1) + "\n")
+    commit = sh(["git", "rev-parse", "HEAD"], testbed, env, quiet=True).stdout.strip()
+    out = Path(a.out)
+    out.mkdir(parents=True, exist_ok=True)
+    base = baseline_failing(testbed, env, testbed_dir, commit=commit, dry_run=a.dry_run)
+    print(f"testbed {testbed}\n  reset commit {commit[:8]} · "
+          f"{len(valid_tasks(testbed))} valid tasks · baseline failing {base['failing']}")
+
+    want = {x.strip() for x in a.only.split(",") if x.strip()}
+    rows = []
+    donefile = out / "gates.jsonl"
+    done = set()
+    if donefile.exists():
+        for line in donefile.read_text().splitlines():
+            try:
+                r = json.loads(line)
+            except ValueError:
+                continue
+            rows.append(r)
+            if not r.get("infra_invalid"):
+                done.add(r["name"])
+    for kind_dir in sorted(CANDIDATES.glob("*")):
+        if not kind_dir.is_dir():
+            continue
+        kind = kind_dir.name
+        if want and kind not in want:
+            continue
+        for cand in sorted(kind_dir.glob("*")):
+            if not cand.is_dir() or cand.name in done:
+                continue
+            if a.dry_run:
+                reset(testbed, env, commit)
+                plant(testbed, cand, cand.name)
+                ts = screen_tasks(kind, cand.name, testbed, env, base)
+                print(f"  {kind:15} {cand.name:38} would screen on {' '.join(ts)}")
+                continue
+            row = one_candidate(kind, cand.name, cand, testbed, env, commit, base, out)
+            row["run"] = "GATE"
+            row["from_run"] = a.src_run
+            row["cortex_tag"] = man.get("cortex_tag")
+            rows = [r for r in rows if r.get("name") != cand.name] + [row]
+            if any(r.get("name") == cand.name for r in json_lines(donefile)):
+                donefile.write_text("".join(json.dumps(r, sort_keys=True) + "\n"
+                                            for r in rows), encoding="utf-8")
+            else:
+                with open(donefile, "a", encoding="utf-8") as fh:
+                    fh.write(json.dumps(row, sort_keys=True) + "\n")
+            if row["infra_invalid"]:
+                usage_stop(f"{row['infra_invalid']} rollout(s) for {cand.name} could not "
+                           f"run (usage limit or auth?). Its row is kept as a record and "
+                           f"will be re-measured")
+
+    kept = sum(1 for r in rows if r.get("verdict") == "KEEP")
+    match = sum(1 for r in rows if r.get("matches"))
+    print(f"\n{len(rows)} candidates · {kept} KEEP · {match} matched the expectation")
+    print(f"-> {donefile}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

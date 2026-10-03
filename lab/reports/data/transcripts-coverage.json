@@ -1,0 +1,76 @@
+{
+ "rollouts": {
+  "C1 bench": {
+   "recorded": 228,
+   "matched": 228
+  },
+  "D0R bench": {
+   "recorded": 456,
+   "matched": 456
+  },
+  "GATE sweep": {
+   "recorded": 948,
+   "matched": 946
+  },
+  "M1 bench": {
+   "recorded": 336,
+   "matched": 336
+  },
+  "M1 sweep": {
+   "recorded": 600,
+   "matched": 598
+  },
+  "PRUNE sweep": {
+   "recorded": 666,
+   "matched": 666
+  },
+  "R1 bench": {
+   "recorded": 906,
+   "matched": 906
+  },
+  "R1 sweep": {
+   "recorded": 254,
+   "matched": 254
+  },
+  "R2 bench": {
+   "recorded": 546,
+   "matched": 546
+  },
+  "R2 sweep": {
+   "recorded": 236,
+   "matched": 236
+  },
+  "R3 bench": {
+   "recorded": 456,
+   "matched": 456
+  },
+  "R3 sweep": {
+   "recorded": 966,
+   "matched": 959
+  },
+  "R4 bench": {
+   "recorded": 446,
+   "matched": 446
+  },
+  "R4 sweep": {
+   "recorded": 362,
+   "matched": 360
+  },
+  "X1 bench": {
+   "recorded": 40,
+   "matched": 40
+  }
+ },
+ "cut_short_matched": {
+  "GATE sweep": 47,
+  "PRUNE sweep": 62
+ },
+ "deleted": [
+  {
+   "run": "PRUNE",
+   "sweep": "20260926T192751-confirm.jsonl",
+   "rollouts": 150,
+   "cost_usd": 20.79
+  }
+ ]
+}

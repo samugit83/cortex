@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """scope-replay — score `cortex scope` against what the sweeps actually decided.
 
-  scope-replay [--evolve <repo>/.evolve] [--out <dir>] [--floor 0.35] [--keep-work]
+  scope-replay [--evolve <repo>/.evolve] [--out <dir>] [--run <label>]
+               [--floor 0.35] [--keep-work]
 
 The lab already knows each candidate's fate: the graveyard says why it was buried,
 `.claude/` says what survived, and `.evolve/runs/*.jsonl` says what it cost. Cortex
@@ -170,7 +171,7 @@ def separates(rows, key):
 
 
 def main(argv):
-    evolve = out = None
+    evolve = out = label = None
     floor, keep_work = 0.35, False
     i = 0
     while i < len(argv):
@@ -180,13 +181,15 @@ def main(argv):
             out = argv[i + 1]; i += 2
         elif argv[i] == "--floor" and i + 1 < len(argv):
             floor = float(argv[i + 1]); i += 2
+        elif argv[i] == "--run" and i + 1 < len(argv):
+            label = argv[i + 1]; i += 2
         elif argv[i] == "--keep-work":
             keep_work = True; i += 1
         else:
             print(__doc__.strip(), file=sys.stderr)
             return 2
     evolve = Path(evolve or os.environ.get("LAB_EVOLVE")
-                  or "/home/samuele/Progetti didattici/cortex-lab/.evolve").resolve()
+                  or CORTEX.parent / "cortex-lab" / ".evolve").resolve()
     if not (evolve / "runs").is_dir():
         print(f"scope-replay: no sweep history under {evolve}/runs", file=sys.stderr)
         return 2
@@ -227,7 +230,9 @@ def main(argv):
                "sweeps": money[name]["sweeps"], "rollouts": money[name]["rollouts"],
                "cost_usd": round(money[name]["cost"], 2),
                "relevance": None, "breadth": None, "injected": None, "suite": None,
-               "below_floor": None, "jev": None, "error": None}
+               "below_floor": None, "jev": None, "error": None,
+               "would_fire_on": None, "predicted_fire_rate": None,
+               "measured_fire_rate": None}
         if src is None:
             row["error"] = note or "no text found live, in the graveyard or in candidate/"
             rows.append(row); continue
@@ -237,16 +242,49 @@ def main(argv):
             row["error"] = err
             rows.append(row); continue
         sc = rep["scope"]
+        # J5, the fire-rate prediction, is asked for a SKILL only: a rule is loaded
+        # when the agent reads a matching file and is never chosen, so there is
+        # nothing to predict. H17 scores `predicted_fire_rate` against the rate the
+        # benchmark actually measured.
+        # `would_fire` lives on the full report under `items`; older Cortex builds
+        # left it out of the `scope` object entirely, so read both.
+        wf = (rep.get("scope", {}).get("would_fire")
+              or (rep.get("items") or [{}])[0].get("would_fire") or {})
+        pred = wf.get("predicted")
         row.update(injected=sc["injected"], suite=sc["suite"],
                    relevance=sc["relevance"], below_floor=sc["below_floor"],
-                   breadth=breadth(evolve, rep), jev=rep["jev"]["model"])
+                   breadth=breadth(evolve, rep), jev=rep["jev"]["model"],
+                   would_fire_on=pred,
+                   predicted_fire_rate=(len(pred) / sc["injected"]
+                                        if pred is not None and sc.get("injected") else None))
         if sc["always_on"]:
             row["error"] = "always-on: scope does not apply"
         jev_on = jev_on or bool(rep["jev"]["model"])
         rows.append(row)
 
-    (out / "scope-replay.jsonl").write_text(
+    # Per-run file, as before...
+    stem = f"scope-replay{'-' + label if label else ''}.jsonl"
+    (out / stem).write_text(
         "".join(json.dumps(r, sort_keys=True) + "\n" for r in rows))
+    # ...and one combined `scope.jsonl` the analysis reads, with this run's rows
+    # replaced rather than appended, so re-running is safe. The fate strings are
+    # lowercased to the vocabulary the report uses.
+    if label:
+        FATE = {"KEPT": "kept", "BURIED-regression": "buried-regression"}
+        combined = out / "scope.jsonl"
+        keep = []
+        if combined.exists():
+            for line in combined.read_text().splitlines():
+                try:
+                    r = json.loads(line)
+                except ValueError:
+                    continue
+                if r.get("run") != label:
+                    keep.append(r)
+        for r in rows:
+            keep.append({**r, "run": label,
+                         "fate": FATE.get(r["fate"], (r["fate"] or "").lower())})
+        combined.write_text("".join(json.dumps(r, sort_keys=True) + "\n" for r in keep))
 
     rel_ok, rel_kept, rel_bad = separates(rows, "relevance")
     br_ok, br_kept, br_bad = separates(rows, "breadth")

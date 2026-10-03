@@ -49,11 +49,18 @@ figure or table.
 | H17 | The judge's predicted fire rate tracks the measured one | `scope-replay` + firing data |
 | H18 | Counting every lesson and transcript chooses a different theme than reading a sample | one Jev-on run |
 
-**H16–H18 depend on a working Jev key.** At the time of writing the key is refused
-by its gateway (see `DEVIATIONS.md`), so H16 is reported from its deterministic
-half (breadth) alone, H17 is reported as NOT TESTABLE, and H18 is dropped. If the
-key works before the analysis, the judge half is added and the fact that it was
-added late is recorded.
+**H16–H18 depend on a working Jev key.** The key was refused by its gateway for the
+whole of Phase 1 (`DEVIATIONS.md` D-01) and was unblocked on 2026-09-21, before any
+replicate run. H16 and H17 are therefore testable in full, with both halves: the
+judge's relevance **and** glob breadth as the free control on the same rows. H18
+remains the first block to cut under budget pressure.
+
+J0 — the gate Cortex's own author put in front of the Jev integration — ran at that
+point and **failed at its original 90 % bar (89.4 %), then passed at 85 % after the
+operator lowered it.** `DEVIATIONS.md` D-07 records the full sequence. Nothing in
+H0–H15 depends on J0's verdict, and **the arms do not change**: every run producing
+a primary number still runs with Jev off (§3), because D0 had no judge and H13 is
+only testable without one.
 
 ---
 

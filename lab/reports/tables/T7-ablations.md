@@ -1,0 +1,14 @@
+# T7 · Ablations: what each harness costs and buys
+
+Always-on characters are CLAUDE.md plus what Cortex counts as always on: a path-less rule's whole body and an always-on skill's description. A gated skill and a path-scoped rule cost nothing until their area is touched.
+
+| arm | always-on chars | CLAUDE.md | items | A+B+C+E | D | paired diff vs none | 95% CI | tokens | $ | s | turns | tool calls |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| none | 559 | 559 | 0 | 21% | 100% | +0 | [+0, +0] | 672,374 | 0.121 | 57 | 18.2 | 17.1 |
+| none2 | 559 | 559 | 0 | 17% | 100% | -4 | [-9, +0] | 693,617 | 0.123 | 58 | 18.8 | 17.8 |
+| evolved | 559 | 559 | 4 | 77% | 99% | +56 | [+35, +75] | 854,405 | 0.149 | 68 | 22.1 | 21.0 |
+| kitchen | 2519 | 2519 | 0 | 76% | 100% | +56 | [+42, +69] | 798,424 | 0.141 | 65 | 21.1 | 20.1 |
+| accept-all | 559 | 559 | 5 | 78% | 100% | +57 | [+42, +71] | 887,962 | 0.155 | 68 | 22.4 | 21.4 |
+| flat | 1688 | 559 | 4 | 75% | 100% | +54 | [+35, +72] | 771,473 | 0.137 | 64 | 20.7 | 19.7 |
+| desc-only | 559 | 559 | 4 | 74% | 100% | +53 | [+35, +70] | 748,824 | 0.132 | 60 | 20.0 | 18.8 |
+| ideal | 728 | 559 | 4 | 49% | 100% | +28 | [+14, +44] | 765,668 | 0.135 | 64 | 20.0 | 18.9 |

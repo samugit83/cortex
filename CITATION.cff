@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+title: "Cortex: a measured loop for agent context, and the lab that tests it"
+message: "If you use this software or its data, please cite it."
+type: software
+authors:
+  - family-names: Giampieri
+    given-names: Samuele
+license: MIT
+version: "v1.0-paper"
+repository-code: "https://github.com/samugit83/cortex"
+abstract: >-
+  Cortex measures whether a skill, rule or instruction earns its place in an
+  agent's context, by running the agent with and without it on tasks harvested
+  from real sessions and comparing pass rates under fixed gates. This repository
+  contains Cortex, the end-to-end lab that evaluates it, 56 scenarios across five
+  task families (four house rules and a control), and the rollout-level data behind
+  every number in lab/reports/REPORT.md. The gates contain no model of any kind, by design; a
+  calibrated judge is confined to the proposal layer and every primary number in
+  the report was produced with it switched off.
+keywords:
+  - llm-agents
+  - context-engineering
+  - evaluation
+  - ablation
+  - agent-skills

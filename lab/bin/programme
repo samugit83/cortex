@@ -1,0 +1,327 @@
+#!/usr/bin/env bash
+# programme — run the whole evaluation, in order, unattended.
+#
+#   lab/bin/programme            run every step that is not already done
+#   lab/bin/programme --status   what is done, what is next
+#   lab/bin/programme --from 4   start at step 4
+#
+# The steps are sequential ON PURPOSE. Every sweep sizes itself to 12 workers on
+# 12 CPUs, and Cortex invalidates a rollout that timed out while the machine was
+# oversubscribed. Two runs at once would not be twice as fast; it would be one
+# run's worth of throughput and a pile of INVALID rows in a primary. So the
+# programme waits.
+#
+# Each step writes a marker under cortex-eval/state/ when it finishes, so this can
+# be interrupted and restarted without redoing work or, worse, half-redoing it.
+set -uo pipefail
+
+# CORTEX is derived from this file's location, EXCEPT when the pinned copy is
+# running: that copy lives in cortex-eval/, so deriving from it would point two
+# directories above the repository. The first invocation exports both.
+CORTEX="${PROGRAMME_CORTEX:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+EVAL="${PROGRAMME_EVAL:-$(cd "$CORTEX/.." && pwd)/cortex-eval}"
+STATE="$EVAL/state"
+LOG="$EVAL/programme.log"
+BIN="$CORTEX/lab/bin"
+mkdir -p "$STATE"
+
+say() { printf '%s  %s\n' "$(date '+%F %T')" "$*" | tee -a "$LOG"; }
+
+done_marker() { [ -f "$STATE/$1.done" ]; }
+mark()        { date -Is > "$STATE/$1.done"; }
+
+# ------------------------------------------------ usage and budget guards --
+# Every rollout runs on the operator's Claude login, and the operator's standing
+# instruction is: if usage runs out, STOP and ask for a recharge. Without this, a
+# usage limit makes every `claude -p` fail in seconds, each step "finishes" with
+# INVALID rows, earns its marker, and the chain races on. The brief says the same
+# of money: "spend is within BUDGET_CAP_USD, or the user approved going over".
+GUARD="$BIN/usage-guard"
+
+# What each paid step may cost, reserved against the cap BEFORE it starts:
+# PREREGISTRATION.md §12's figures. D0-bench is what was left of its 456 rollouts.
+# The Sonnet benchmark is priced by its own pilot, and reserves the whole rest of
+# the study (bench + prune), so it cannot run out of budget half-way (§9: the pilot
+# is "recorded before committing to the rest").
+reserve_for() {
+  case "$1" in
+    D0-bench)  echo 50 ;;
+    gates)     echo 230 ;;
+    prune)     echo 95 ;;
+    ext-setup) echo 5 ;;
+    ext-train) echo 150 ;;
+    ext-bench) echo 50 ;;
+    M1-pilot)  echo 20 ;;
+    M1-bench)  "$GUARD" m1-reserve 2>>"$LOG" ;;
+    M1-prune)  "$GUARD" m1-reserve --prune-only 2>>"$LOG" ;;
+    *)         echo 0 ;;
+  esac
+}
+# the Sonnet study can meet a limit Haiku does not, so it is probed with Sonnet
+probe_model() {
+  case "$1" in M1-*) echo "${STRONG_MODEL:-claude-sonnet-5}" ;; *) echo claude-haiku-4-5-20251001 ;; esac
+}
+
+preflight() {                  # preflight <step>: 0 go · 3 usage · 4 budget
+  local name="$1" reserve out rc
+  if [ "$name" = scope-replay ]; then
+    if ! out=$("$GUARD" jev 2>&1); then
+      say "JEV   $name — the judge does not answer: $out"
+      say "      recharge Jev, then restart the programme (H16/H17 need the judge, not its fallback)."
+      return 3
+    fi
+    say "      $out"
+    return 0
+  fi
+  reserve=$(reserve_for "$name")
+  [ "$reserve" = 0 ] && return 0
+  out=$("$GUARD" budget --reserve "$reserve" --step "$name" 2>&1); rc=$?
+  say "      $out"
+  [ "$rc" -eq 0 ] || { say "      stopping: over BUDGET_CAP_USD — the user decides."; return 4; }
+  if ! out=$("$GUARD" probe --model "$(probe_model "$name")" 2>&1); then
+    say "USAGE $name — $out"
+    say "      Claude does not answer: recharge, then restart the programme."
+    return 3
+  fi
+}
+
+# Stop a step's whole tree: its session, and any rollout that escaped into a
+# session of its own, found by its working directory inside cortex-eval/.
+stop_tree() {
+  local sid="$1" p
+  pkill -TERM -s "$sid" 2>/dev/null
+  sleep 5
+  for p in $(pgrep -f 'claude|sweep|bench\.py|harness\.py|autopilot|run-external' 2>/dev/null); do
+    case "$(readlink "/proc/$p/cwd" 2>/dev/null)" in "$EVAL"/*) kill -TERM "$p" 2>/dev/null ;; esac
+  done
+  sleep 5
+  pkill -KILL -s "$sid" 2>/dev/null
+  return 0
+}
+
+# run a step unless its marker exists; record how long it took and what it cost
+step() {                       # step <name> <description> <command...>
+  local name="$1" desc="$2"; shift 2
+  if done_marker "$name"; then say "SKIP  $name ($desc) — already done"; return 0; fi
+  preflight "$name" || return $?
+  say "START $name — $desc"
+  local t0 pid rc n seen=0
+  t0=$(date +%s)
+  # its own session, so the watchdog can stop the whole tree at once
+  setsid "$@" >> "$EVAL/logs/$name.log" 2>&1 < /dev/null &
+  pid=$!
+  # The watchdog: rollouts or sessions that could not run at all (the signature of
+  # a usage limit) trigger a live probe; if Claude does not answer, stop NOW —
+  # before the step records a pile of INVALID rows and RERUN verdicts as results.
+  while kill -0 "$pid" 2>/dev/null; do
+    sleep 20
+    n=$("$GUARD" infra --since "$t0" 2>/dev/null | head -1)
+    [ "${n:-0}" -ge $((seen + 3)) ] 2>/dev/null || continue
+    if "$GUARD" probe --model "$(probe_model "$name")" >> "$LOG" 2>&1; then
+      say "      $n rollout(s)/session(s) of $name could not run, but Claude answers — transient, carrying on"
+      seen=$n
+    else
+      say "USAGE $name — $n rollout(s)/session(s) could not run and Claude does not answer: stopping the step"
+      stop_tree "$pid"
+      wait "$pid" 2>/dev/null
+      say "      stopped. Recharge, then restart the programme: the step resumes where it stopped."
+      return 3
+    fi
+  done
+  wait "$pid"; rc=$?
+  if [ "$rc" -eq 0 ]; then
+    n=$("$GUARD" infra --since "$t0" 2>/dev/null | head -1)
+    if [ "${n:-0}" -gt 0 ] 2>/dev/null; then
+      if ! "$GUARD" probe --model "$(probe_model "$name")" >> "$LOG" 2>&1; then
+        say "USAGE $name — it finished, but $n rollout(s) could not run and Claude does not answer: NOT marked done"
+        return 3
+      fi
+      say "      note: $n rollout(s)/session(s) of $name could not run (transient — Claude answers)"
+    fi
+    say "DONE  $name — $(( ($(date +%s) - t0) / 60 )) min"
+    mark "$name"
+  elif [ "$rc" -eq 3 ]; then
+    say "USAGE $name — the step stopped itself: what it needs could not run (Claude usage or auth, or the Jev judge) — see $EVAL/logs/$name.log"
+    say "      recharge, then restart the programme: the step resumes where it stopped."
+    return 3
+  else
+    say "FAIL  $name (rc=$rc) — see $EVAL/logs/$name.log"
+    say "      stopping: nothing downstream may run on half a step."
+    return "$rc"
+  fi
+}
+
+mkdir -p "$EVAL/logs"
+
+# Wait for a run that is already going (R1 is launched by hand first, so the
+# programme can be started while it is in flight).
+# Refuse to start anything while a run is in flight. A second run on the same
+# 12 CPUs does not go twice as fast: Cortex invalidates a rollout that timed out
+# while the machine was oversubscribed, so it buys INVALID rows in a primary.
+# This exists because a path bug once made the script skip its wait and try to
+# start R2 on top of R1.
+no_run_in_flight() {
+  local who
+  who=$(pgrep -af 'run-eval rounds|autopilot (round|evolve|prune)' | grep -v pgrep || true)
+  if [ -n "$who" ]; then
+    say "REFUSING to start: a run is already in flight —"
+    say "  $(echo "$who" | head -2)"
+    return 1
+  fi
+}
+
+wait_for_run() {               # wait_for_run <label>
+  local label="$1"
+  local log="$EVAL/runs/$label/autopilot.log"
+  # "no log" is not "finished". If the run directory exists, its log must too;
+  # treating a missing log as success is how a wait gets skipped silently.
+  if [ ! -f "$log" ]; then
+    if [ -d "$EVAL/runs/$label" ]; then
+      say "FINDING: $EVAL/runs/$label exists but has no autopilot.log — stopping"
+      return 1
+    fi
+    return 0
+  fi
+  if grep -q "round 10 finished" "$log" 2>/dev/null; then return 0; fi
+  say "waiting for $label to finish its rounds..."
+  while ! grep -q "round 10 finished" "$log" 2>/dev/null; do
+    if ! pgrep -f "run-eval rounds $label" >/dev/null 2>&1 && \
+       ! pgrep -f "autopilot round" >/dev/null 2>&1; then
+      say "FINDING: $label is not running and has not reached round 10 — stopping"
+      return 1
+    fi
+    sleep 60
+  done
+  say "$label reached round 10"
+}
+
+usage() { sed -n '2,20p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
+
+if [ "${1:-}" = "--status" ]; then
+  for f in "$STATE"/*.done; do [ -e "$f" ] && echo "done  $(basename "${f%.done}")  $(cat "$f")"; done
+  exit 0
+fi
+[ "${1:-}" = "--help" ] && { usage; exit 0; }
+
+# Bash reads a script incrementally, by byte offset, so editing this file while
+# it runs can drop execution into the middle of a line. Run from a copy: the
+# original is then free to be edited, and a restart picks the new one up.
+if [ "${PROGRAMME_PINNED:-}" != "1" ]; then
+  PINNED="$EVAL/programme-running.sh"
+  mkdir -p "$EVAL"
+  cp "${BASH_SOURCE[0]}" "$PINNED"
+  export PROGRAMME_PINNED=1 PROGRAMME_CORTEX="$CORTEX" PROGRAMME_EVAL="$EVAL"
+  exec bash "$PINNED" "$@"
+fi
+
+say "===================== programme start ====================="
+say "cortex $(cd "$CORTEX" && git describe --tags --always) · frozen $(readlink -f ~/.local/bin/cortex)"
+
+# ---------------------------------------------------------------- the runs --
+wait_for_run R1 || exit 1
+mark r1-rounds
+
+for R in R2 R3 R4; do
+  no_run_in_flight || exit 1
+  step "$R-new"    "isolated copy for $R"           "$BIN/run-eval" new "$R" || exit 1
+  step "$R-rounds" "$R: ten rounds, Jev off"        "$BIN/run-eval" rounds "$R" --from 1 --to 10 || exit 1
+done
+
+no_run_in_flight || exit 1
+step "C1-new"    "isolated copy for the control"    "$BIN/run-eval" new C1 --control || exit 1
+step "C1-rounds" "C1: the same sessions, no /evolve" "$BIN/run-eval" rounds C1 --from 1 --to 10 || exit 1
+
+# ---------------------------------------------------------- the benchmarks --
+# k is per split, as the pre-registration sets it: the holdout is the inference
+# and gets k=5, the training set is description and gets k=3. The ablation arms
+# are holdout-only at k=3 — they answer "which part did the work", and the
+# training set has nothing to say about that.
+step "R1-bench"  "R1: the two primary arms, holdout k=5 + train k=3" \
+  "$BIN/run-eval" bench R1 --k 5 --train-k 3 --arms none,evolved || exit 1
+step "R1-ablations" "R1: six ablation arms, holdout only, k=3" \
+  "$BIN/run-eval" bench R1 --k 3 --split holdout --skip-validate \
+  --arms none2,kitchen,ideal,flat,desc-only || exit 1
+# `accept-all` is deliberately absent: R1 buried nothing, so it is byte-identical
+# to `evolved` and measuring it would spend ~90 rollouts to produce a zero that
+# means nothing. `bench.py arms` prints the fingerprint clash; H5's placebo
+# testbed answers the same question properly. If a later run buries something,
+# add it back for THAT run.
+for R in R2 R3 R4; do
+  step "$R-bench" "$R: none vs evolved, holdout k=5 + train k=3" \
+    "$BIN/run-eval" bench "$R" --k 5 --train-k 3 || exit 1
+done
+
+# The control ran with /evolve switched off, so it has no items and its `evolved`
+# harness IS `none`. Measuring both would spend 228 rollouts to produce a zero
+# that is true by construction. One arm is the useful datum: `none` on C1's final
+# code says whether code written WITHOUT a harness is easier or harder to work in
+# than code written with one — which is the same question D0 raised when B02 was
+# right first time after copying B01's fix out of the source.
+step "C1-bench" "C1: the \`none\` arm only — its evolved harness is empty by design" \
+  "$BIN/run-eval" bench C1 --k 5 --train-k 3 --arms none || exit 1
+
+# H6 needs a run that actually buried something, and R1 did not — its accept-all
+# is byte-identical to evolved. R2 buried one candidate (an overlapping clock
+# rule the loop declined as a duplicate), so accept-all is a real arm there.
+step "R2-accept-all" "R2: the accept-all arm, holdout only, k=3" \
+  "$BIN/run-eval" bench R2 --k 3 --split holdout --skip-validate \
+  --arms accept-all || exit 1
+
+# D0 is re-measured on the expanded holdout with the SAME tooling, in its own
+# output directory — the development run never gets written to.
+step "D0-bench" "D0 re-measured on the 30-task holdout, on a copy" \
+  "$BIN/remeasure-d0" 5 none,evolved 3 || exit 1
+step "D0R-export" "D0's re-measurement: rows" \
+  "$BIN/export-run" --run D0R --kind remeasure --of D0 --bench-only \
+    --repo "$EVAL/runs/D0R/cortex-lab-D0R" --bench "$EVAL/runs/D0R/bench" \
+    --note "D0 re-measured on the expanded holdout with the frozen tooling" || exit 1
+
+# -------------------------------------------------------- the two testbeds --
+step "gates"  "gate calibration: 29 candidates with known answers" \
+  "$BIN/gate-calibration" --from C1 || exit 1
+step "prune"  "the prune experiment: four planted items" \
+  "$BIN/prune-experiment" --from R1 --second-pass || exit 1
+
+# ------------------------------------------------------ a second repository --
+step "ext-setup" "structlog: clone, venv, cortex init, fixed split" \
+  python3 "$CORTEX/lab/external/run-external.py" setup || exit 1
+step "ext-train" "structlog: eight training sessions with /harvest and /evolve" \
+  python3 "$CORTEX/lab/external/run-external.py" train || exit 1
+step "ext-bench" "structlog: none vs evolved on its four holdout commits, k=5" \
+  python3 "$CORTEX/lab/external/run-external.py" bench --k 5 || exit 1
+step "ext-export" "structlog: rows" \
+  python3 "$CORTEX/lab/external/run-external.py" export || exit 1
+
+# ------------------------------------------------- a stronger model (H14) --
+# Pre-registered as "the stronger model (Sonnet)". The cost pilot runs first and
+# its measurement is recorded BEFORE committing to the rest, exactly as §9 asks —
+# a model that turns out to cost six times as much changes what the rest is worth.
+export STRONG_MODEL="${STRONG_MODEL:-claude-sonnet-5}"
+step "M1-pilot" "Sonnet: a 10-rollout cost pilot, measured before committing" \
+  "$BIN/model-change" pilot || exit 1
+step "M1-bench" "Sonnet: the holdout, none vs evolved, k=3" \
+  "$BIN/model-change" bench 3 || exit 1
+step "M1-prune" "Sonnet: /prune re-measures every item after the model change" \
+  "$BIN/model-change" prune || exit 1
+
+# ------------------------------------------------------------- the exports --
+for R in R1 R2 R3 R4 C1; do
+  step "$R-export" "$R: rows" "$BIN/run-eval" export "$R" || exit 1
+done
+
+step "scope-replay" "H16/H17: score the judge against verdicts that already exist" \
+  bash -c "for r in D0 R1 R2 R3 R4; do
+             d=\"$EVAL/runs/\$r/cortex-lab-\$r/.evolve\"
+             [ \"\$r\" = D0 ] && d=\"$(cd "$CORTEX/.." && pwd)/cortex-lab/.evolve\"
+             # scope-replay defaults JEV_ENABLED to 0 (the environment beats .env), and
+             # runs cortex scope in a clone where the repo's .env is not found: without
+             # both, the "judged" replay silently had no judge at all
+             [ -d \"\$d\" ] && JEV_ENABLED=1 JEV_ENV_FILE=\"$CORTEX/.env\" \"$BIN/scope-replay\" --evolve \"\$d\" \
+                 --out \"$CORTEX/lab/reports/data\" --run \"\$r\" || true
+           done
+           # the replay falls back to its deterministic half if Jev stops answering;
+           # a half-judged replay must stop the programme (exit 3), not be reported
+           \"$BIN/usage-guard\" jev-rows \"$CORTEX\"/lab/reports/data/scope-replay-*.jsonl" || exit 1
+
+say "===================== programme finished ====================="
+say "next: Checkpoint B, the final analysis and the artifact package"

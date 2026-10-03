@@ -14,3 +14,13 @@ jev/firing_corpus.jsonl
 # secrets. NEVER commit a .env: it holds JEV_API_KEY, and a key that reaches a
 # commit reaches every clone and every rollout sandbox made from one.
 .env
+
+# the lab report's figures as vector PDF: a build output (analysis/figures.py writes them
+# for the paper), not shipped
+lab/reports/figures/*.pdf
+
+# the paper is kept and built outside this repository; its numbers come from lab/reports/
+paper/
+
+# virtual environments (lab/reports/analysis/run.sh makes one), or a link to one
+.venv

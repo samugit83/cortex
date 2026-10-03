@@ -22,7 +22,7 @@ Four things have to be true for that claim to hold, and each one is measured:
 
 ## The lab repository: `cortex-lab`
 
-`/home/samuele/Progetti didattici/cortex-lab`: *shopkit*, a small Python order and
+`<workspace>/cortex-lab`: *shopkit*, a small Python order and
 invoicing toolkit (catalog, carts, invoices, refunds, exports, reports, a CLI). It has 70 unit
 tests, no dependencies, and a history of eight commits by two teammates. It is rebuilt from
 `lab/seed/` with `lab build --force`.
@@ -298,7 +298,7 @@ list (`.claude/settings.json`: make, python, read-only git).
 | `bin/roundcheck` | the experimenter's check of a round, as Markdown (`results/round-NN-check.md`) |
 | `bench/bench.py` | the final benchmark: `prepare`, `run`, `report` |
 | `bench/test_bench.sh` | its own tests, on a clone of the lab repo with a fake `claude` (no API calls) |
-| `bin/scenarios.py` | all 41 scenarios: teammate commit, prompt, reference fix, rule-breaking fix |
+| `bin/scenarios.py` | all 56 scenarios (the development run's 41, and 15 written for the evaluation): teammate commit, prompt, reference fix, rule-breaking fix |
 | `seed/` | the lab repository's source; `lab build --force` recreates `cortex-lab` from it |
 | `state/state.json` | what happened in each session (written by `bin/lab`) |
 | `results/FINAL.md` | **the answer**: the four claims, the benchmark, what lives and why, what it cost, what it does not show |

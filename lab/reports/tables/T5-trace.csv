@@ -1,0 +1,65 @@
+run,#,counted as a cycle,date,candidate,kind,paths,theme,verdict (journal),verdict (score.sh),phases,rollouts,cost,gates failed (journal)
+D0,0,yes,2026-09-20,changelog-updates,skill,"""none""",remind to update CHANGELOG on edits (recurring in lessons),KILL,—,screen,20,$2.20,5
+D0,1,yes,2026-09-19,use-billing-helpers,rule,"""shop/billing/**""","use rate helpers for exact arithmetic (2 lessons: tasks 01, 03)",KEEP,—,"confirm, screen",30,$2.19,—
+D0,2,yes,2026-09-19,check-changelog-on-shop-edits,gated-skill,"""shop/**""","CHANGELOG forgotten for user-visible changes (3 lessons: tasks 04, 05, 06)",KILL,—,"confirm, screen",78,$5.76,—
+D0,3,yes,2026-09-19,check-changelog-on-shop-edits,gated-skill,"""shop/**""","the same, retried with a trigger-first description:",KEEP,—,"confirm, screen",78,$5.76,—
+D0,4,yes,2026-09-19,(barren),,—,—,BARREN,—,—,—,—,—
+D0,5,yes,2026-09-20,complete-exporter-setup,gated-skill,"""shop/plugins/**""","exporter plugins need all four: registry entry, docs row, golden file, implementation (4 lessons: tasks 08, 09, 10, and no-task)",KEEP,—,"confirm, screen",66,$8.20,—
+D0,6,yes,2026-09-20,enforce-shop-clock,rule,"""shop/clock/**""","clock module initialization requires proper delegation to service (2 lessons: tasks 11, 12)",KILL,—,screen,12,$0.98,1
+D0,7,yes,2026-09-20,(barren),,—,—,BARREN,—,—,—,—,—
+D0,8,no,2026-09-20,"(correction, by the experimenter)",,—,—,,—,—,—,—,—
+D0,9,no,2026-09-20,"(correction, by the experimenter)",,—,—,,—,—,—,—,—
+D0,10,yes,2026-09-20,(barren),,—,—,BARREN,—,—,—,—,—
+D0,11,no,2026-09-20,"(correction, by the experimenter)",,—,—,,—,—,—,—,—
+D0,12,yes,2026-09-20,(barren),,—,—,BARREN,—,—,—,—,—
+D0,13,yes,2026-09-20,(barren),,—,—,BARREN,—,—,—,—,—
+D0,14,yes,2026-09-20,(barren),,—,—,BARREN,—,—,—,—,—
+D0,15,yes,2026-09-20,enforce-shop-clock-v2,rule,"""shop/clock/**""","use shop.clock for all time operations in shop/ module (3 lessons: tasks 11, 12, 13)",KILL,—,"confirm, screen",102,$10.44,—
+D0,16,no,2026-09-20,"(policy, by the experimenter)",,—,—,,—,—,—,—,—
+D0,17,yes,2026-09-20,(barren),,—,—,BARREN,—,—,—,—,—
+D0,18,yes,2026-09-20,changelog-rule-v2,rule,"""shop/**""","CHANGELOG updates required when implementing shop features (4+ lessons: tasks 04, 05, 06, 17; currently fails 04, 05, 06)",KILL,—,screen,12,$1.29,2
+D0,19,yes,2026-09-20,clock-in-billing,rule,"""shop/billing/**""","clock operations in billing code require shop.clock module (2 lessons: tasks 11, 12)",KEEP,—,"confirm, recheck, screen",406,$45.94,—
+D0,20,no,2026-09-20,clock-in-billing (re-tested),rule,"""shop/billing/**""",re-test of clock-in-billing promoted from previous cycle,KILL,—,—,—,—,"2, 3, 4"
+D0,21,yes,2026-09-20,shop-clock-usage,rule,"""shop/**""",use shop.clock instead of datetime in shop/ code (1 lesson: task),KILL,—,"confirm, recheck, screen",174,$20.34,"2, 3"
+D0,22,no,2026-09-20,"(correction, by the experimenter)",,—,—,,—,—,—,—,—
+D0,23,no,2026-09-20,prune,prune pass,—,—,,—,—,—,—,—
+R1,0,yes,2026-09-21,billing-helpers,rule,"""shop/billing/**""","Use helper functions percent_of/times/scale from shop/billing/rates.py (3 lessons on tasks 01, 02, 03)",KEEP,KEEP,"confirm, screen",30,$3.30,—
+R1,1,yes,2026-09-21,changelog-requirement,rule,"""shop/**""","Add CHANGELOG entries for user-visible changes (3 lessons on tasks 04, 05, 06)",KEEP,KEEP,"confirm, screen",48,$5.78,—
+R1,2,yes,2026-09-21,(barren),,—,—,BARREN,—,—,—,—,—
+R1,3,yes,2026-09-21,shop-clock-rule,rule,"""shop/**""","Use shop.clock for all time access instead of stdlib datetime (3 lessons on tasks 09, 10, 11)",KEEP,KEEP,"confirm, recheck, screen",84,$10.95,—
+R1,4,yes,2026-09-21,exporter-checklist,gated-skill,"""shop/plugins/**""","Complete exporter implementation checklist: docs row, golden file, registry entry, CHANGELOG (2 lessons on tasks 07, 08)",KEEP,KEEP,"confirm, screen",92,$12.73,—
+R1,5,yes,2026-09-21,(barren),,—,—,BARREN,—,—,—,—,—
+R1,6,yes,2026-09-21,(barren),,—,—,BARREN,—,—,—,—,—
+R1,7,yes,2026-09-21,(barren),,—,—,BARREN,—,—,—,—,—
+R1,8,yes,2026-09-21,(barren),,—,—,BARREN,—,—,—,—,—
+R2,0,yes,2026-09-21,billing-exact-arithmetic,rule,"""shop/billing/**""",exact arithmetic in billing (2 lessons: task 01 + 03),KEEP,KEEP,"confirm, screen",30,$3.07,—
+R2,1,yes,2026-09-21,changelog-user-visible,rule,"""shop/**""","missing CHANGELOG entries for user-visible changes (3 lessons: tasks 04, 05, 06)",KEEP,KEEP,"confirm, screen",48,$5.84,—
+R2,2,yes,2026-09-21,exporter-docs-and-golden,rule,"""shop/plugins/**""","missing exporter documentation and golden file requirements (3 lessons: tasks 08, 09, 10)",KEEP,KEEP,"confirm, screen",66,$11.19,—
+R2,3,yes,2026-09-21,shop-clock-not-datetime,rule,"""shop/**""","direct datetime.now()/date.today() instead of shop.clock (3 lessons: tasks 11, 12, 13)",KEEP,KEEP,"confirm, screen",84,$13.14,—
+R2,4,yes,2026-09-21,(barren),,—,—,BARREN,—,—,—,—,—
+R2,5,yes,2026-09-21,(barren),,—,—,BARREN,—,—,—,—,—
+R2,6,yes,2026-09-21,(barren),,—,—,BARREN,—,—,—,—,—
+R2,7,yes,2026-09-21,(barren),,—,—,BARREN,—,—,—,—,—
+R2,8,yes,2026-09-21,shop-clock-explicit-imports,rule,"""shop/**""",explicit import patterns for shop.clock (variant of shop-clock-not-datetime),KILL,RERUN,screen,8,$0.66,—
+R3,0,yes,2026-09-21,changelog-user-facing,rule,"shop/cli.py, shop/formatting.py, shop/report.py","missing CHANGELOG entry for user-visible changes (3 lessons, tasks 04-06)",KEEP,KEEP,"confirm, screen",48,$5.46,—
+R3,1,yes,2026-09-21,rate-helpers-narrow,rule,"shop/billing/tax.py, shop/billing/discount.py, shop/billing/fx.py",precision loss in manual rate/percentage parsing (3 failing tasks),KEEP,KEEP,"confirm, screen",30,$3.28,—
+R3,2,yes,2026-09-21,use-rate-helpers,rule,shop/billing/**,precision loss in manual rate/percentage parsing (3 failing tasks),KILL,RERUN,"confirm, screen",30,$2.40,—
+R3,3,yes,2026-09-21,exporter-checklist,gated-skill,src/exporters/**,"exporters missing documentation, golden files, and verification checks (tasks 07, 08, 09)",KILL,KILL,"confirm, screen",66,$10.60,—
+R3,4,yes,2026-09-21,changelog-shop-reminder,rule,shop/**,"missing CHANGELOG entry for shop/ changes (continuation from changelog-user-facing, expanded scope)",KEEP,KEEP,"confirm, screen",76,$10.15,—
+R3,5,yes,2026-09-21,shop-clock-access,rule,shop/**,"time operations using date.today()/datetime.now() instead of shop.clock (tasks 10, 11, 12)",KILL,KILL,"confirm, recheck, screen",108,$13.75,—
+R3,6,yes,2026-09-21,shop-clock-narrow,rule,"shop/billing/invoice.py, shop/cart.py, shop/orders.py",time operations using shop.clock (refined from shop-clock-access regression),KEEP,KEEP,"confirm, screen",120,$14.86,—
+R3,7,yes,2026-09-21,billing-rate-helpers,rule,"shop/billing/shipping.py, shop/billing/refunds.py","precision loss in billing calculations using float arithmetic instead of rate helpers (tasks 17, 20)",KEEP,KEEP,"confirm, screen",146,$20.71,—
+R3,8,yes,2026-09-21,text-utilities-correctness,rule,shop/util/text.py,"string utility function edge cases (pluralize count check, regex unicode handling) (2 tasks in protected set)",KILL,KILL,"confirm, screen",162,$19.84,—
+R3,9,yes,2026-09-21,exporter-checklist-v2,rule,shop/plugins/*_export.py,"exporter plugins missing documentation, registry entry, and golden files (tasks 07, 09, 18)",KEEP,KEEP,"confirm, screen",180,$27.72,—
+R3,10,yes,2026-09-21,(barren),,—,—,BARREN,—,—,—,—,—
+R4,0,yes,2026-09-22,changelog-for-user-visible-changes,rule,"""CHANGELOG.md""","update CHANGELOG.md for every user-visible change (3 lessons: tasks 04, 05, 06)",KILL,KILL,screen,12,$1.43,—
+R4,1,yes,2026-09-22,billing-rates-helpers,rule,shop/billing/**,use helpers percent_of() and times() from rates.py instead of float/Decimal (3 lessons),KEEP,KEEP,"confirm, screen",30,$3.32,—
+R4,2,yes,2026-09-22,exporter-checklist,gated skill,"""shop/plugins/**""","verify required metadata fields before exporting (3 lessons: tasks 07, 08, 09)",KEEP,KEEP,"confirm, screen",66,$10.37,—
+R4,3,yes,2026-09-22,changelog-contributing-reminder,rule,"""CONTRIBUTING.md""","add CHANGELOG.md entry for every user-visible change (3 lessons: tasks 04, 05, 06)",KILL,KILL,screen,12,$1.65,—
+R4,4,yes,2026-09-22,shop-clock-queries,rule,shop/**,"shop/ must use shop.clock for time queries, not stdlib (tasks 10, 11)",KEEP,KEEP,"confirm, screen",98,$11.07,—
+R4,5,yes,2026-09-22,shop-changelog-reminder,rule,"""shop/**""","ensure CHANGELOG.md is updated for user-visible changes (3 lessons: tasks 04, 05, 06)",KEEP,KEEP,"confirm, recheck, screen",132,$16.14,—
+R4,6,yes,2026-09-22,(barren),,—,—,BARREN,—,—,—,—,—
+R4,7,yes,2026-09-22,(barren),,—,—,BARREN,—,—,—,—,—
+R4,8,yes,2026-09-22,(barren),,—,—,BARREN,—,—,—,—,—
+R4,9,yes,2026-09-22,(barren),,—,—,BARREN,—,—,—,—,—
+R4,—,no,2026-09-22,changelog-moment-check,skill,—,(no journal entry),—,RERUN,screen,12,$1.66,—

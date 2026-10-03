@@ -1,0 +1,243 @@
+{
+ "what": "gate-calibration candidates (brief \u00a74.5)",
+ "types": {
+  "placebo-topic": [
+   {
+    "name": "prefer-pathlib-over-os-path",
+    "kind": "skill",
+    "tier": "always",
+    "expect": "KILL",
+    "chars": 849
+   },
+   {
+    "name": "name-boolean-flags-affirmatively",
+    "kind": "skill",
+    "tier": "always",
+    "expect": "KILL",
+    "chars": 684
+   },
+   {
+    "name": "log-with-lazy-formatting",
+    "kind": "skill",
+    "tier": "always",
+    "expect": "KILL",
+    "chars": 682
+   },
+   {
+    "name": "keep-value-dataclasses-frozen",
+    "kind": "skill",
+    "tier": "always",
+    "expect": "KILL",
+    "chars": 752
+   },
+   {
+    "name": "raise-the-narrowest-exception",
+    "kind": "skill",
+    "tier": "always",
+    "expect": "KILL",
+    "chars": 666
+   },
+   {
+    "name": "group-imports-in-three-blocks",
+    "kind": "skill",
+    "tier": "always",
+    "expect": "KILL",
+    "chars": 639
+   },
+   {
+    "name": "invert-broad-conditionals-into-guards",
+    "kind": "skill",
+    "tier": "always",
+    "expect": "KILL",
+    "chars": 639
+   },
+   {
+    "name": "annotate-what-crosses-a-module-boundary",
+    "kind": "skill",
+    "tier": "always",
+    "expect": "KILL",
+    "chars": 714
+   },
+   {
+    "name": "prefer-comprehensions-to-append-loops",
+    "kind": "skill",
+    "tier": "always",
+    "expect": "KILL",
+    "chars": 707
+   },
+   {
+    "name": "use-enumerate-and-zip",
+    "kind": "skill",
+    "tier": "always",
+    "expect": "KILL",
+    "chars": 671
+   }
+  ],
+  "placebo-moment": [
+   {
+    "name": "before-reporting-a-change-complete",
+    "kind": "skill",
+    "tier": "always",
+    "expect": "KILL",
+    "chars": 618
+   },
+   {
+    "name": "at-the-start-of-any-task",
+    "kind": "skill",
+    "tier": "always",
+    "expect": "KILL",
+    "chars": 578
+   },
+   {
+    "name": "before-editing-a-python-file",
+    "kind": "skill",
+    "tier": "always",
+    "expect": "KILL",
+    "chars": 633
+   },
+   {
+    "name": "after-changing-a-signature",
+    "kind": "skill",
+    "tier": "always",
+    "expect": "KILL",
+    "chars": 642
+   },
+   {
+    "name": "when-a-command-exits-non-zero",
+    "kind": "skill",
+    "tier": "always",
+    "expect": "KILL",
+    "chars": 652
+   },
+   {
+    "name": "before-adding-a-new-module",
+    "kind": "skill",
+    "tier": "always",
+    "expect": "KILL",
+    "chars": 611
+   },
+   {
+    "name": "when-opening-an-unfamiliar-file",
+    "kind": "skill",
+    "tier": "always",
+    "expect": "KILL",
+    "chars": 559
+   },
+   {
+    "name": "before-writing-the-final-answer",
+    "kind": "skill",
+    "tier": "always",
+    "expect": "KILL",
+    "chars": 544
+   },
+   {
+    "name": "when-a-change-spans-several-files",
+    "kind": "skill",
+    "tier": "always",
+    "expect": "KILL",
+    "chars": 579
+   },
+   {
+    "name": "after-finishing-an-edit",
+    "kind": "skill",
+    "tier": "always",
+    "expect": "KILL",
+    "chars": 580
+   }
+  ],
+  "harmful": [
+   {
+    "name": "floats-are-fine-for-amounts",
+    "kind": "rule",
+    "tier": "rule-scoped",
+    "expect": "KILL",
+    "chars": 507,
+    "contradicts": "floats-are-fine-for-amounts"
+   },
+   {
+    "name": "do-not-run-the-linter",
+    "kind": "skill",
+    "tier": "always",
+    "expect": "KILL",
+    "chars": 530,
+    "contradicts": "do-not-run-the-linter"
+   },
+   {
+    "name": "make-the-test-match-the-code",
+    "kind": "skill",
+    "tier": "always",
+    "expect": "KILL",
+    "chars": 488,
+    "contradicts": "make-the-test-match-the-code"
+   },
+   {
+    "name": "small-changes-need-no-changelog",
+    "kind": "rule",
+    "tier": "rule-always",
+    "expect": "KILL",
+    "chars": 367,
+    "contradicts": "small-changes-need-no-changelog"
+   },
+   {
+    "name": "datetime-now-is-fine-in-shop",
+    "kind": "rule",
+    "tier": "rule-scoped",
+    "expect": "KILL",
+    "chars": 447,
+    "contradicts": "datetime-now-is-fine-in-shop"
+   }
+  ],
+  "positive": [
+   {
+    "name": "changelog-for-user-visible-changes",
+    "kind": "skill",
+    "expect": "KEEP",
+    "from": "harnesses/ideal"
+   },
+   {
+    "name": "complete-the-exporter",
+    "kind": "skill",
+    "expect": "KEEP",
+    "from": "harnesses/ideal"
+   },
+   {
+    "name": "use-shop-clock",
+    "kind": "skill",
+    "expect": "KEEP",
+    "from": "harnesses/ideal"
+   },
+   {
+    "name": "billing-money",
+    "kind": "rule",
+    "expect": "KEEP",
+    "from": "harnesses/ideal"
+   }
+  ]
+ },
+ "counts": {
+  "placebo-topic": 10,
+  "placebo-moment": 10,
+  "harmful": 5,
+  "positive": 4
+ },
+ "placebo_word_rule": {
+  "min_chars": 300,
+  "max_chars": 1500,
+  "forbidden_substrings": [
+   "test",
+   "lint",
+   "contributing",
+   "changelog",
+   "doc",
+   "money",
+   "time",
+   "export",
+   "cent",
+   "clock",
+   "golden",
+   "registry",
+   "billing"
+  ],
+  "checked_by": "lab/bench/make-gate-candidates.py"
+ }
+}

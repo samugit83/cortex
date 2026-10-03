@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The evidence that justified jev_integration_plan.md.
+"""The evidence that justified the Jev integration (docs/JEV.md).
 
 Reads a Cortex repo's recorded sweeps and graveyard and reproduces every number
 in section 1 of the plan. No network, no model, no API key: this is the
@@ -14,8 +14,10 @@ what J0 tests.
 import json, os, sys, glob
 from collections import defaultdict
 
-EV = sys.argv[1] if len(sys.argv) > 1 else \
-    "/home/samuele/Progetti didattici/cortex-lab/.evolve"
+# default: the development run's repository, cortex-lab, beside this checkout
+EV = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "cortex-lab", ".evolve")
 RUNS, TASKS, GRAVE = (os.path.join(EV, d) for d in ("runs", "tasks", "graveyard"))
 
 # subject -> keywords marking a task as being ABOUT that subject

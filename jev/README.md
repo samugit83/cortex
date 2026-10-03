@@ -9,7 +9,7 @@ This directory exists to answer one question before any Jev code is written:
 | File | What it is | Needs a key |
 |---|---|---|
 | `corpus.py` | builds the `(candidate, task)` firing corpus from `.evolve/runs/*.jsonl` | no |
-| `evidence.py` | reproduces every number in §1 of `../jev_integration_plan.md` | no |
+| `evidence.py` | reproduces the measurements that justified the judge (quoted in `../docs/JEV.md`) | no |
 | `EVIDENCE.txt` | the recorded output of `evidence.py` on `cortex-lab` run R1 | no |
 | `validate.py` | **J0** — the same test with real Jev calls instead of the keyword oracle | yes |
 | `RESULTS.md` | written by `validate.py`; the gate's verdict. Its first lines carry the model id `bin/jev.py` reads back on every call | — |
@@ -68,7 +68,7 @@ On `cortex-lab` R1 (984 rollouts, 26 sweeps, 10 candidates, $107.53):
 `evidence.py` judges "is this task about X" with a hand-written keyword matcher,
 not with Jev. It proves the **signal exists and separates**. It does not prove
 Jev can compute it. That is `validate.py` (J0), and until J0 is green nothing in
-`../jev_integration_plan.md` ships.
+the integration (`../docs/JEV.md`) ships.
 
 The oracle also reads **more** than Jev is ever sent: it matches against
 `fix.patch` as well as the prompt and the notes. That makes it a harder baseline

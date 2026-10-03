@@ -1,0 +1,322 @@
+#!/usr/bin/env python3
+"""prune-experiment — plant items whose right fate is known, then run /prune for real.
+
+  prune-experiment --from R1 [--force] [--second-pass]
+
+`/prune` decided "nothing to test" in D0. That is a correct call on that harness —
+no item paid an always-on tax and all three were in use — but it means H10 was
+never tested. This plants four items whose right fate was written down before the
+testbed existed (`lab/bench/prune-plants/MANIFEST.json`) and runs the real pass:
+
+| planted | n | expected |
+|---|---|---|
+| placebo always-on skills with a *moment* description | 2 | fire, cost nothing -> **ACCEPT** (deleted) |
+| a gated skill whose `paths` match no file any task touches | 1 | **SKIPPED** by the plan; never deleted |
+| an always-on skill whose description names no moment here | 1 | never fires -> **UNMEASURED**; not deleted |
+| the run's own evolved items | as kept | **REJECT** (kept) |
+
+The third and fourth rows are the ones that matter. A tool that deletes what it
+cannot measure is worse than no tool: a skill for something that happens twice a
+year looks exactly like a useless one in between, and is precisely the one you
+want when it happens. So the experiment is not "does /prune delete rubbish" but
+"does it delete rubbish **and refuse to delete what it never saw fire**".
+
+`prune.max_items` is raised so the plan can reach every live item — otherwise a
+routine pass tests three and the planted ones are never reached for a reason that
+has nothing to do with their merit.
+
+Run with **Jev off**, which is what the pre-registration fixes. With Jev off
+`cortex prune plan` prints no `DOUBT` column and the items run in the order the
+plan shows, which is what this measures. A Jev-on pass, if run, is an observation
+only: `jev_rank` is a sort order, it cannot delete anything, and every verdict
+still comes from that item's own sweep.
+
+Output: `reports/data/prune.jsonl`, one row per item the pass considered.
+"""
+import argparse
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+from datetime import datetime
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+import guard                                            # noqa: E402
+
+CORTEX = HERE.parent.parent
+WORKSPACE = CORTEX.parent / "cortex-eval"
+PLANTS = CORTEX / "lab" / "bench" / "prune-plants"
+DATA = CORTEX / "lab" / "reports" / "data"
+
+
+def redirect_sandbox(cfg_path, sandbox, why):
+    """Point environment.sandbox_root at `sandbox`, keeping the original indent.
+
+    The indent is read from the line being replaced. Writing four spaces into a
+    file that uses two produces YAML that parses as a deeper block, and the next
+    key at the original depth ends the mapping early — `cortex config` then
+    refuses, hours later, for a reason that looks nothing like its cause.
+    """
+    text = cfg_path.read_text(encoding="utf-8")
+    out, changed = [], False
+    for line in text.splitlines():
+        m = re.match(r"(\s*)sandbox_root:", line)
+        if m:
+            out.append(f"{m.group(1)}sandbox_root: {sandbox}   # {why}")
+            changed = True
+        else:
+            out.append(line)
+    if not changed:
+        raise SystemExit(f"{cfg_path}: no environment.sandbox_root to redirect")
+    cfg_path.write_text("\n".join(out) + "\n", encoding="utf-8")
+
+
+def sh(cmd, cwd, env, timeout=None, quiet=False):
+    p = subprocess.run(cmd, cwd=cwd, env=env, capture_output=True, text=True, timeout=timeout)
+    if not quiet and p.returncode != 0:
+        print(f"    ! {' '.join(str(c) for c in cmd)} -> {p.returncode}", flush=True)
+    return p
+
+
+def env_for(cortex_home):
+    env = dict(os.environ)
+    env["PATH"] = f"{cortex_home / 'bin'}{os.pathsep}" + env.get("PATH", "")
+    env["JEV_ENABLED"] = "0"
+    env["JEV_API_KEY"] = ""
+    env["DISABLE_AUTOUPDATER"] = "1"
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+    return env
+
+
+def raise_max_items(testbed, n):
+    """A routine pass tests `prune.max_items` items. The experiment needs all of
+    them reachable, so the cap is raised — and recorded, because it is a change to
+    the thing under test and must not be silent."""
+    cfg = testbed / ".evolve" / "config.yaml"
+    text = cfg.read_text(encoding="utf-8")
+    out, was = [], None
+    for line in text.splitlines():
+        m = re.match(r"(\s*)max_items:\s*(\d+)", line)
+        if m:
+            was = int(m.group(2))
+            out.append(f"{m.group(1)}max_items: {n}   # raised for the prune experiment")
+        else:
+            out.append(line)
+    cfg.write_text("\n".join(out) + "\n", encoding="utf-8")
+    return was
+
+
+def unfinished(status, which):
+    """Stop if the pass did not end. `autopilot prune` returns 0 whatever happened —
+    after twelve turns it simply stops — so a plan left PROPOSED (never approved) or
+    APPROVED (stopped mid-way) would be read back as final verdicts: every planted
+    item still live, recorded as REJECT or SKIPPED. Finishing with nothing chosen
+    ("no prune plan") is a legitimate outcome — D0's pass did exactly that — and
+    DONE and CANCELLED are ends too."""
+    m = re.search(r"status: (PROPOSED|APPROVED)", status)
+    if m:
+        sys.exit(f"prune-experiment: the {which} /prune pass did not finish — its plan is "
+                 f"{m.group(1)}. Nothing is recorded; see runs/PRUNE/status.txt.")
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--from", dest="src_run", required=True)
+    ap.add_argument("--cortex", default=str(CORTEX.parent / "cortex-eval-v1.0"))
+    ap.add_argument("--out", default=str(DATA))
+    ap.add_argument("--force", action="store_true")
+    ap.add_argument("--second-pass", action="store_true",
+                    help="after the first pass, address any planted item it skipped")
+    ap.add_argument("--setup-only", action="store_true",
+                    help="build the testbed, plant, raise the cap and print the plan, "
+                         "without running the pass or spending a rollout")
+    a = ap.parse_args()
+
+    src = WORKSPACE / "runs" / a.src_run
+    man = json.loads((src / "manifest.json").read_text())
+    d = WORKSPACE / "runs" / "PRUNE"
+    testbed = d / "cortex-lab-PRUNE"
+    guard.protect(d, "build the prune testbed at")
+    if d.exists() and a.force:
+        shutil.rmtree(d)
+    cortex_home = Path(a.cortex).resolve()
+    env = env_for(cortex_home)
+
+    manifest = json.loads((PLANTS / "MANIFEST.json").read_text())
+    if not testbed.exists():
+        d.mkdir(parents=True, exist_ok=True)
+        print(f"building the prune testbed from {a.src_run}")
+        shutil.copytree(man["repo"], testbed, symlinks=False)
+        redirect_sandbox(testbed / ".evolve" / "config.yaml",
+                         d / "sandbox", "the prune testbed only")
+        live_before = sorted(p.name for p in (testbed / ".claude" / "skills").glob("*")
+                             if (p / "SKILL.md").is_file())
+        live_rules = sorted(p.stem for p in (testbed / ".claude" / "rules").glob("*.md"))
+        # plant, then raise the cap so every live item is reachable by the plan
+        for plant in manifest["plants"]:
+            dest = testbed / ".claude" / "skills" / plant["name"]
+            shutil.rmtree(dest, ignore_errors=True)
+            shutil.copytree(PLANTS / plant["name"], dest)
+            print(f"  planted {plant['name']:38} expect {plant['expect']}")
+        total = len(live_before) + len(live_rules) + len(manifest["plants"])
+        was = raise_max_items(testbed, total + 2)
+        sh(["cortex", "config"], testbed, env)
+        sh(["git", "add", "-A"], testbed, env, quiet=True)
+        sh(["git", "commit", "-q", "-m", "prune testbed: plants + max_items raised"], testbed, env,
+           quiet=True)
+        (d / "setup.json").write_text(json.dumps(
+            {"from": a.src_run, "live_before": live_before, "live_rules": live_rules,
+             "planted": [p["name"] for p in manifest["plants"]],
+             "max_items_was": was, "max_items_now": total + 2,
+             "at": datetime.now().isoformat(timespec="seconds")}, indent=1) + "\n")
+        print(f"  max_items {was} -> {total + 2}; live before: "
+              f"{', '.join(live_before + live_rules) or '(none)'}")
+
+    setup = json.loads((d / "setup.json").read_text())
+
+    # ---- the pass itself, driven exactly as a user would ---------------------
+    #
+    # `cortex prune plan` with no --items REFUSES, and it is right to: choosing
+    # which items to test is the agent's job inside /prune, from the evidence
+    # `cortex usage` lays out. So the evidence is captured first, the agent is let
+    # loose, and the plan is read back afterwards — the plan is an OUTPUT of this
+    # experiment, not an input to it.
+    apenv = dict(env, LAB_REPO=str(testbed), LAB_STATE=str(d / "state.json"))
+    usage = sh(["cortex", "usage"], testbed, env, quiet=True).stdout
+    (d / "usage-before.txt").write_text(usage)
+    print("\n--- what /prune will be choosing from (`cortex usage`) ---")
+    print(usage.strip()[:2000])
+    est = sh(["cortex", "prune", "estimate"], testbed, env, quiet=True).stdout
+    (d / "estimate.txt").write_text(est)
+    plan_before = ""
+
+    if a.setup_only:
+        live = sorted(p.name for p in (testbed / ".claude" / "skills").glob("*")
+                      if (p / "SKILL.md").is_file())
+        rules = sorted(p.stem for p in (testbed / ".claude" / "rules").glob("*.md"))
+        print(f"\nsetup only. live skills: {', '.join(live)}")
+        print(f"             live rules : {', '.join(rules)}")
+        print(f"             planted    : {', '.join(p['name'] for p in manifest['plants'])}")
+        print(f"\nestimate:\n{est.strip()[:1200]}")
+        return 0
+
+    print("\n--- running `autopilot prune` ---", flush=True)
+    subprocess.run([str(HERE / "autopilot"), "prune", "--jev", "off"], cwd=str(CORTEX),
+                   env=apenv)
+
+    status = sh(["cortex", "prune", "status"], testbed, env, quiet=True).stdout
+    (d / "status.txt").write_text(status)
+    unfinished(status, "first")
+    # the plan the agent actually chose, read back from the pass it ran
+    plan_before = status + "\n" + (d / "plan.txt").read_text() if (d / "plan.txt").is_file() else status
+    (d / "plan.txt").write_text(plan_before)
+    print("\n--- what /prune chose and what came of it ---")
+    print(status.strip()[:2500])
+
+    # ---- what happened to each item -----------------------------------------
+    live_after = sorted(p.name for p in (testbed / ".claude" / "skills").glob("*")
+                        if (p / "SKILL.md").is_file())
+    live_rules_after = sorted(p.stem for p in (testbed / ".claude" / "rules").glob("*.md"))
+    expect = {p["name"]: p for p in manifest["plants"]}
+    rows = []
+    considered = set(re.findall(r"[\w-]+", plan_before))
+
+    def verdict_for(name, planted):
+        gone = name not in live_after and name not in live_rules_after
+        if gone:
+            return "ACCEPT"
+        if name not in considered:
+            return "SKIPPED"
+        if re.search(rf"{re.escape(name)}.*UNMEASURED", status + plan_before, re.I):
+            return "UNMEASURED"
+        return "REJECT"
+
+    for name, p in expect.items():
+        v = verdict_for(name, True)
+        want = p["expect"].split()[0].strip("(:")
+        rows.append({"run": "PRUNE", "from_run": a.src_run, "item": name,
+                     "role": p["role"], "planted": True, "fires": p.get("fires"),
+                     "expected": want, "verdict": v, "matches": v == want,
+                     "chosen_by": "plan" if name in considered else "not chosen",
+                     "note": p["expect"]})
+    for name in setup["live_before"] + setup["live_rules"]:
+        v = verdict_for(name, False)
+        rows.append({"run": "PRUNE", "from_run": a.src_run, "item": name,
+                     "role": f"{a.src_run}'s own evolved item", "planted": False,
+                     "expected": "REJECT", "verdict": v, "matches": v == "REJECT",
+                     "chosen_by": "plan" if name in considered else "not chosen",
+                     "note": "an item the run earned: deleting it should cost pass rate"})
+
+    if a.second_pass:
+        skipped = [r["item"] for r in rows if r["verdict"] == "SKIPPED" and r["planted"]]
+        if skipped:
+            print(f"\n--- second pass, addressing what the plan skipped: {skipped} ---")
+            sh(["cortex", "prune", "cancel"], testbed, env, quiet=True)
+            sh(["cortex", "prune", "plan", "--items", " ".join(skipped)], testbed, env)
+            (d / "plan-2.txt").write_text(
+                sh(["cortex", "prune", "status"], testbed, env, quiet=True).stdout)
+            subprocess.run([str(HERE / "autopilot"), "prune", "--jev", "off"],
+                           cwd=str(CORTEX), env=apenv)
+            unfinished(sh(["cortex", "prune", "status"], testbed, env, quiet=True).stdout, "second")
+            after2 = sorted(p.name for p in (testbed / ".claude" / "skills").glob("*")
+                            if (p / "SKILL.md").is_file())
+            # Cortex's own verdicts, from its plan — not "still live, so REJECT", which
+            # recorded an item /prune refused to test ("never loaded — a removal can
+            # only be UNMEASURED") as if a sweep had decided to keep it
+            plan2 = json.loads((testbed / ".evolve" / "prune-plan.json").read_text())
+            by = {it["name"]: it for it in plan2.get("items", [])}
+            for r in rows:
+                if r["item"] in skipped:
+                    it = by.get(r["item"], {})
+                    r["second_pass"] = True
+                    r["plan_state"] = it.get("state")
+                    if it.get("state") == "decided" and it.get("verdict"):
+                        r["verdict"] = it["verdict"]
+                    elif it.get("state") == "skipped":
+                        r["verdict"] = "SKIPPED"
+                    else:
+                        r["verdict"] = "ACCEPT" if r["item"] not in after2 else "REJECT"
+                    r["deleted"] = r["item"] not in after2
+                    r["matches"] = r["verdict"] == r["expected"]
+
+    # The testbed is a copy of the source run, so its .evolve/runs/ starts with that
+    # run's own sweeps (R1: 9 sweeps, 254 rollouts, $32.76). Summing every file there
+    # charged the prune pass with the whole of R1's evolution. Only sweeps the source
+    # did not already have are this experiment's — a rule that also survives a restart
+    # part-way through the pass, which a snapshot taken at start-up would not.
+    inherited = {f.name for f in (Path(man["repo"]) / ".evolve" / "runs").glob("*.jsonl")}
+    rollouts = cost = 0
+    for f in sorted((testbed / ".evolve" / "runs").glob("*.jsonl")):
+        if f.name in inherited:
+            continue
+        for line in f.read_text(errors="replace").splitlines():
+            try:
+                x = json.loads(line)
+            except ValueError:
+                continue
+            if x.get("v"):
+                rollouts += 1
+                cost += x.get("cost_usd") or 0
+    for r in rows:
+        r["pass_rollouts"] = rollouts
+        r["pass_cost_usd"] = round(cost, 4)
+
+    out = Path(a.out)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "prune.jsonl").write_text(
+        "".join(json.dumps(r, sort_keys=True) + "\n" for r in rows), encoding="utf-8")
+    print(f"\n{'item':40} {'expected':10} {'verdict':10} match")
+    for r in rows:
+        print(f"{r['item']:40} {r['expected']:10} {str(r['verdict']):10} "
+              f"{'OK' if r['matches'] else 'NO'}")
+    print(f"\n{sum(1 for r in rows if r['matches'])} of {len(rows)} matched · "
+          f"{rollouts} rollouts ${cost:.2f}\n-> {out / 'prune.jsonl'}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

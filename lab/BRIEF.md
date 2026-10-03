@@ -1,4 +1,4 @@
-# Brief for the evaluation agent: from the finished lab run to a paper-grade report
+# Evaluation brief: from the finished lab run to a paper-grade report
 
 The lab has already produced **one complete run with a benchmark and a written
 conclusion** (`results/FINAL.md`). That run answered "does this work at all?".
@@ -23,8 +23,8 @@ Read this whole brief before touching anything.
 | `lab/bin/lab`, `lab/bin/scenarios.py` | session helper, oracle, 41 scenarios (`LAB_REPO`/`LAB_STATE` aware) |
 | `Cortex/README.md`, `docs/THEORY.md` | what Cortex does and why |
 | `Cortex/docs/JEV.md` | **read this before planning any run.** Cortex gained an optional judge after D0; §1.15 and §3.2b say what that does to this programme |
-| `Cortex/paper/concept-audit.md` | what is genuinely new; your results must support §5 there |
-| `Cortex/paper/plan.md` | the paper this report feeds |
+| `Cortex/paper/concept-audit.md` | what is genuinely new; your results must support §5 there (kept with the paper, not in this repository) |
+| `Cortex/paper/plan.md` | the paper this report feeds (kept with the paper, not in this repository) |
 
 ### What the existing run (call it **D0**) produced
 
@@ -116,7 +116,7 @@ that is the finding.
 ## 3. Guardrails
 
 ### 3.1 Do not disturb D0
-`/home/samuele/Progetti didattici/cortex-lab` and `lab/state/state.json` are the
+`<workspace>/cortex-lab` and `lab/state/state.json` are the
 finished development run, and they are evidence. **Read-only.** Never run
 `lab build --force`, `autopilot`, `bench` or any `cortex` write command against
 them without `LAB_REPO`/`LAB_STATE`/`BENCH_OUT` pointing elsewhere. Wrap the

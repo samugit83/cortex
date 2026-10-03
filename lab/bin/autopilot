@@ -378,9 +378,14 @@ def ask(sid, message):
     return 0 if not t["is_error"] else 1
 
 
-def prune(max_turns=12):
+def prune(max_turns=30):
     """The /prune pass, driven as a user would: /prune in a fresh chat, approve the
-    plan it proposes in that same chat, then /prune again until it is finished."""
+    plan it proposes in that same chat, then /prune again until it is finished.
+
+    Each /prune turn decides one item and launches the next (prune.md, Step 4 back
+    to Step 3), so a pass over n items takes about n + 2 turns. The prune experiment
+    can plan eight; the old ceiling of twelve left almost no room, and a pass cut
+    off mid-way is (rightly) not recorded. The loop ends at DONE or CANCELLED."""
     sid = None
     for n in range(max_turns):
         st = subprocess.run(["cortex", "prune", "status"], cwd=REPO, capture_output=True, text=True).stdout
@@ -389,9 +394,21 @@ def prune(max_turns=12):
             break
         t = turn("/prune", what=f"prune #{n + 1}")
         sid = t["session"]
-        text = (t["result"] or "").lower()
-        if "approve" in text and ("waiting" in text or "approval" in text or "shall i" in text or "proceed" in text):
-            log("prune: approving the plan, as the user would")
+        # Approve when CORTEX says the plan is waiting for the user, not when the reply
+        # happens to contain the right words. prune.md has the agent end its turn with
+        # "Approve this prune pass? It will run N rollouts…", which the old test —
+        # "approve" AND one of waiting/approval/shall i/proceed — never matched: the
+        # scripted user would have stayed silent for twelve turns. D0's pass chose
+        # nothing, so this was never exercised before.
+        after = subprocess.run(["cortex", "prune", "status"], cwd=REPO, capture_output=True, text=True).stdout
+        if "no prune plan" in after:
+            # the agent looked and chose nothing to test — D0's outcome. That is an
+            # answer; asking again would only repeat it (up to max_turns times)
+            log("prune: /prune chose nothing to test — the pass ends here")
+            break
+        if "status: PROPOSED" in after:
+            asked = (t["result"] or "").strip().splitlines()[-1:] or [""]
+            log(f"prune: the plan is PROPOSED and the agent asked ({asked[0][:90]!r}) — approving, as the user would")
             turn("Yes — approve the plan and start measuring.", resume=sid, what=f"prune #{n + 1} approve")
         if sweep_running():
             w = wait_sweep()

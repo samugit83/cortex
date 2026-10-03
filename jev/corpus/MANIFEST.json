@@ -20,7 +20,7 @@
     "claude-haiku-4-5-20251001"
   ],
   "rows": 174,
-  "source": "/home/samuele/Progetti didattici/cortex-lab/.evolve",
+  "source": "<workspace>/cortex-lab/.evolve",
   "sweeps": 25,
   "taken": "2026-09-20T19:20:00+00:00",
   "tasks": [

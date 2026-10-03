@@ -254,10 +254,20 @@ def cmd_bench(a):
         if rc not in (0, 1):
             die("holdout validation errored")
 
+    # the exclusions are read back from disk, so a re-run with --skip-validate
+    # still applies the ones the first pass found
+    excl = p["dir"] / "excluded.json"
+    drop = ",".join((json.loads(excl.read_text()).get("excluded") or [])) if excl.is_file() else ""
+
     sh([sys.executable, bench, "prepare"], env)
     sh([sys.executable, bench, "arms", "--arms", a.arms], env)
-    sh([sys.executable, bench, "run", "--k", str(a.k), "--arms", a.arms,
+    rc = sh([sys.executable, bench, "run", "--k", str(a.k), "--arms", a.arms,
+        *(["--exclude", drop] if drop else []),
+        *(["--train-k", str(a.train_k)] if a.train_k else []),
+        *(["--split", a.split] if a.split else []),
         *(["--jobs", a.jobs] if a.jobs else [])], env, check=False)
+    if rc == 3:                             # bench.py's usage stop: never swallowed
+        die("bench stopped: rollouts could not run (usage limit or auth?)", code=3)
     sh([sys.executable, bench, "report"], env)
 
 
@@ -315,6 +325,8 @@ def main():
     b.add_argument("label")
     b.add_argument("--arms", default="none,evolved")
     b.add_argument("--k", type=int, default=5)
+    b.add_argument("--train-k", type=int, default=0)
+    b.add_argument("--split", default="", choices=["", "holdout", "train"])
     b.add_argument("--jobs", default=None)
     b.add_argument("--skip-validate", action="store_true")
     b.set_defaults(func=cmd_bench)

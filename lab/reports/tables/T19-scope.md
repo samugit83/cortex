@@ -1,0 +1,46 @@
+# T19 · Predicting the verdict before paying for it
+
+Predictions are computed from each candidate's own text and its run's task suite, never from the verdict — which is what makes them predictions. `fate` is score.sh's verdict for the evaluation runs' candidates (kept, killed-regression, killed on another gate, or unscored: buried by the /evolve agent after a RERUN), and the journal's for the development run. The saving is never reported without the false-alarm count beside it.
+
+| run | candidate | kind | injected | suite | relevance | breadth | fate | rollouts | cost |
+|---|---|---|---|---|---|---|---|---|---|
+| D0 | changelog-rule-v2 | rule | 3 | 26 | 0.3333 | 0.11538461538461539 | killed-regression (journal) | 12 | $1.29 |
+| D0 | changelog-updates | skill | 0 | 26 |  | 0.0 | killed (journal) | 20 | $2.20 |
+| D0 | check-changelog-on-shop-edits | skill | 25 | 26 | 0.12 | 0.9615384615384616 | kept (journal) | 78 | $5.76 |
+| D0 | clock-in-billing | rule | 12 | 26 | 0.0833 | 0.46153846153846156 | killed-regression (journal) | 406 | $45.94 |
+| D0 | complete-exporter-setup | skill | 5 | 26 | 1.0 | 0.19230769230769232 | kept (journal) | 66 | $8.20 |
+| D0 | enforce-shop-clock | rule | 3 | 26 | 1.0 | 0.11538461538461539 | killed (journal) | 12 | $0.98 |
+| D0 | enforce-shop-clock-v2 | rule | 15 | 26 | 0.2 | 0.5769230769230769 | killed (no gate recorded) (journal) | 102 | $10.44 |
+| D0 | exporter-completeness-rule |  |  |  |  |  | unresolved | 84 | $10.19 |
+| D0 | shop-clock-usage | rule | 25 | 26 | 0.16 | 0.9615384615384616 | killed-regression (journal) | 174 | $20.34 |
+| D0 | use-billing-helpers | rule | 13 | 26 | 0.3846 | 0.5 | kept (journal) | 30 | $2.19 |
+| R1 | billing-helpers | rule | 8 | 25 | 0.375 | 0.32 | kept | 30 | $3.30 |
+| R1 | changelog-requirement | rule | 14 | 25 | 0.5 | 0.56 | kept | 48 | $5.78 |
+| R1 | exporter-checklist | skill | 2 | 25 | 1.0 | 0.08 | kept | 92 | $12.73 |
+| R1 | shop-clock-rule | rule | 14 | 25 | 0.2143 | 0.56 | kept | 84 | $10.95 |
+| R2 | billing-exact-arithmetic | rule | 9 | 26 | 0.3333 | 0.34615384615384615 | kept | 30 | $3.07 |
+| R2 | changelog-user-visible | rule | 12 | 26 | 0.6667 | 0.46153846153846156 | kept | 48 | $5.84 |
+| R2 | exporter-docs-and-golden | rule | 4 | 26 | 0.75 | 0.15384615384615385 | kept | 66 | $11.19 |
+| R2 | shop-clock-explicit-imports | rule | 2 | 26 | 1.0 | 0.07692307692307693 | unscored | 8 | $0.66 |
+| R2 | shop-clock-not-datetime | rule | 12 | 26 | 0.25 | 0.46153846153846156 | kept | 84 | $13.14 |
+| R3 | billing-rate-helpers | rule | 2 | 26 | 1.0 | 0.07692307692307693 | kept | 146 | $20.71 |
+| R3 | changelog-shop-reminder | rule | 26 | 26 | 0.3077 | 1.0 | kept | 76 | $10.15 |
+| R3 | changelog-user-facing | rule | 12 | 26 | 0.6667 | 0.46153846153846156 | kept | 48 | $5.46 |
+| R3 | exporter-checklist | skill | 3 | 26 | 1.0 | 0.11538461538461539 | killed | 66 | $10.60 |
+| R3 | exporter-checklist-v2 | rule | 6 | 26 | 1.0 | 0.23076923076923078 | kept | 180 | $27.72 |
+| R3 | rate-helpers-narrow | rule | 3 | 26 | 1.0 | 0.11538461538461539 | kept | 30 | $3.28 |
+| R3 | shop-clock-access | rule | 15 | 26 | 0.2 | 0.5769230769230769 | killed-regression | 108 | $13.75 |
+| R3 | shop-clock-narrow | rule | 12 | 26 | 0.3333 | 0.46153846153846156 | kept | 120 | $14.86 |
+| R3 | text-utilities-correctness | rule | 4 | 26 | 0.75 | 0.15384615384615385 | killed-regression | 162 | $19.84 |
+| R3 | use-rate-helpers | rule | 3 | 26 | 1.0 | 0.11538461538461539 | unscored | 30 | $2.40 |
+| R4 | billing-rates-helpers | rule | 9 | 25 | 0.4444 | 0.36 | kept | 30 | $3.32 |
+| R4 | changelog-contributing-reminder | rule | 25 | 25 | 0.16 | 1.0 | killed | 12 | $1.65 |
+| R4 | changelog-for-user-visible-changes | rule | 25 | 25 | 0.12 | 1.0 | killed | 12 | $1.43 |
+| R4 | changelog-moment-check | skill | 0 | 25 |  | 0.0 | unscored | 12 | $1.66 |
+| R4 | exporter-checklist | skill | 4 | 25 | 1.0 | 0.16 | kept | 66 | $10.37 |
+| R4 | shop-changelog-reminder | rule | 18 | 25 | 0.4444 | 0.72 | kept | 132 | $16.14 |
+| R4 | shop-clock-queries | rule | 18 | 25 | 0.1667 | 0.72 | kept | 98 | $11.07 |
+| **counterfactual, evaluation runs** | later buried, that the floor would have flagged | 3 |  |  |  |  |  |  | **$16.83** saved |
+| **false alarms, evaluation runs** | KEPT candidates it would also have flagged | 6 |  |  |  |  |  |  |  |
+| **counterfactual, development run** | later buried, that the floor would have flagged | 4 |  |  |  |  |  |  | **$78.01** saved |
+| **false alarms, development run** | KEPT candidates it would also have flagged | 1 |  |  |  |  |  |  |  |

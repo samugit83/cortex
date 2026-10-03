@@ -3,8 +3,10 @@
 import json, glob, os, sys
 from collections import defaultdict
 
-RUNS = sys.argv[1] if len(sys.argv) > 1 else \
-    "/home/samuele/Progetti didattici/cortex-lab/.evolve/runs"
+# default: the development run's repository, cortex-lab, beside this checkout
+RUNS = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "cortex-lab", ".evolve", "runs")
 
 sweeps = []
 for f in sorted(glob.glob(os.path.join(RUNS, "*.jsonl"))):

@@ -2240,7 +2240,12 @@ def cmd_scope(argv):
                          "unanswered": len(one["unanswered"]), "relevance": one["relevance"],
                          "floor": one["floor"], "below_floor": one["below_floor"],
                          "always_on": one["always_on"], "exposure": one["exposure"],
-                         "suite": one["suite"], "suggest": one["suggest"]},
+                         "suite": one["suite"], "suggest": one["suggest"],
+                         # J5's prediction was paid for with the same request as the
+                         # relevance answer; leaving it out of the machine-readable
+                         # half meant the only consumer that wanted it had to dig it
+                         # back out of `items`.
+                         "would_fire": one["would_fire"]},
                "per_task": one["per_task"],
                "jev": dict(one["jev"], fell_back=bool(one["jev"]["fell_back"])),
                "items": reports}

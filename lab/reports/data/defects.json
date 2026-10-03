@@ -1,0 +1,974 @@
+[
+ {
+  "n": 1,
+  "where": "round-00-calibration",
+  "class": "task validity",
+  "symptom": "`/harvest` built `fix.patch` with `git diff`, which drops **new files**",
+  "fix": "`cortex harness fixpatch --base <sha>`: temp index, new files in, `.evolve/`, `.claude/` and harness files out",
+  "detected": "the lab, round 00 calibration",
+  "why_serious": "every task whose fix creates a file (all exporter tasks) quarantined by preflight",
+  "suite_note": null,
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-00-calibration.md",
+  "id": "T16-01",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 2,
+  "where": "round-00-calibration",
+  "class": "task validity",
+  "symptom": "sweeps checked out `.evolve/` at `base_sha`",
+  "fix": "the sandbox is a sparse checkout without `.evolve/`; preflight checks the same way",
+  "detected": "the lab, round 00 calibration",
+  "why_serious": "later tasks' rollouts could read earlier fixes, lessons and buried skills, in **both** arms, hiding the gain",
+  "suite_note": null,
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-00-calibration.md",
+  "id": "T16-02",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 3,
+  "where": "round-00-calibration",
+  "class": "scoring",
+  "symptom": "a check that runs a test the fix itself added passes preflight, then fails every rollout",
+  "fix": "preflight's third state: the fix's code **without** its test edits must pass; the harvest rules explain how to keep such a test in the task folder",
+  "detected": "the lab, round 00 calibration",
+  "why_serious": "dead tasks that cost money forever",
+  "suite_note": null,
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-00-calibration.md",
+  "id": "T16-03",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 4,
+  "where": "round-00-calibration",
+  "class": "scoring",
+  "symptom": "gate 3 killed on **one** lost run on any task that went 3/3 in base",
+  "fix": "**exposure**: tasks where the change never entered the context are left out of the gates; **RECHECK**: a KILL resting only on per-task drops is re-measured, and must replicate",
+  "detected": "the lab, round 00 calibration",
+  "why_serious": "with ~15 tasks, most good candidates killed by chance (\u224865% at p=0.95)",
+  "suite_note": null,
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-00-calibration.md",
+  "id": "T16-04",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 5,
+  "where": "round-00-calibration",
+  "class": "scoring",
+  "symptom": "`/evolve` had no rule for the screen set without a baseline (first cycle)",
+  "fix": "lessons carry `task NN`; the screen runs the theme's tasks; `baseline.json` gains `live` / `failing`",
+  "detected": "the lab, round 00 calibration",
+  "why_serious": "the first cycle is ambiguous for the model driving it",
+  "suite_note": null,
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-00-calibration.md",
+  "id": "T16-05",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 1,
+  "where": "round-01",
+  "class": "task validity",
+  "symptom": "Claude committed its own fixes, sometimes twice (first attempt + corrected)",
+  "fix": "`/harvest`: base_sha is below **all** of the session's commits; `lab done` flags a wrong start",
+  "detected": "the lab, round 01",
+  "why_serious": "A task that cannot tell a house-rule fix from a rule-breaking one scores both the same. The candidate then measures as useless, and is killed for the task's defect rather than its own.",
+  "suite_note": "cortex: 357 tests, all green",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-01.md",
+  "id": "T16-06",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 2,
+  "where": "round-01",
+  "class": "task validity",
+  "symptom": "`/harvest` wrote `fix.patch` with `git diff` and a hand-picked file list",
+  "fix": "`cortex task new --base <sha>` writes `fix.patch` (new files included) and `task.yaml`; refuses a base outside HEAD's history",
+  "detected": "the lab, round 01",
+  "why_serious": "A task that cannot tell a house-rule fix from a rule-breaking one scores both the same. The candidate then measures as useless, and is killed for the task's defect rather than its own.",
+  "suite_note": "cortex: 357 tests, all green",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-01.md",
+  "id": "T16-07",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 3,
+  "where": "round-01",
+  "class": "task validity",
+  "symptom": "B02 learned the rule from B01's fix in the code: no correction, no lesson",
+  "fix": "a real effect (\"the code teaches\"); rounds regrouped by family",
+  "detected": "the lab, round 01",
+  "why_serious": "A task that cannot tell a house-rule fix from a rule-breaking one scores both the same. The candidate then measures as useless, and is killed for the task's defect rather than its own.",
+  "suite_note": "cortex: 357 tests, all green",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-01.md",
+  "id": "T16-08",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 4,
+  "where": "round-01",
+  "class": "task validity",
+  "symptom": "the user forgot `/harvest` in B03; `lab done` only warned",
+  "fix": "`lab done` refuses without a task; `lab done --late` attaches a later harvest",
+  "detected": "the lab, round 01",
+  "why_serious": "A task that cannot tell a house-rule fix from a rule-breaking one scores both the same. The candidate then measures as useless, and is killed for the task's defect rather than its own.",
+  "suite_note": "cortex: 357 tests, all green",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-01.md",
+  "id": "T16-09",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 5,
+  "where": "round-01",
+  "class": "task validity",
+  "symptom": "the late `/harvest` wrote `cd \"$(dirname \"$0\")/../..\"` in `check.sh`; preflight quarantined it with no reason; Haiku debugged in the working copy, then `rm -rf .evolve/tasks/_broken` and skipped the lesson",
+  "fix": "check rule 0 (never `cd`); preflight runs checks from a copy like a sweep and prints why; one repair, then delete only that task; the lesson is written whenever the user corrected",
+  "detected": "the lab, round 01",
+  "why_serious": "A task that cannot tell a house-rule fix from a rule-breaking one scores both the same. The candidate then measures as useless, and is killed for the task's defect rather than its own.",
+  "suite_note": "cortex: 357 tests, all green",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-01.md",
+  "id": "T16-10",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 6,
+  "where": "round-01",
+  "class": "scoring",
+  "symptom": "`/evolve` promoted straight from the **screen**: `cortex score` said KEEP for a screen",
+  "fix": "a screen's verdict is CONFIRM / KILL / RERUN; `cortex promote` refuses without a confirm KEEP; `cortex baseline` refuses a screen",
+  "detected": "the lab, round 01",
+  "why_serious": "The verdict is the thing every other number rests on. A wrong verdict does not fail loudly: it keeps the wrong item, or buries the right one, and every later measurement is taken on the harness that mistake produced.",
+  "suite_note": "cortex: 357 tests, all green",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-01.md",
+  "id": "T16-11",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 7,
+  "where": "round-01",
+  "class": "scoring",
+  "symptom": "`cortex status` said \"0 skills live\" with a live rule",
+  "fix": "counts rules",
+  "detected": "the lab, round 01",
+  "why_serious": "The verdict is the thing every other number rests on. A wrong verdict does not fail loudly: it keeps the wrong item, or buries the right one, and every later measurement is taken on the harness that mistake produced.",
+  "suite_note": "cortex: 357 tests, all green",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-01.md",
+  "id": "T16-12",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 8,
+  "where": "round-01",
+  "class": "tooling",
+  "symptom": "a sweep launched with `nohup \u2026 &` dies when the agent's session ends (headless, or a closed chat)",
+  "fix": "`cortex sweep --detach` (own process session); `/evolve` and `/prune` use it",
+  "detected": "the lab, round 01",
+  "why_serious": "It does not corrupt a number directly, but it costs a session, a round or an afternoon, and a run that has to be abandoned is a run that cannot be pooled.",
+  "suite_note": "cortex: 357 tests, all green",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-01.md",
+  "id": "T16-13",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 9,
+  "where": "round-01",
+  "class": "scoring",
+  "symptom": "a dead sweep would be polled forever",
+  "fix": "`cortex score` reports `running`; a dead sweep says so and `/evolve` relaunches it",
+  "detected": "the lab, round 01",
+  "why_serious": "The verdict is the thing every other number rests on. A wrong verdict does not fail loudly: it keeps the wrong item, or buries the right one, and every later measurement is taken on the harness that mistake produced.",
+  "suite_note": "cortex: 357 tests, all green",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-01.md",
+  "id": "T16-14",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 10,
+  "where": "round-01",
+  "class": "tooling",
+  "symptom": "`lab commit` mangled the first path of `git status`",
+  "fix": "fixed",
+  "detected": "the lab, round 01",
+  "why_serious": "It does not corrupt a number directly, but it costs a session, a round or an afternoon, and a run that has to be abandoned is a run that cannot be pooled.",
+  "suite_note": "cortex: 357 tests, all green",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-01.md",
+  "id": "T16-15",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 1,
+  "where": "round-02",
+  "class": "scoring",
+  "symptom": "`/evolve` read the previous cycle's finished confirm as its own, replayed its ending and recorded the same KEEP twice",
+  "fix": "**`cortex phase`**: the phase is computed from the files (A, B, C, D, relaunch, prune); `cortex cycle KEEP <name>` refuses a duplicate",
+  "detected": "the lab, round 02",
+  "why_serious": "The verdict is the thing every other number rests on. A wrong verdict does not fail loudly: it keeps the wrong item, or buries the right one, and every later measurement is taken on the harness that mistake produced.",
+  "suite_note": "cortex: 377 tests",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-02.md",
+  "id": "T16-16",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 2,
+  "where": "round-02",
+  "class": "scoring",
+  "symptom": "after a KILL, `/evolve` skipped the journal entry",
+  "fix": "KILL <name>` refuses until the journal has that cycle's entry; `cortex cycle BARREN` writes its own line",
+  "detected": "the lab, round 02",
+  "why_serious": "`cortex cycle KEEP\\",
+  "suite_note": "cortex: 377 tests",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-02.md",
+  "id": "T16-17",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 3,
+  "where": "round-02",
+  "class": "scoring",
+  "symptom": "the retry reused the killed candidate's **name**, then `/evolve` edited the old journal entry instead of adding one, got refused, and ran `git checkout` on the records",
+  "fix": "the sweep refuses a buried name (a revised idea is `<name>-v2`); the refusal says \"add a NEW heading, never edit an older entry\"; records restored by hand, marked as such",
+  "detected": "the lab, round 02",
+  "why_serious": "The verdict is the thing every other number rests on. A wrong verdict does not fail loudly: it keeps the wrong item, or buries the right one, and every later measurement is taken on the harness that mistake produced.",
+  "suite_note": "cortex: 377 tests",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-02.md",
+  "id": "T16-18",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 4,
+  "where": "round-02",
+  "class": "scoring",
+  "symptom": "**the test suite and the lab's live sweep shared `/tmp/cortex-evolve`**, and wiped each other's clone and task snapshot three times (the scorer caught it: RERUN)",
+  "fix": "each repository sweeps in `<sandbox_root>/<hash of its path>`; the test suite uses its own temp folder; a vanished task snapshot is recorded as `snapshot_lost`, never skipped silently",
+  "detected": "the lab, round 02",
+  "why_serious": "The verdict is the thing every other number rests on. A wrong verdict does not fail loudly: it keeps the wrong item, or buries the right one, and every later measurement is taken on the harness that mistake produced.",
+  "suite_note": "cortex: 377 tests",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-02.md",
+  "id": "T16-19",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 5,
+  "where": "round-02",
+  "class": "tooling",
+  "symptom": "while reading \"this project's transcripts\", `/evolve` read a file from **another project** (redamon's memory)",
+  "fix": "`cortex harness transcripts` lists exactly this project's recent sessions; `/evolve` reads only those",
+  "detected": "the lab, round 02",
+  "why_serious": "It does not corrupt a number directly, but it costs a session, a round or an afternoon, and a run that has to be abandoned is a run that cannot be pooled.",
+  "suite_note": "cortex: 377 tests",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-02.md",
+  "id": "T16-20",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 6,
+  "where": "round-02",
+  "class": "task validity",
+  "symptom": "task 05's check forgot the corrected CHANGELOG condition",
+  "fix": "`/harvest`: list the user's corrections **before** writing `check.sh`; each becomes a line that fails when the mistake is repeated",
+  "detected": "the lab, round 02",
+  "why_serious": "A task that cannot tell a house-rule fix from a rule-breaking one scores both the same. The candidate then measures as useless, and is killed for the task's defect rather than its own.",
+  "suite_note": "cortex: 377 tests",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-02.md",
+  "id": "T16-21",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 7,
+  "where": "round-02",
+  "class": "tooling",
+  "symptom": "the autopilot took a cycle-counter bump as \"cycle ended\"",
+  "fix": "a cycle has ended when the journal has its entry and no candidate is left",
+  "detected": "the lab, round 02",
+  "why_serious": "It does not corrupt a number directly, but it costs a session, a round or an afternoon, and a run that has to be abandoned is a run that cannot be pooled.",
+  "suite_note": "cortex: 377 tests",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-02.md",
+  "id": "T16-22",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 1,
+  "where": "round-03",
+  "class": "task validity",
+  "symptom": "**Preflight quarantined every exporter task.** Its third state strips \"the fix's own tests\" and counted everything under `tests/` as tests, including the golden file `tests/golden/order.xml` that the house rule requires. Stripped, lint failed, and the task was quarantined as \"needs the fix's own test edits\". C01 and C02 lost their tasks",
+  "fix": "only test **code** is stripped: a source file with a test name, or a source file in a test folder. Test **data** (golden files, fixtures, snapshots) stays. Tests: a golden file is kept, and a non-test-named helper in `tests/` is still stripped",
+  "detected": "the lab, round 03",
+  "why_serious": "A task that cannot tell a house-rule fix from a rule-breaking one scores both the same. The candidate then measures as useless, and is killed for the task's defect rather than its own.",
+  "suite_note": "cortex: 386 tests",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-03.md",
+  "id": "T16-23",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 2,
+  "where": "round-03",
+  "class": "task validity",
+  "symptom": "Both harvests ran `git stash` in the user's working copy to \"see the broken state\"",
+  "fix": "`/harvest`: never stash, checkout or reset the user's working copy; preflight already shows that state",
+  "detected": "the lab, round 03",
+  "why_serious": "A task that cannot tell a house-rule fix from a rule-breaking one scores both the same. The candidate then measures as useless, and is killed for the task's defect rather than its own.",
+  "suite_note": "cortex: 386 tests",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-03.md",
+  "id": "T16-24",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 3,
+  "where": "round-03",
+  "class": "task validity",
+  "symptom": "C02 made 4 repairs, cloned the repo to `/tmp` and applied the patch by hand (caused by 1)",
+  "fix": "`/harvest`: one repair is one edit of `check.sh` plus one preflight run",
+  "detected": "the lab, round 03",
+  "why_serious": "A task that cannot tell a house-rule fix from a rule-breaking one scores both the same. The candidate then measures as useless, and is killed for the task's defect rather than its own.",
+  "suite_note": "cortex: 386 tests",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-03.md",
+  "id": "T16-25",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 4,
+  "where": "round-03",
+  "class": "task validity",
+  "symptom": "C02 skipped its lesson as \"already captured\" by C01. C03 skipped Step 3: Step 1 defined a correction as \"two or more times about the same thing\", which contradicted Step 3",
+  "fix": "Step 1 B is now \"any correction, once is enough\"; one lesson line per correction, even when a similar line exists (a repeat is the recurrence `/evolve` counts); the report always states the lesson count",
+  "detected": "the lab, round 03",
+  "why_serious": "A task that cannot tell a house-rule fix from a rule-breaking one scores both the same. The candidate then measures as useless, and is killed for the task's defect rather than its own.",
+  "suite_note": "cortex: 386 tests",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-03.md",
+  "id": "T16-26",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 5,
+  "where": "round-03",
+  "class": "task validity",
+  "symptom": "Re-running `/harvest` in C01's chat added a second lesson line for the same correction (the first said `no task`)",
+  "fix": "`/harvest`: on a re-run in the same session, update your own line's `no task` to the new id",
+  "detected": "the lab, round 03",
+  "why_serious": "A task that cannot tell a house-rule fix from a rule-breaking one scores both the same. The candidate then measures as useless, and is killed for the task's defect rather than its own.",
+  "suite_note": "cortex: 386 tests",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-03.md",
+  "id": "T16-27",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 6,
+  "where": "round-03",
+  "class": "task validity",
+  "symptom": "A late harvest after other sessions would have swept their commits into `fix.patch`",
+  "fix": "`cortex task new --head <sha>`: exactly the commits base..head. Tests: later commits and uncommitted work stay out; a head before the base or off HEAD's history is refused",
+  "detected": "the lab, round 03",
+  "why_serious": "A task that cannot tell a house-rule fix from a rule-breaking one scores both the same. The candidate then measures as useless, and is killed for the task's defect rather than its own.",
+  "suite_note": "cortex: 386 tests",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-03.md",
+  "id": "T16-28",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 7,
+  "where": "round-03",
+  "class": "scoring",
+  "symptom": "Tasks 09 and 10 grep for their own docs wording (`\"XML document\"`, `\"table with one row\"`), so a different correct fix fails them. The linter already checks that the row exists",
+  "fix": "`/harvest` rule 6: a check passes any correct fix: run the project's own tools, never grep for one fix's names or wording. `cortex score` names tasks that no rollout of either arm passed, and `/evolve` reports them. That is how a real user, with no oracle, finds such a check",
+  "detected": "the lab, round 03",
+  "why_serious": "The verdict is the thing every other number rests on. A wrong verdict does not fail loudly: it keeps the wrong item, or buries the right one, and every later measurement is taken on the harness that mistake produced.",
+  "suite_note": "cortex: 386 tests",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-03.md",
+  "id": "T16-29",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 8,
+  "where": "round-03",
+  "class": "task validity",
+  "symptom": "lab: `lab done --late` counted other sessions' lessons, and could not record a lesson-only late harvest",
+  "fix": "lessons are counted from the last recorded session event; lesson-only late harvests are accepted",
+  "detected": "the lab, round 03",
+  "why_serious": "A task that cannot tell a house-rule fix from a rule-breaking one scores both the same. The candidate then measures as useless, and is killed for the task's defect rather than its own.",
+  "suite_note": "cortex: 386 tests",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-03.md",
+  "id": "T16-30",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 9,
+  "where": "round-03",
+  "class": "tooling",
+  "symptom": "autopilot: an undefined variable in the BARREN branch would have crashed it",
+  "fix": "fixed",
+  "detected": "the lab, round 03",
+  "why_serious": "It does not corrupt a number directly, but it costs a session, a round or an afternoon, and a run that has to be abandoned is a run that cannot be pooled.",
+  "suite_note": "cortex: 386 tests",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-03.md",
+  "id": "T16-31",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 1,
+  "where": "round-04",
+  "class": "scoring",
+  "symptom": "Both E01 and E03 put a **CHANGELOG entry nobody asked for** into their checks (they had added one on their own). No rollout could pass those tasks, so the clock rule measured 0 and was killed",
+  "fix": "`/harvest` rule 7: a check tests the request and the corrections, **nothing else the fix happened to do**. The three checks were repaired in their own chats, after `/evolve` reported the tasks as never passing",
+  "detected": "the lab, round 04",
+  "why_serious": "The verdict is the thing every other number rests on. A wrong verdict does not fail loudly: it keeps the wrong item, or buries the right one, and every later measurement is taken on the harness that mistake produced.",
+  "suite_note": "cortex: 482 tests",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-04.md",
+  "id": "T16-32",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 2,
+  "where": "round-04",
+  "class": "scoring",
+  "symptom": "A KILL on tasks nobody can pass reads as \"this idea does not help\", and buries it",
+  "fix": "`cortex score`: when no gated task can show a gain (all never passed, or all already pass in base), the verdict is **RERUN** \u2014 \"the candidate was not measured\" \u2014 never KILL",
+  "detected": "the lab, round 04",
+  "why_serious": "The verdict is the thing every other number rests on. A wrong verdict does not fail loudly: it keeps the wrong item, or buries the right one, and every later measurement is taken on the harness that mistake produced.",
+  "suite_note": "cortex: 482 tests",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-04.md",
+  "id": "T16-33",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 3,
+  "where": "round-04",
+  "class": "task validity",
+  "symptom": "`never_passed` counted tasks the candidate never reached. `/evolve` read it as \"these tasks are broken\" and dropped a theme that was fine",
+  "fix": "it counts only tasks the change actually reached; for the others, \"nobody passed\" merely says the live harness fails them \u2014 which is what makes them targets",
+  "detected": "the lab, round 04",
+  "why_serious": "A task that cannot tell a house-rule fix from a rule-breaking one scores both the same. The candidate then measures as useless, and is killed for the task's defect rather than its own.",
+  "suite_note": "cortex: 482 tests",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-04.md",
+  "id": "T16-34",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 4,
+  "where": "round-04",
+  "class": "scoring",
+  "symptom": "`/evolve` proposed a **rule that duplicated a live skill** (same area, same content) as an *addition*: both would load",
+  "fix": "`cortex skills --candidate` warns when a candidate covers exactly a live item's files and names the replacement it should be; `/evolve` now says a theme a live item covers belongs to `/prune` Step 5",
+  "detected": "the lab, round 04",
+  "why_serious": "The verdict is the thing every other number rests on. A wrong verdict does not fail loudly: it keeps the wrong item, or buries the right one, and every later measurement is taken on the harness that mistake produced.",
+  "suite_note": "cortex: 482 tests",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-04.md",
+  "id": "T16-35",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 5,
+  "where": "round-04",
+  "class": "task validity",
+  "symptom": "Three older checks had the same fault (05 lost the correction it was harvested for; 09 and 10 pinned their own docs wording)",
+  "fix": "repaired in their own sessions. 11 of 12 tasks now discriminate; the twelfth (02) is from the one session that was never corrected, so it has no house rule to check",
+  "detected": "the lab, round 04",
+  "why_serious": "A task that cannot tell a house-rule fix from a rule-breaking one scores both the same. The candidate then measures as useless, and is killed for the task's defect rather than its own.",
+  "suite_note": "cortex: 482 tests",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/round-04.md",
+  "id": "T16-36",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 1,
+  "where": "rounds-06-10",
+  "class": "scoring",
+  "symptom": "**Every recheck in this lab failed to pair with its confirm.** `score.sh` listed the confirms with an unquoted `$(ls \u2026)`, and this repository lives under \"Progetti didattici\" \u2014 the space split the list, so no confirm was ever found and every recheck answered \"no confirm precedes this one\", degrading to RERUN. Round 9's candidate (gain +4.33) was killed on a regression its recheck had just cleared",
+  "fix": "read the list line by line; regression test runs in a path **with a space in it**. Round 9 re-scored: the first recheck does replicate the regression, so the KILL stands \u2014 on evidence, not on tooling",
+  "detected": "the lab, rounds 06 10",
+  "why_serious": "The verdict is the thing every other number rests on. A wrong verdict does not fail loudly: it keeps the wrong item, or buries the right one, and every later measurement is taken on the harness that mistake produced.",
+  "suite_note": "cortex: 487 tests",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/rounds-06-10.md",
+  "id": "T16-37",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 2,
+  "where": "rounds-06-10",
+  "class": "scoring",
+  "symptom": "A **screen** of a *removal* returned a final REJECT on three tasks at k=2 \u2014 a cheap filter deciding the fate of a live item",
+  "fix": "a screen of a replacement says CONFIRM or KILL, never ACCEPT/REJECT, exactly as \"a screen never KEEPs\"",
+  "detected": "the lab, rounds 06 10",
+  "why_serious": "The verdict is the thing every other number rests on. A wrong verdict does not fail loudly: it keeps the wrong item, or buries the right one, and every later measurement is taken on the harness that mistake produced.",
+  "suite_note": "cortex: 487 tests",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/rounds-06-10.md",
+  "id": "T16-38",
+  "test": "regression test added with the fix"
+ },
+ {
+  "n": 3,
+  "where": "rounds-06-10",
+  "class": "scoring",
+  "symptom": "A sweep that died with its session was scored on the 120 rollouts it had",
+  "fix": "already fixed that morning: it ends `incomplete`, `cortex score` refuses it and names the three tasks that never ran. It fired for real here, and `/evolve` relaunched the sweep",
+  "detected": "the lab, rounds 06 10",
+  "why_serious": "The verdict is the thing every other number rests on. A wrong verdict does not fail loudly: it keeps the wrong item, or buries the right one, and every later measurement is taken on the harness that mistake produced.",
+  "suite_note": "cortex: 487 tests",
+  "runs_affected": [
+   "D0"
+  ],
+  "source": "lab/results/rounds-06-10.md",
+  "id": "T16-39",
+  "test": "regression test added with the fix"
+ },
+ {
+  "class": "task validity",
+  "symptom": "Two of the fifteen original holdout scenarios (HA3, HE3) had reference fixes anchored on source lines that the TRAINING scenarios rewrite, so on the final code of any run that trained on them the fix could not be applied at all.",
+  "detected": "the first time the holdout was validated against a finished run's code, rather than against a fresh repository",
+  "why_serious": "Both scenarios would have been excluded from every run's benchmark by the exclusion rule, silently reducing families A and E to five holdout tasks each \u2014 and the exclusion would have looked like a property of the scenarios rather than of their anchors.",
+  "fix": "Re-anchored on lines no training fix touches: HA3 filters the printed rows rather than the product list; HE3 adds its imports after the __future__ line. Neither the prompt, the test nor the oracle changed.",
+  "test": "`lab validate` is now run against each run's FINAL code before its benchmark, not only against a fresh build (run-eval bench).",
+  "runs_affected": [
+   "D0",
+   "R1",
+   "R2",
+   "R3",
+   "R4",
+   "C1"
+  ],
+  "where": "the evaluation programme",
+  "source": "lab/reports/DEVIATIONS.md",
+  "id": "T16-40"
+ },
+ {
+  "class": "attribution",
+  "symptom": "`export-run` read a `task` key from the lab state that has never existed \u2014 the state records `tasks`, a list \u2014 so every session was exported as having harvested nothing.",
+  "detected": "the pilot round, by the exported rows disagreeing with the autopilot's own log",
+  "why_serious": "Harvest quality (T11) and every per-session count would have read zero, and the run would have looked as though `/harvest` never fired while its log said otherwise.",
+  "fix": "Read `tasks`; prefer the state's own `corrections` count over the derived one; carry `lessons_added`, `oracle` and `quarantined`.",
+  "test": "The exporter is checked against D0's published numbers: 26 sessions, 26 harvested tasks, 17 corrections, 10 right first time.",
+  "runs_affected": [
+   "D0",
+   "R1",
+   "R2",
+   "R3",
+   "R4",
+   "C1"
+  ],
+  "where": "the evaluation programme",
+  "source": "lab/reports/DEVIATIONS.md",
+  "id": "T16-41"
+ },
+ {
+  "class": "isolation",
+  "symptom": "Putting the frozen checkout's `bin/` first on a run's PATH does not freeze Cortex: `/harvest` and `/evolve` reach `cortex` from inside a rollout through a LOGIN shell, and a login profile re-prepends `~/.local/bin`, which symlinked into the live working copy.",
+  "detected": "`run-eval`'s own assertion, before the first replicate rollout",
+  "why_serious": "Every run would have been driven by whatever the working checkout happened to contain that hour, and nothing in the data would have shown it. The manifest would have recorded the frozen tag truthfully and been wrong.",
+  "fix": "`run-eval` checks all three resolution paths \u2014 the run's PATH, a login shell's PATH and the bare PATH \u2014 and refuses to start unless every one lands in the frozen worktree. The symlink was repointed for the programme (DEVIATIONS.md D-05).",
+  "test": "The assertion runs before anything spends a token, on every run.",
+  "runs_affected": [
+   "R1",
+   "R2",
+   "R3",
+   "R4",
+   "C1",
+   "GATE",
+   "PRUNE",
+   "M1",
+   "X1"
+  ],
+  "where": "the evaluation programme",
+  "source": "lab/reports/DEVIATIONS.md",
+  "id": "T16-42"
+ },
+ {
+  "class": "scoring",
+  "symptom": "The tier rubric's third criterion was computed as fired-given-VISIBLE. A rule is loaded when the agent reads a matching file and is never chosen, so that ratio is 1 by construction and a rule could not pass a criterion about where it fires.",
+  "detected": "applying the rubric to D0's recorded firing data",
+  "why_serious": "H3 would have been NOT SUPPORTED for a reason that is an arithmetic artefact rather than a property of the item.",
+  "fix": "Divide by the family's rollouts, which is what the pre-registration's wording says (DEVIATIONS.md D-06).",
+  "test": "`use-billing-helpers` now reads 100% on its own family against 26% elsewhere, instead of 100% against 100%.",
+  "runs_affected": [
+   "D0",
+   "R1",
+   "R2",
+   "R3",
+   "R4"
+  ],
+  "where": "the evaluation programme",
+  "source": "lab/reports/DEVIATIONS.md",
+  "id": "T16-43"
+ },
+ {
+  "class": "task validity",
+  "symptom": "The external task miner installed its venv editable against the ORIGINAL repository, so its import finder shadowed the work clone and every revert the miner made was invisible to the tests.",
+  "detected": "all 50 mined candidates being rejected for 'the reference fix does not pass the check' \u2014 a rate too perfect to be real",
+  "why_serious": "Every external task would have been silently discarded, and the second repository \u2014 the block the brief calls the most valuable \u2014 would have been reported as impossible rather than as untried.",
+  "fix": "The miner builds its venv against the work clone and asserts where `import structlog` resolves before it mines anything.",
+  "test": "The assertion is a hard exit, not a warning.",
+  "runs_affected": [
+   "X1"
+  ],
+  "where": "the evaluation programme",
+  "source": "lab/reports/DEVIATIONS.md",
+  "id": "T16-44"
+ },
+ {
+  "class": "task validity",
+  "symptom": "The miner's entanglement check ran the whole suite including the task's OWN tests, which are supposed to be red in the broken state, so every mined task was marked entangled.",
+  "detected": "every one of twelve valid tasks carrying the same warning",
+  "why_serious": "A validity signal that is always false is worse than none: it would have been read as 'these tasks are all contaminated'.",
+  "fix": "`--ignore` the task's own test files when checking the rest of the suite.",
+  "test": "All twelve tasks now report the rest of the suite green on the broken state, with the tail of that run recorded per task.",
+  "runs_affected": [
+   "X1"
+  ],
+  "where": "the evaluation programme",
+  "source": "lab/reports/DEVIATIONS.md",
+  "id": "T16-45"
+ },
+ {
+  "class": "task validity",
+  "symptom": "`/harvest` sometimes records a task's `base_sha` as the PREVIOUS session's commit rather than the teammate's commit that started this one, so the task's `fix.patch` contains a test the agent did not write. R1 and R2 logged one each.",
+  "detected": "`lab done`'s own check, every time \u2014 `!! WRONG START: task NN: base_sha X, but the session started at Y`",
+  "why_serious": "A rollout then starts from a tree missing a test file the session had, and the patch appears to add it. If the task's check ran that test, the task would be unsolvable and would score zero in every arm \u2014 a candidate killed for the task's defect.",
+  "fix": "Not fixed in this programme, and deliberately so: incidence is 1 task in 20-25, it is detected every time, preflight's third state (the fix's code WITHOUT its test edits must pass) is the safeguard, and in R1 the affected task was never swept. Four tasks per run also carry a golden file in their patch, and that is correct by design \u2014 preflight strips test source only.",
+  "test": "`lab done` prints it; T12 counts it; the report states the incidence.",
+  "runs_affected": [
+   "R1",
+   "R2"
+  ],
+  "where": "the evaluation programme",
+  "source": "lab/reports/DEVIATIONS.md",
+  "id": "T16-46"
+ },
+ {
+  "class": "scoring",
+  "symptom": "`bench.py` used one `--k` for both splits, so `--k 5` ran the TRAINING set at k=5 as well as the holdout. For the eight-arm R1 benchmark that is 2,240 rollouts where the pre-registration asks for 996.",
+  "detected": "projecting the chain's cost from the planned arm list before it reached the benchmark step",
+  "why_serious": "It produces numbers that are not wrong, only far more expensive than the plan \u2014 about $225 against $66 for that one step. A budget overrun with correct-looking output is the kind that gets spent before anyone asks.",
+  "fix": "`--k` is the holdout's, `--train-k` the training set's, and `--split` runs one of them. The ablation arms answer 'which part did the work', so they are holdout-only at k=3.",
+  "test": "`lab/bench/test_bench.sh`; the planned benchmark total is printed and checked against the pre-registration: 3,276 rollouts.",
+  "runs_affected": [
+   "R1",
+   "R2",
+   "R3",
+   "R4",
+   "C1",
+   "D0R"
+  ],
+  "where": "the evaluation programme",
+  "source": "lab/reports/DEVIATIONS.md",
+  "id": "T16-47"
+ },
+ {
+  "class": "task validity",
+  "symptom": "The pre-registered exclusion rule was RECORDED and never APPLIED. `run-eval bench` validated every holdout scenario against the run's final code and wrote the failures to `excluded.json` \u2014 and then ran the benchmark over all of them anyway.",
+  "detected": "reading the code path while a sweep held the CPU, rather than running it",
+  "why_serious": "The worst of both: a file asserting a task was excluded, beside a results set in which it was not. A scenario whose reference fix cannot be applied on that run's code is one nobody can show is solvable, and it would have scored in both arms and been quoted as evidence.",
+  "fix": "`bench.py --exclude`, passed by `run-eval` from `excluded.json`, applied identically in every arm. Read back from disk, so a re-run with --skip-validate still honours what the first pass found.",
+  "test": "`lab/bench/test_bench.sh`; the run prints what it drops and the counts before and after.",
+  "runs_affected": [
+   "R1",
+   "R2",
+   "R3",
+   "R4",
+   "C1",
+   "D0R",
+   "M1"
+  ],
+  "where": "the evaluation programme",
+  "source": "lab/reports/DEVIATIONS.md",
+  "id": "T16-48"
+ },
+ {
+  "class": "isolation",
+  "symptom": "The chain script is re-read by bash as it executes, so it was made to run from a pinned copy \u2014 and the copy recomputed its root from its own location, two directories above the repository. With every path wrong, `wait_for_run` found no log, treated that as 'finished', and tried to start R2 **while R1 was still running**.",
+  "detected": "the driver log, immediately: it died on a permission error creating `/home/cortex-eval` before it could launch anything",
+  "why_serious": "Two runs on twelve CPUs do not go twice as fast. Cortex invalidates a rollout that timed out while the machine was oversubscribed, so the result would have been a primary run full of INVALID rows and a replicate that could not be pooled.",
+  "fix": "The paths travel in the environment (`PROGRAMME_CORTEX`, `PROGRAMME_EVAL`); a missing log beside an existing run directory is a FINDING rather than success; and `no_run_in_flight` refuses to start anything while a `run-eval` or `autopilot` process is alive.",
+  "test": "`no_run_in_flight` runs before every `run-eval new` in the chain.",
+  "runs_affected": [
+   "R1",
+   "R2"
+  ],
+  "where": "the evaluation programme",
+  "source": "lab/reports/DEVIATIONS.md",
+  "id": "T16-49"
+ },
+ {
+  "class": "tooling",
+  "symptom": "`bench.py report` written with BENCH_OUT unset defaults to `lab/bench/` and overwrote D0's REPORT.md. The guard protected the files listed in D0-PROTECTED.txt but was being asked about the directory that holds them.",
+  "detected": "a routine `verify-d0` check immediately afterwards",
+  "why_serious": "D0 is evidence. The overwrite regenerated the same numbers from the same unchanged rows, so nothing moved \u2014 but only because the backup existed to prove it.",
+  "fix": "The guard protects the exact file each command writes, and `report` is guarded too. `verify-d0` makes the claim checkable at any point.",
+  "test": "`lab/bin/verify-d0` \u2014 1,393 files against the backup.",
+  "runs_affected": [
+   "D0"
+  ],
+  "where": "the evaluation programme",
+  "source": "lab/reports/DEVIATIONS.md",
+  "id": "T16-50"
+ },
+ {
+  "class": "isolation",
+  "symptom": "The gate testbed on disk had been built from R1 during a rehearsal, before C1 existed, and `gate-calibration --from C1` reused any testbed it found. H5 would have been measured on R1's repository, recorded as `from_run: C1`, with its screen tasks read from R1's sweeps.",
+  "detected": "reading the testbed's own history (`cortex: evolve, round 10` \u2014 C1 never evolves) before the step ran",
+  "why_serious": "PREREGISTRATION \u00a77 names C1's repository \u2014 no items ever live \u2014 as the testbed. The substitution would have been invisible in the data: every row would have carried the pre-registered label.",
+  "fix": "A testbed records the run it was built from (`testbed.json`) and is refused for any other; the stale one was set aside and the testbed rebuilt from C1.",
+  "test": "`gate-calibration --from C1 --dry-run` builds and checks it without spending a rollout.",
+  "runs_affected": [
+   "GATE"
+  ],
+  "where": "the evaluation programme",
+  "source": "lab/reports/DEVIATIONS.md",
+  "id": "T16-51"
+ },
+ {
+  "class": "task validity",
+  "symptom": "C1 never ran /evolve, so its repository holds no sweep, and the baseline \u00a77 requires \u2014 the tasks failing with no items live, \"measured once before any candidate is screened\" \u2014 had nothing to be read from. The code fell back to \"every task is fair game\", and a dry run CACHED that fallback for the real run to reuse.",
+  "detected": "reading `baseline_failing()` against C1's actual repository",
+  "why_serious": "Placebos would have been screened on tasks 01-04 whether or not they fail. On a task that already passes a placebo cannot show a spurious gain, so the false-KEEP rate \u2014 H5's headline \u2014 would have been biased toward zero: the gates would have looked better calibrated than they are.",
+  "fix": "The baseline is measured: one confirm sweep, k=3, over every task, reading only the BASE arm, which is always the empty harness. The candidate that carries the sweep is a neutral note; a truly inert one was tried first and Cortex refused it (\"it could never load, so the sweep would measure nothing\"). Dry runs no longer cache.",
+  "test": "`cortex sweep --dry-run` accepts the probe; the dry run writes no cache.",
+  "runs_affected": [
+   "GATE"
+  ],
+  "where": "the evaluation programme",
+  "source": "lab/reports/DEVIATIONS.md",
+  "id": "T16-52"
+ },
+ {
+  "class": "attribution",
+  "symptom": "Nothing checked that a gate candidate's `cortex sweep` had run. A refused sweep (a lock, its budget, a candidate it will not load) writes no results, and `cortex score` then prints the PREVIOUS sweep's scores.",
+  "detected": "reading the screen/confirm flow",
+  "why_serious": "Another candidate's verdict would have been recorded under this candidate's name with no trace that it had never been measured.",
+  "fix": "Each sweep must have written a new results file that names this candidate and phase, or the testbed stops.",
+  "test": "The refusal of the inert probe showed the failure mode is real.",
+  "runs_affected": [
+   "GATE"
+  ],
+  "where": "the evaluation programme",
+  "source": "lab/reports/DEVIATIONS.md",
+  "id": "T16-53"
+ },
+ {
+  "class": "scoring",
+  "symptom": "Per-item cost and rollout counts summed every file in `.evolve/runs/`, which is never cleared. Each gate candidate would have been charged with every candidate before it, and the prune pass with R1's own nine inherited sweeps (254 rollouts, $32.76).",
+  "detected": "reading the accounting while checking the testbed's inherited sweeps",
+  "why_serious": "The cost columns of the gate and prune tables would have grown monotonically down the table and overstated the prune experiment by a third of a run's evolution.",
+  "fix": "A gate candidate counts only the sweep files it added; the prune pass counts only files its source repository did not already have, a rule that survives a restart part-way through.",
+  "test": "Before any prune pass the rule counts 0 of the testbed's 9 sweeps.",
+  "runs_affected": [
+   "GATE",
+   "PRUNE"
+  ],
+  "where": "the evaluation programme",
+  "source": "lab/reports/DEVIATIONS.md",
+  "id": "T16-54"
+ },
+ {
+  "class": "isolation",
+  "symptom": "Nothing stopped the chain when Claude usage ran out. `claude -p` fails in seconds; `bench.py` wrote the rollout as INVALID and moved on, a restart counted those rows as done, and the callers' `|| true` swallowed any failure \u2014 each step would have \"finished\" and earned its marker. The judge had the same hole: `cortex jev doctor` exits 0 when Jev is merely off, and the scope replay then reports only its deterministic half.",
+  "detected": "asking, before an unattended run, what a usage limit would do",
+  "why_serious": "The operator's standing instruction is to stop and ask for a recharge. Instead the tail of the programme \u2014 gates, prune, structlog, the Sonnet study \u2014 would have raced through in minutes recording INVALID rows and RERUN verdicts as results.",
+  "fix": "`usage-guard`: every paid step checks the measured spend against BUDGET_CAP_USD and probes Claude with its own model before starting, and a watchdog stops a step's whole session when rollouts cannot run and Claude does not answer. `bench.py` stops after five such rollouts in a row (exit 3) and a restart re-measures them. Jev must actually answer.",
+  "test": "A fake failing `claude` against a scratch copy of a real bench, and the chain's `step()` under a fake guard in seven scenarios. Across the whole history the outage signature fires 0 times: no false alarm in 437 sessions and ~5,000 rollouts.",
+  "runs_affected": [
+   "D0R",
+   "GATE",
+   "PRUNE",
+   "X1",
+   "M1"
+  ],
+  "where": "the evaluation programme",
+  "source": "lab/reports/DEVIATIONS.md",
+  "id": "T16-55"
+ },
+ {
+  "class": "task validity",
+  "symptom": "`remeasure-d0` wrote D0's holdout exclusions to `excluded.json` and never passed them to the benchmark \u2014 the bug `run-eval` had once.",
+  "detected": "reading the script before restarting it",
+  "why_serious": "None here: D0 validated 30/30 and excluded nothing. On a run that excluded a task, the file and the results would have disagreed.",
+  "fix": "The exclusions are passed to `bench.py run --exclude`.",
+  "test": "\u2014",
+  "runs_affected": [
+   "D0R"
+  ],
+  "where": "the evaluation programme",
+  "source": "lab/reports/DEVIATIONS.md",
+  "id": "T16-56"
+ },
+ {
+  "class": "isolation",
+  "symptom": "The structlog training loop jumped from one task's commit to the next with `git checkout -f`, which removed Cortex's own files \u2014 config, harvested tasks, lessons, evolved items, CLAUDE.md, the /harvest command \u2014 because they are committed on our branch and upstream commits do not contain them.",
+  "detected": "replaying the setup and one jump on a clone before the run: `cortex status` read 0 tasks and 0 lessons after the first jump",
+  "why_serious": "H15 \u2014 the block the brief calls the single most valuable \u2014 would have measured eight sessions that each started from nothing. The loop could never accumulate a task or an item, and the result would have looked like 'Cortex learns nothing on a real repository'.",
+  "fix": "`training_state()`: HEAD never moves; the code is restored from the task's commit, the harness from where the loop left it, and the implementation reverted to its parent \u2014 the broken state mine-tasks.py validated.",
+  "test": "On a clone: after a jump the harvested task, the evolved rule, the lessons, the config and CLAUDE.md are all present, the tests equal the task's commit, the implementation its parent, and every other file its commit.",
+  "runs_affected": [
+   "X1"
+  ],
+  "where": "the evaluation programme",
+  "source": "lab/reports/DEVIATIONS.md",
+  "id": "T16-57"
+ },
+ {
+  "class": "isolation",
+  "symptom": "The structlog setup pinned the sweep model only if the line already named a Claude model, and `cortex init` writes `model: \"\"`. It also rewrote `sandbox_root` with a hard-coded four-space indent in a two-space file, and did not stop if `cortex config` refused.",
+  "detected": "reading the setup against the frozen `cortex init` template",
+  "why_serious": "An empty model means whatever the CLI defaults to, which follows the operator's interactive `/model` \u2014 it read `opus` when checked. Every structlog sweep would have run on a different, far dearer model than the rest of the programme, against \u00a70.",
+  "fix": "The model is pinned whatever its value, keeping the file's indent; `cortex config` must succeed and the compiled model must be Haiku before the first session.",
+  "test": "The real `cmd_setup()` against a scratch clone: the compiled config reads `claude-haiku-4-5-20251001`.",
+  "runs_affected": [
+   "X1"
+  ],
+  "where": "the evaluation programme",
+  "source": "lab/reports/DEVIATIONS.md",
+  "id": "T16-58"
+ },
+ {
+  "class": "task validity",
+  "symptom": "Cortex validates and measures every harvested task in a fresh `git clone` of the repository and runs its check as `cd <clone> && env <rollout_env> bash check.sh`. For structlog a clone has no virtualenv, this machine's `python3` has no pytest, and /harvest teaches `python3 -m pytest \u2026`.",
+  "detected": "asking how a structlog check would run inside a sweep, before the run",
+  "why_serious": "Every harvested task would have failed preflight on its FIXED state and been quarantined; with fewer than three valid tasks /evolve refuses to run. The second repository would have reported 'no gain' for a reason that had nothing to do with the loop.",
+  "fix": "A test-tools-only Python (structlog deliberately not installed) first on PATH, with PYTHONPATH=src, for the training sessions and \u2014 through `rollout_env` \u2014 for every preflight, check and rollout; `import structlog` resolves to the clone's own source, and would fail loudly rather than import another copy.",
+  "test": "Setup's own self-test before the first session: in a bare clone, `python3 -m pytest` runs and structlog imports from inside the clone.",
+  "runs_affected": [
+   "X1"
+  ],
+  "where": "the evaluation programme",
+  "source": "lab/reports/DEVIATIONS.md",
+  "id": "T16-59"
+ },
+ {
+  "class": "scoring",
+  "symptom": "The prune experiment's second pass recorded each planted item as ACCEPT if it had been deleted and REJECT otherwise. An item /prune refused to test \u2014 'never loaded \u2014 a removal can only be UNMEASURED' \u2014 was written down as if a sweep had decided to keep it.",
+  "detected": "reading the recorded verdicts against Cortex's own prune-plan.json, after the pass",
+  "why_serious": "It erased the one behaviour H10 exists to test \u2014 refusing to delete what was never seen to fire \u2014 and turned two correct refusals into two apparent mismatches.",
+  "fix": "Second-pass verdicts come from Cortex's plan (decided verdict, or SKIPPED); the four recorded rows were corrected from the same file, nothing re-run. Matching stays strict: an item pre-registered UNMEASURED that Cortex SKIPPED is still a mismatch.",
+  "test": "The corrected rows equal the plan file item for item.",
+  "runs_affected": [
+   "PRUNE"
+  ],
+  "where": "the evaluation programme",
+  "source": "lab/reports/DEVIATIONS.md",
+  "id": "T16-60"
+ },
+ {
+  "class": "task validity",
+  "symptom": "structlog's oracle linted with today's ruff (0.16.9) under the project's select=[\"ALL\"]; the project's own upstream commits fail that with 51-56 errors, mostly a rule that did not exist when the code was written.",
+  "detected": "the first training session: three lint 'corrections' for files the task never touched, and a harvested check that failed preflight",
+  "why_serious": "Every external task was unsolvable as defined; the loop would have learned from corrections about unrelated files, and H15 would have measured whether an agent can relint a codebase, not the project's rules.",
+  "fix": "Lint with the ruff the project pinned at each commit (.pre-commit-config.yaml): a dispatcher reads the checkout's pin, for the oracle, the sessions, Cortex's preflight and sweeps, and the benchmark. The run restarted from scratch (D-11).",
+  "test": "All twelve upstream fixes pass lint under their own pin; setup's self-test checks `ruff` and `python3 -m ruff` resolve to the pin in a bare clone.",
+  "runs_affected": [
+   "X1"
+  ],
+  "where": "the evaluation programme",
+  "source": "lab/reports/DEVIATIONS.md",
+  "id": "T16-61"
+ }
+]

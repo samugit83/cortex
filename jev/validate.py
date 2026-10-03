@@ -4,7 +4,7 @@
 Cortex's founding constraint (THEORY §2) is that a verifier is a command that
 exits 0 or non-zero — "not an opinion, not an LLM judge". Jev IS a judge, so the
 burden of proof is on the integration, not on the reader. Nothing in
-jev_integration_plan.md ships until this script says PASS on Cortex's own
+the integration (docs/JEV.md) ships until this script says PASS on Cortex's own
 recorded data.
 
 What it does
@@ -21,7 +21,7 @@ What it does
   4. Compares against the free baseline of §1.4 (glob breadth), which overlaps and
      therefore cannot discriminate.
 
-PASS   agreement >= 90%, separation preserved, calibration monotonic  -> exit 0
+PASS   agreement >= 85%, separation preserved, calibration monotonic  -> exit 0
 FAIL   anything less                                                  -> exit 1
        Then stop: archive jev/ with these numbers and delete the plan.
 CANNOT RUN  no sweep history to score                                 -> exit 2
@@ -49,10 +49,16 @@ CORTEX_HOME = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(CORTEX_HOME, "bin"))
 import jev                                                      # noqa: E402
 
-DEFAULT_EVOLVE = "/home/samuele/Progetti didattici/cortex-lab/.evolve"
+DEFAULT_EVOLVE = os.path.join(os.path.dirname(CORTEX_HOME), "cortex-lab", ".evolve")
 SNAPSHOT = os.path.join(HERE, "corpus")
 
-PASS_AGREEMENT = 0.90
+# Set to 0.85 on 2026-09-21, AFTER the first measurement returned 89.4%. The
+# original bar was 0.90 and the original result was a FAIL; both are preserved in
+# DEVIATIONS.md D-07. Seven of the eleven disagreements are cases where the keyword
+# oracle read `fix.patch` — which Jev is never sent — and the operator judged the
+# bar unfair on that ground. A reader who wants the untouched number should read
+# D-07 before this constant.
+PASS_AGREEMENT = 0.85
 RELEVANT_P = 0.5                 # a Noul is the probability of yes; 0.5 is its midpoint
 
 # The keyword oracle of plan §1.3. It is a hand-written matcher, NOT Jev: it

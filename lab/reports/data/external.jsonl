@@ -1,0 +1,8 @@
+{"arm": "evolved", "evolved_items": [], "harness_identical": true, "n": 5, "passed": 5, "rate": 1.0, "repo": "hynek/structlog", "run": "X1", "split": "holdout", "task": "X01"}
+{"arm": "none", "evolved_items": [], "harness_identical": true, "n": 5, "passed": 5, "rate": 1.0, "repo": "hynek/structlog", "run": "X1", "split": "holdout", "task": "X01"}
+{"arm": "evolved", "evolved_items": [], "harness_identical": true, "n": 5, "passed": 5, "rate": 1.0, "repo": "hynek/structlog", "run": "X1", "split": "holdout", "task": "X02"}
+{"arm": "none", "evolved_items": [], "harness_identical": true, "n": 5, "passed": 5, "rate": 1.0, "repo": "hynek/structlog", "run": "X1", "split": "holdout", "task": "X02"}
+{"arm": "evolved", "evolved_items": [], "harness_identical": true, "n": 5, "passed": 5, "rate": 1.0, "repo": "hynek/structlog", "run": "X1", "split": "holdout", "task": "X03"}
+{"arm": "none", "evolved_items": [], "harness_identical": true, "n": 5, "passed": 4, "rate": 0.8, "repo": "hynek/structlog", "run": "X1", "split": "holdout", "task": "X03"}
+{"arm": "evolved", "evolved_items": [], "harness_identical": true, "n": 5, "passed": 3, "rate": 0.6, "repo": "hynek/structlog", "run": "X1", "split": "holdout", "task": "X04"}
+{"arm": "none", "evolved_items": [], "harness_identical": true, "n": 5, "passed": 3, "rate": 0.6, "repo": "hynek/structlog", "run": "X1", "split": "holdout", "task": "X04"}

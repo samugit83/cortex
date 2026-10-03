@@ -1,0 +1,6 @@
+# The analysis needs nothing else, and no network once these are installed.
+numpy==2.5.3
+scipy==1.18.1
+matplotlib==3.11.2
+statsmodels==0.15.0
+pandas==3.0.6

@@ -1,0 +1,78 @@
+#!/usr/bin/env python3
+"""write-manifest — lab/reports/data/manifest.json, the facts a reader needs to trust
+the rows (brief §7.4): tags and commits, model ids, CLI versions, dates, the machine,
+the permission modes, and the measured cost. Built from the rows, git and the host,
+never typed; run it after the last export, before scrub-data.
+"""
+import json
+import os
+import platform
+import subprocess
+from collections import Counter
+from datetime import datetime
+from pathlib import Path
+
+CORTEX = Path(__file__).resolve().parents[2]
+DATA = CORTEX / "lab" / "reports" / "data"
+
+
+def git(*a):
+    return subprocess.run(["git", *a], cwd=CORTEX, capture_output=True, text=True).stdout.strip()
+
+
+def rows(name):
+    p = DATA / name
+    return [json.loads(l) for l in p.read_text().splitlines() if l.strip()] if p.exists() else []
+
+
+def mem_gb():
+    try:
+        for line in open("/proc/meminfo"):
+            if line.startswith("MemTotal:"):
+                return round(int(line.split()[1]) / 1024 / 1024, 1)
+    except OSError:
+        return None
+
+
+def main():
+    runs = rows("runs.jsonl")
+    roll = rows("rollouts.jsonl")
+    spend = json.loads((DATA / "spend.json").read_text()) if (DATA / "spend.json").exists() else {}
+    models = Counter(r.get("model") for r in roll if r.get("model"))
+    dates = sorted(r["t"] for r in roll if isinstance(r.get("t"), str) and r["t"][:2] == "20")
+    man = {
+        "written": datetime.now().isoformat(timespec="seconds"),
+        "system_under_test": {"tag": "v1.0-eval", "commit": git("rev-list", "-n1", "v1.0-eval"),
+                              "note": "every evaluation, control, gate, prune, model-change and "
+                                      "second-repository process ran on this tag"},
+        "analysis_commit": git("rev-parse", "HEAD"),
+        "paper_tag": "v1.0-paper",
+        "models": {"rollouts": "claude-haiku-4-5-20251001",
+                   "model_change": "claude-sonnet-5",
+                   "judge": "typesafe-ai/jev (proposal layer only; every primary run Jev-off)",
+                   "rollout_model_counts": dict(models)},
+        "claude_code": sorted({r.get("cli_version") for r in runs if r.get("cli_version")}),
+        "dates": {"first_row": dates[0] if dates else None, "last_row": dates[-1] if dates else None},
+        "permissions": {"rollouts": "--permission-mode acceptEdits",
+                        "lab_sessions": "--permission-mode bypassPermissions, with sudo, git push, "
+                                        "curl, wget, ssh, web fetch/search and scheduling tools "
+                                        "disallowed",
+                        "home_directory": "~/.claude was never modified by the programme"},
+        "environment": {"os": f"{platform.system()} {platform.release()}",
+                        "python": platform.python_version(),
+                        "cpus": os.cpu_count(), "ram_gb": mem_gb()},
+        "cost_usd": {"programme_measured": spend.get("total"), "cap": spend.get("cap"),
+                     "per_block": {k: round(sum(v.values()), 2) for k, v in (spend.get("per_run") or {}).items()},
+                     "development_run_D0": next((r.get("cost_usd") for r in runs if r["run"] == "D0"), None),
+                     "source": "usage-guard: every session, sweep and benchmark row, each counted once"},
+        "runs": [{k: r.get(k) for k in ("run", "kind", "of", "rollout_model", "cli_version", "cortex",
+                                         "cortex_version", "jev", "rollouts", "cost_usd")} for r in runs],
+        "rollouts": len(roll),
+    }
+    (DATA / "manifest.json").write_text(json.dumps(man, indent=1, default=str) + "\n")
+    print(f"-> {DATA / 'manifest.json'} · {len(runs)} runs · {len(roll):,} rollouts · "
+          f"${spend.get('total')} measured")
+
+
+if __name__ == "__main__":
+    main()

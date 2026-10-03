@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# remeasure-d0 — benchmark the development run on the expanded 30-task holdout.
+#
+# D0 must be measured by the same scripts as every replicate, or its column in the
+# report is not comparable. But `bench.py prepare` PUSHES a branch per holdout
+# scenario into the repository it prepares, and D0 is evidence: the guard refuses,
+# correctly.
+#
+# So the re-measurement runs against a byte-for-byte COPY. The code under test is
+# identical — same commit, same .claude/, same CLAUDE.md — and nothing touches D0.
+set -euo pipefail
+CORTEX="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+EVAL="$(cd "$CORTEX/.." && pwd)/cortex-eval"
+D0="$(cd "$CORTEX/.." && pwd)/cortex-lab"
+OUT="$EVAL/runs/D0R"
+FROZEN="${CORTEX_FROZEN:-$(cd "$CORTEX/.." && pwd)/cortex-eval-v1.0}"
+K="${1:-5}"
+ARMS="${2:-none,evolved}"
+TRAIN_K="${3:-3}"
+
+# bench.py writes tasks.json, arms.json and results.jsonl into BENCH_OUT and does
+# not create it: run-eval makes these directories in `new`, and this script has no
+# `new`. Without them, prepare dies on the last line after doing all its work.
+mkdir -p "$OUT" "$OUT/bench" "$OUT/sandbox"
+if [ ! -d "$OUT/cortex-lab-D0R" ]; then
+  echo "copying D0 -> $OUT/cortex-lab-D0R (D0 itself is never written to)"
+  cp -a "$D0" "$OUT/cortex-lab-D0R"
+fi
+export PATH="$FROZEN/bin:$PATH"
+export LAB_REPO="$OUT/cortex-lab-D0R"
+export LAB_STATE="$OUT/state.json"
+export BENCH_OUT="$OUT/bench"
+export BENCH_SANDBOX="$OUT/sandbox"
+export DISABLE_AUTOUPDATER=1 PYTHONDONTWRITEBYTECODE=1 JEV_ENABLED=0 JEV_API_KEY=""
+[ -f "$LAB_STATE" ] || cp "$CORTEX/lab/state/state.json" "$LAB_STATE"
+
+echo "validating the 30 holdout scenarios on D0's final code"
+python3 - "$CORTEX" > "$OUT/holdout-ids.txt" <<'PY'
+import sys, types
+from pathlib import Path
+src = (Path(sys.argv[1]) / "lab" / "bin" / "scenarios.py").read_text()
+m = types.ModuleType("sc"); exec(compile(src, "s", "exec"), m.__dict__)
+print(" ".join(s["id"] for s in m.SCENARIOS if s["split"] == "holdout"))
+PY
+"$CORTEX/lab/bin/lab" validate $(cat "$OUT/holdout-ids.txt") > "$OUT/holdout-validity.log" 2>&1 || true
+grep '^FAIL' "$OUT/holdout-validity.log" | awk '{print $2}' > "$OUT/excluded.txt" || true
+python3 -c "
+import json,sys
+bad=[l.strip() for l in open('$OUT/excluded.txt') if l.strip()]
+json.dump({'run':'D0','excluded':bad,'reason':'reference fix or test invalid on final code'},
+          open('$OUT/excluded.json','w'), indent=1)
+print(f'excluded: {bad or \"(none)\"}')"
+
+python3 "$CORTEX/lab/bench/bench.py" prepare
+python3 "$CORTEX/lab/bench/bench.py" arms --arms "$ARMS"
+# The exclusions are APPLIED, not only recorded — the bug run-eval once had (a file
+# saying a task was excluded, and a results set in which it was not).
+DROP=$(python3 -c "import json; print(','.join(json.load(open('$OUT/excluded.json'))['excluded']))")
+# Exit 3 is bench.py's usage stop: it must stop the programme, not be swallowed
+# like an ordinary DID-NOT-RUN, or the step would earn its marker having measured
+# nothing.
+rc=0
+python3 "$CORTEX/lab/bench/bench.py" run --k "$K" --train-k "$TRAIN_K" --arms "$ARMS" \
+  ${DROP:+--exclude "$DROP"} || rc=$?
+[ "$rc" -eq 3 ] && exit 3
+python3 "$CORTEX/lab/bench/bench.py" report | tail -30

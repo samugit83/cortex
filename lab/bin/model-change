@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+# model-change — the same harness under a stronger model (brief §4.8, H14).
+#
+#   lab/bin/model-change pilot          10 rollouts, to measure what the model costs
+#   lab/bin/model-change bench [k]      the holdout, none vs evolved, stronger model
+#   lab/bin/model-change prune          /prune on a fresh copy of R1, stronger model
+#
+# A reviewer will ask whether anything here is specific to Haiku. This answers it,
+# and the expected answer is uncomfortable: a stronger model may already follow
+# some house rules, so the same harness should buy LESS. That is a finding about
+# where the loop is worth running, not a failure.
+#
+# The two models are analysed separately and never pooled. `/prune` under the new
+# model is the only direct test of Cortex's "re-measure after an upgrade"
+# mechanism: Cortex detects the model change and tests EVERY item, largest
+# always-on cost first.
+set -euo pipefail
+CORTEX="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+EVAL="$(cd "$CORTEX/.." && pwd)/cortex-eval"
+FROZEN="${CORTEX_FROZEN:-$(cd "$CORTEX/.." && pwd)/cortex-eval-v1.0}"
+STRONG="${STRONG_MODEL:-claude-sonnet-5}"
+SRC="$EVAL/runs/R1"
+OUT="$EVAL/runs/M1"
+CMD="${1:-bench}"
+K="${2:-3}"
+
+mkdir -p "$OUT"
+if [ ! -d "$OUT/cortex-lab-M1" ]; then
+  echo "copying R1's final repository -> $OUT/cortex-lab-M1"
+  cp -a "$SRC/cortex-lab-R1" "$OUT/cortex-lab-M1"
+  python3 - "$OUT" <<'PY'
+import sys, re
+from pathlib import Path
+cfg = Path(sys.argv[1]) / "cortex-lab-M1" / ".evolve" / "config.yaml"
+t = cfg.read_text()
+t = re.sub(r"^(\s*)sandbox_root:.*$", rf"\1sandbox_root: {sys.argv[1]}/sandbox   # M1 only",
+           t, flags=re.M)
+cfg.write_text(t)
+PY
+  cp "$SRC/state.json" "$OUT/state.json"
+fi
+export PATH="$FROZEN/bin:$PATH"
+export LAB_REPO="$OUT/cortex-lab-M1" LAB_STATE="$OUT/state.json"
+export BENCH_OUT="$OUT/bench" BENCH_SANDBOX="$OUT/sandbox"
+export DISABLE_AUTOUPDATER=1 PYTHONDONTWRITEBYTECODE=1 JEV_ENABLED=0 JEV_API_KEY=""
+export BENCH_MODEL="$STRONG"
+
+case "$CMD" in
+  pilot)
+    echo "cost pilot: 10 rollouts with $STRONG, before committing to the rest"
+    python3 "$CORTEX/lab/bench/bench.py" prepare
+    python3 "$CORTEX/lab/bench/bench.py" arms --arms none,evolved
+    python3 "$CORTEX/lab/bench/bench.py" run --k 1 --arms none,evolved \
+      --only HA1,HB1,HC1,HD1,HE1 || { rc=$?; [ "$rc" -eq 3 ] && exit 3; true; }
+    python3 - "$OUT/bench/results.jsonl" <<'PY'
+import json, sys
+rows = [json.loads(l) for l in open(sys.argv[1])]
+v = [r for r in rows if r.get("valid")]
+c = [r["cost_usd"] for r in v if isinstance(r.get("cost_usd"), (int, float))]
+s = [r["secs"] for r in v if isinstance(r.get("secs"), (int, float))]
+print(f"\n{len(v)} valid rollouts · ${sum(c)/max(1,len(c)):.4f} per rollout · "
+      f"{sum(s)/max(1,len(s)):.0f}s each · ${sum(c):.2f} total")
+PY
+    ;;
+  bench)
+    echo "holdout, none vs evolved, k=$K, model $STRONG"
+    # R1's own holdout exclusions apply: this is R1's repository and R1's harness,
+    # measured under a different model. Nothing about the tasks changed.
+    cp "$SRC/excluded.json" "$OUT/excluded.json" 2>/dev/null || true
+    python3 "$CORTEX/lab/bench/bench.py" prepare
+    python3 "$CORTEX/lab/bench/bench.py" arms --arms none,evolved
+    DROP=$(python3 -c "import json; print(','.join(json.load(open('$OUT/excluded.json')).get('excluded') or []))" 2>/dev/null || true)
+    python3 "$CORTEX/lab/bench/bench.py" run --k "$K" --arms none,evolved ${DROP:+--exclude "$DROP"} \
+      || { rc=$?; [ "$rc" -eq 3 ] && exit 3; true; }   # 3 = usage stop: never swallowed
+    python3 "$CORTEX/lab/bench/bench.py" report | tail -25
+    # --bench-only: M1's repository is a COPY of R1's, so its sessions, sweeps and
+    # items are R1's; exported again they would duplicate R1 under a second name
+    # (the bug D0R's export had). M1 contributes its benchmark rows, --of R1.
+    "$CORTEX/lab/bin/export-run" --run M1 --kind model-change --of R1 --bench-only \
+      --repo "$OUT/cortex-lab-M1" --bench "$OUT/bench" \
+      --note "R1's harness, re-measured under $STRONG"
+    ;;
+  prune)
+    echo "/prune under $STRONG on a fresh copy of R1"
+    # every `cortex` command below acts on the repository in the working directory;
+    # the programme runs this from the Cortex repo, where there is no .evolve/
+    cd "$OUT/cortex-lab-M1"
+    python3 - "$OUT" "$STRONG" <<'PY'
+import sys, re
+from pathlib import Path
+cfg = Path(sys.argv[1]) / "cortex-lab-M1" / ".evolve" / "config.yaml"
+t = cfg.read_text()
+t = re.sub(r"^(\s*)model:\s*claude-\S+", rf"\1model: {sys.argv[2]}", t, flags=re.M)
+cfg.write_text(t)
+print(f"pinned the rollout model to {sys.argv[2]}")
+PY
+    cortex config
+    cortex prune plan | tee "$OUT/plan-strong.txt"
+    "$CORTEX/lab/bin/autopilot" prune --jev off
+    cortex prune status | tee "$OUT/status-strong.txt"
+    # `autopilot prune` returns 0 whatever happened; a plan still PROPOSED or APPROVED
+    # did not finish, and reading it back as verdicts would record untested items
+    if grep -Eq "status: (PROPOSED|APPROVED)" "$OUT/status-strong.txt"; then
+      echo "model-change: the /prune pass did not finish — nothing is recorded" >&2
+      exit 1
+    fi
+    # H14's verdict IS this step (brief §4.8.3: "does an item the weaker model needed
+    # become removable for the stronger one?"), so each item's verdict is recorded
+    # from Cortex's own plan, in a file of its own: the Haiku prune experiment's
+    # rows carry pre-registered expectations that these do not have.
+    python3 - "$OUT" "$SRC" "$CORTEX/lab/reports/data/prune-model-change.jsonl" <<'PY'
+import json, sys
+from pathlib import Path
+out, src, dest = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
+plan = json.loads((out / "cortex-lab-M1" / ".evolve" / "prune-plan.json").read_text())
+inherited = {f.name for f in (src / "cortex-lab-R1" / ".evolve" / "runs").glob("*.jsonl")}
+cost = rollouts = 0
+for f in (out / "cortex-lab-M1" / ".evolve" / "runs").glob("*.jsonl"):
+    if f.name in inherited:
+        continue
+    for line in f.read_text(errors="replace").splitlines():
+        try:
+            r = json.loads(line)
+        except ValueError:
+            continue
+        if r.get("v") is not None:
+            rollouts += 1
+            cost += r.get("cost_usd") or 0
+rows = [{"run": "M1", "from_run": "R1", "model": plan.get("model"), "mode": plan.get("mode"),
+         "plan_status": plan.get("status"), "item": it.get("name"), "kind": it.get("kind"),
+         "state": it.get("state"), "verdict": it.get("verdict") if it.get("state") == "decided"
+         else (it.get("state") or "").upper(), "planned_rollouts": it.get("rollouts"),
+         "pass_rollouts": rollouts, "pass_cost_usd": round(cost, 4)}
+        for it in plan.get("items", [])]
+dest.write_text("".join(json.dumps(r, sort_keys=True) + "\n" for r in rows))
+print(f"{len(rows)} item verdict(s) under {plan.get('model')} ({plan.get('mode')}) -> {dest}")
+for r in rows:
+    print(f"  {r['item']:32} {r['verdict']}")
+PY
+    ;;
+  *) echo "usage: model-change pilot|bench|prune [k]"; exit 2 ;;
+esac
