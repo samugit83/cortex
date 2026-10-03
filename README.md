@@ -1,12 +1,10 @@
 <div align="center">
 
-# Cortex
+<img src="docs/images/cortex-logo.png" alt="Cortex: skill harness and evolution" width="520">
 
-**Measure your Claude Code skills and rules. Keep only the ones that help.**
+<h3>Measure your Claude Code skills and rules.<br>Keep only the ones that help.</h3>
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Claude Code](https://img.shields.io/badge/Claude%20Code-%E2%89%A5%202.1.276-d97757.svg)](#requirements)
-[![Cite](https://img.shields.io/badge/cite-CITATION.cff-555.svg)](CITATION.cff)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![Claude Code](https://img.shields.io/badge/Claude%20Code-%E2%89%A5%202.1.276-d97757.svg)](#requirements) [![Cite](https://img.shields.io/badge/cite-CITATION.cff-555.svg)](CITATION.cff)
 
 </div>
 

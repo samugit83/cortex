@@ -3323,7 +3323,8 @@ Cortex/
     ├── JEV.md                 the optional judge: what runs when it is off, why the
     │                               artifacts are interchangeable, every question verbatim,
     │                               and exactly what leaves your machine
-    └── TROUBLESHOOTING.md     every failure mode and its fix
+    ├── TROUBLESHOOTING.md     every failure mode and its fix
+    └── images/                the logo shown at the top of the README
 ```
 
 ### What each script does
