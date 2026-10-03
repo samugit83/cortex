@@ -2,7 +2,7 @@
 
 This document explains the reasoning behind Cortex's design. It describes only
 what the code actually does. Every principle names the file that implements
-it, so you can check it. The README tells you how to use Cortex; this document
+it, so you can check it. The [guide](GUIDE.md) tells you how to use Cortex; this document
 tells you why it works the way it does. Ideas that come from other work are
 credited in [Where the ideas come from](#where-the-ideas-come-from).
 

@@ -204,7 +204,7 @@ J
 # Edit this file; `.evolve/config.json` is compiled from it and is not edited
 # by hand. Run `cortex config` after changing anything (sweeps recompile
 # automatically when this file is newer). Every setting is explained in the
-# "Configuration reference" section of the Cortex README.
+# "Configuration reference" section of the Cortex guide (docs/GUIDE.md).
 
 measurement:
   k:

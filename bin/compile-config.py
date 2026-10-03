@@ -211,7 +211,7 @@ def main():
         elif (os.path.normpath(f) + "/").startswith((".claude/skills/", ".claude/rules/")):
             errors.append(f"environment.harness_files: {f!r} is under .claude/skills or .claude/rules, "
                           "which the sweep manages itself — listing it would undo --replace")
-    # README has always said never to run unattended rollouts this way; enforce it.
+    # The guide has always said never to run unattended rollouts this way; enforce it.
     if out["permission_mode"] == "bypassPermissions":
         errors.append("environment.permission_mode: bypassPermissions is refused — rollouts are "
                       "unattended agents with real tool access (use acceptEdits)")
