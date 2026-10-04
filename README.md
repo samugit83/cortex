@@ -181,6 +181,7 @@ already sets `JEV_ENABLED=1`), then run `cortex doctor`.
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | every known failure mode and its fix |
 | [docs/JEV.md](docs/JEV.md) | the optional judge: what it is asked and exactly what leaves your machine |
 | [lab/README.md](lab/README.md) | how the evaluation lab is built |
+| [CHANGELOG.md](CHANGELOG.md) | what changed in each release; the current version is in [`VERSION`](VERSION) |
 
 ## Repository layout
 

@@ -6,7 +6,9 @@
 A table with many cells is written here, row by row, from lab/reports/data, so no cell is
 ever typed; the section files hold only each table's frame (columns, headings, caption).
 Every table is checked against numbers the text already quotes, and the script stops if
-they disagree. Writes paper/generated/tab-*.tex.
+they disagree. Writes paper/generated/tab-*.tex. Two more sets of rows are built only to
+be checked against the text that quotes them (what a rollout costs, what rollouts read
+through git) and are not written.
 """
 import csv
 import json
@@ -66,6 +68,8 @@ def main():
     # ---- the held-out gain by family: evolved against none, complete-case (as H1) --------
     def signed(v):                            # points, one decimal, with a real minus sign
         t = f"{v * 100:+.1f}"
+        if t in ("+0.0", "-0.0"):             # zero carries no sign, as in the text and figures
+            return "0.0"
         return t.replace("-", r"\textminus{}", 1) if t.startswith("-") else t
 
     def pval(v):
@@ -111,6 +115,7 @@ def main():
     write("tab-main.tex", "\n".join(body) + "\n")
 
     # ---- what a held-out rollout costs, by harness, in the runs that measured it ---------
+    # (§5.4 quotes these in a paragraph; the rows are built to check what it says)
     def cost(run_list, arm):
         rs = [r for r in d.bench(runs=run_list, arms=(arm,), split="holdout") if r.get("valid", 1)]
         n = len(rs)
@@ -120,17 +125,8 @@ def main():
     blocks = [("R1--R4", ev, ("none", "evolved")),
               ("R1", ["R1"], ("none", "evolved", "none2", "kitchen", "ideal", "flat", "desc-only")),
               ("R2", ["R2"], ("none", "evolved", "accept-all"))]
-    body = []
-    for label, run_list, arms in blocks:
-        body.append(rf"\multicolumn{{7}}{{@{{}}l}}{{\emph{{{label}}}}} \\")
-        for arm in arms:
-            n, chars, tok, usd, turns, tools, secs = cost(run_list, arm)
-            body.append(rf"\quad\cmd{{{arm}}} & {num(int(chars))} & {num(round(tok / 1000))} & "
-                        rf"{usd:.3f} & {turns:.1f} & {tools:.1f} & {secs:.0f} \\")
-        if label != blocks[-1][0]:
-            body.append(r"\addlinespace")
-    # the text quotes the four-run primary costs: they must be these; and it says every arm
-    # with advice in context cost more per rollout than no harness, in the run that measured it
+    # the text quotes the four-run primary costs: they must be these; and every arm with
+    # advice in context cost more per rollout than no harness, in the run that measured it
     a, b = cost(ev, "none")[3], cost(ev, "evolved")[3]
     base = {label: cost(run_list, "none")[3] for label, run_list, arms in blocks}
     later = cost(["R1"], "none2")[3]            # no harness, in the ablations' own batch
@@ -139,8 +135,7 @@ def main():
             if arm not in ("none", "none2") and not cost(run_list, arm)[3] > max(base[label], later):
                 stop(f"{arm} ({label}) does not cost more per rollout than no harness")
     if f"{a:.3f}" != M["CostNone"] or f"{b:.3f}" != M["CostEvolved"]:
-        stop("the cost table's primary rows disagree with the text")
-    write("tab-cost-rollout.tex", "\n".join(body) + "\n")
+        stop("the primary arms' cost per rollout disagrees with the text")
 
     # ---- what running the loop cost, per evaluation run ---------------------------------
     sess = defaultdict(float)
@@ -154,7 +149,7 @@ def main():
     cyc = [c for c in rows("cycles.jsonl") if c.get("is_cycle")]
     cs = rescore.candidates()
     sw = rows("sweeps.jsonl")
-    body, tot = [], defaultdict(float)
+    tot, per_run = defaultdict(float), {}
     for run in ev:
         evolve = runs[run]["agent_cost_usd"] - sess[run]
         sweeps = [s for s in sw if s["run"] == run]
@@ -164,19 +159,17 @@ def main():
                 "sessions": sess[run], "evolve": evolve,
                 "rollouts": sum(s.get("rollouts") or 0 for s in sweeps),
                 "sweep_usd": sum(s.get("cost_usd") or 0 for s in sweeps)}
+        per_run[run] = vals
         for k, v in vals.items():
             tot[k] += v
-        body.append(rf"{run} & {vals['cycles']} & {vals['swept']} & {vals['kept']} & "
-                    rf"{vals['sessions']:.2f} & {vals['evolve']:.2f} & {num(vals['rollouts'])} & "
-                    rf"{vals['sweep_usd']:.2f} \\")
-    body.append(r"\midrule")
-    body.append(rf"all four & {int(tot['cycles'])} & {int(tot['swept'])} & {int(tot['kept'])} & "
-                rf"{tot['sessions']:.2f} & {tot['evolve']:.2f} & {num(int(tot['rollouts']))} & "
-                rf"{tot['sweep_usd']:.2f} \\")
     if (str(int(tot["cycles"])), str(int(tot["swept"])), str(int(tot["kept"]))) != (
             M["LoopCycles"], M["LoopSwept"], M["KeptItems"]) or num(int(tot["rollouts"])) != M["LoopRollouts"]:
-        stop("the loop's cost table disagrees with the funnel's counts")
-    write("tab-cost-loop.tex", "\n".join(body) + "\n")
+        stop("the loop's costs do not add up to the funnel's counts")
+    # the ranges §5.4 quotes: what the sweeps, /evolve's own turns and the sessions cost a run
+    for key, mac in (("sweep_usd", "SweepCost"), ("evolve", "EvolveCost"), ("sessions", "SessionCost")):
+        got = (f"{min(v[key] for v in per_run.values()):.2f}", f"{max(v[key] for v in per_run.values()):.2f}")
+        if got != (M[mac + "Lo"], M[mac + "Hi"]):
+            stop(f"the loop's {key} per run is {got}, the text's macros say otherwise")
 
     # ---- the gate test, by kind of candidate --------------------------------------------
     gates = rows("gates.jsonl")
@@ -239,7 +232,8 @@ def main():
         stop("the kept-items table does not list every kept item")
     write("tab-kept.tex", "\n".join(body) + "\n")
 
-    # ---- what rollouts read that their harness did not give them (§6) --------------------
+    # ---- what rollouts read that their harness did not give them (Limitations) -----------
+    # (the rows are built to check the counts the text quotes; no table is written)
     T = [json.loads(l) for l in (DATA / "transcripts.jsonl").read_text().splitlines() if l.strip()]
 
     def pick(run, source, arms=None):
@@ -266,12 +260,10 @@ def main():
         (r"\SecondRepo{} benchmark", haiku, pick("X1", "bench"), ("impl",), None, None),
         (r"\SecondRepo{} training sessions", haiku, pick("X1", "session"), ("impl",), None, None),
     ]
-    body, got = [], {}
+    got = {}
     for label, model, rs, fix, names, text in lines:
-        cells = [num(len(rs)), str(n(rs, *fix)), dash if names is None else str(n(rs, names)),
-                 dash if text is None else str(n(rs, text))]
-        got[label + model] = cells
-        body.append(rf"{label} & {model} & " + " & ".join(cells) + r" \\")
+        got[label + model] = [num(len(rs)), str(n(rs, *fix)), dash if names is None else str(n(rs, names)),
+                              dash if text is None else str(n(rs, text))]
     # the text quotes these rows; they must agree
     want = {r"the loop's sweeps, R1--R4" + haiku: (M["LoopSweepRollouts"], M["LoopFixReads"]),
             r"benchmark, \cmd{none}, R1--R4" + haiku: (M["NoneBenchRollouts"], M["NoneBenchFix"],
@@ -286,40 +278,9 @@ def main():
             r"\SecondRepo{} training sessions" + haiku: (M["XTrainSessions"], M["XTrainImpl"])}
     for key, vals in want.items():
         if any(v is not None and v != c for v, c in zip(vals, got[key])):
-            stop(f"the leak table's row '{key}' disagrees with the text: {got[key]} against {vals}")
+            stop(f"what rollouts read, row '{key}', disagrees with the text: {got[key]} against {vals}")
     if got[r"the gate test" + haiku][1] != "0":
         stop("a gate-test rollout read a fix")
-    write("tab-leaks.tex", "\n".join(body) + "\n")
-
-    # ---- every deviation from the pre-registration (Appendix) ---------------------------
-    import re
-    text = (CORTEX / "lab" / "reports" / "DEVIATIONS.md").read_text()
-
-    def tex_md(x):                            # a line of Markdown, as LaTeX text
-        x = x.replace("\\", "").replace("**", "")
-        parts = re.split(r"`([^`]*)`", x)
-        esc = lambda t: (t.replace("&", r"\&").replace("%", r"\%").replace("_", r"\_")
-                         .replace("#", r"\#").replace("~", r"\textasciitilde{}"))
-        return "".join(esc(t) if i % 2 == 0 else r"\cmd{" + esc(t) + "}" for i, t in enumerate(parts))
-    body = []
-    for m in re.finditer(r"(?s)^## (D-\d+) · (.*?)\n(.*?)(?=^## D-|\Z)", text, re.M):
-        did, title, rest = m.group(1), m.group(2).strip(), m.group(3)
-        # each field runs to the end of its paragraph; D-09 to D-12 put both in one
-        paras = [" ".join(x.split()) for x in re.split(r"\n\s*\n", rest)]
-        when = next(x for x in paras if re.match(r"\*\*(When|Date):\*\*", x))
-        date = re.search(r"\d{4}-\d{2}-\d{2}", when)
-        when_cell = ("never (found " + date.group(0) + ")"
-                     if re.match(r"\*\*When:\*\* never", when) else date.group(0) if date else "—")
-        seen_p = next((x for x in paras if re.search(r"(?i)data seen", x)), "")
-        seen_txt = re.sub(r"\*\*", "", re.split(r"(?i)(?:outcome )?data seen:?", seen_p, maxsplit=1)[-1])
-        sents = re.split(r"(?<=[A-Za-z0-9)'`])\.(?:\s|$)", seen_txt.strip(" :*"))
-        seen_txt = sents[0] + (f"; {sents[1][0].lower()}{sents[1][1:]}" if len(sents) > 1
-                               and sents[1].startswith("No ") else "")
-        seen_txt = seen_txt.split(" — ")[0] if seen_txt.startswith("none") else seen_txt.replace(" — ", ": ")
-        body.append(rf"{did} & {tex_md(title)} & {when_cell} & {tex_md(seen_txt)} \\")
-    if str(len(body)) != M["DeviationsRecorded"]:
-        stop("the deviations table does not list every entry")
-    write("tab-deviations.tex", "\n".join(body) + "\n")
 
 
 if __name__ == "__main__":

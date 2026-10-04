@@ -531,8 +531,9 @@ def t15_model_change(d):
         cs = S.cells(rows, "none", "evolved", families=fams, split="holdout")
         if not cs:
             continue
-        _, _, p0 = S.rate(rows, split="holdout", arm="none", **({"family": f} if f else {}))
-        _, _, p1 = S.rate(rows, split="holdout", arm="evolved", **({"family": f} if f else {}))
+        sel = [r for r in rows if r.get("family") in fams]     # the pooled row is the rule families'
+        _, _, p0 = S.rate(sel, split="holdout", arm="none")
+        _, _, p1 = S.rate(sel, split="holdout", arm="evolved")
         lo, hi, _ = S.two_way_bootstrap(cs)
         body.append([f or "A+B+C+E", pct(p0), pct(p1), signed(S.paired_mean(cs)), ci(lo, hi)])
     return table(out("T15-model-change"), "T15 · The same harness under a stronger model",

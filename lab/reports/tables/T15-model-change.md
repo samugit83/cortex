@@ -9,4 +9,4 @@ Analysed separately from Haiku and never pooled with it. /prune under claude-son
 | C | 78% | 89% | +11 | [-11, +39] |
 | D | 100% | 100% | +0 | [+0, +0] |
 | E | 83% | 89% | +6 | [-11, +22] |
-| A+B+C+E | 91% | 96% | +6 | [-3, +14] |
+| A+B+C+E | 89% | 94% | +6 | [-3, +14] |

@@ -50,7 +50,7 @@ def main():
     D = {"params": {k: M[k] for k in ("KScreen", "KConfirm", "RegressionTolerance", "MinNetRuns",
                                         "MaxInvalidPct", "RolloutTimeoutMin", "MinThemeOccurrences",
                                         "RolloutModelName", "StrongModelName", "PrimaryK", "AblationK",
-                                        "StopAfterBarren")}}
+                                        "StopAfterBarren", "MinThemeFailingTasks")}}
 
     cands = rescore.candidates()               # every R1–R4 candidate, scored by the rules
 
@@ -208,10 +208,17 @@ def main():
     if (sum(len(s["cycles"]) for s in seqs), D["cycles"]["barren"], sum(s["swept"] for s in seqs),
             sum(s["kept"] for s in seqs)) != (F["cycles"], F["barren"], F["swept"], F["keep"]):
         raise SystemExit("gen_diagram_data.py: the cycle timeline does not add up to the funnel")
+    # the captions say one cycle, drawn split, swept more than one candidate, and how many
+    split = [len(x["items"]) for s in seqs for x in s["cycles"] if not x["barren"] and len(x["items"]) > 1]
+    split_runs = [s["run"] for s in seqs for x in s["cycles"] if not x["barren"] and len(x["items"]) > 1]
+    if ([str(n) for n in split] != [M["SplitCycleSwept"]] or str(F["active"]) != M["LoopActive"]
+            or split_runs != [M["SplitCycleRun"]]):
+        raise SystemExit("gen_diagram_data.py: the cycles drawn split are not the one the captions describe")
 
     # ---- loaded vs chosen --------------------------------------------------------
     # every candidate of a tier, in every run where it was offered: the loop's sweeps and
-    # the gate test's screens (tiers as each sweep recorded them). No selection by outcome.
+    # the gate test's screens and confirms (tiers as each sweep recorded them). No selection
+    # by outcome.
     kept = [i for i in items if i["run"] in EVAL and i.get("fate") == "kept"]
     kept_skills = [i for i in kept if i.get("kind") == "skill"]
     offered = {"always": [0, 0], "gated": [0, 0]}
@@ -221,22 +228,27 @@ def main():
             if r["candidate"] in (r.get("visible") or []):
                 offered[r["candidate_tier"]][0] += 1
                 offered[r["candidate_tier"]][1] += r["candidate"] in (r.get("fired") or [])
-    n_always_gate = 0
+    n_gate = defaultdict(int)
     for g in gates:
-        sc = g.get("screen") or {}
-        if sc.get("candidate_tier") == "always":
-            n_always_gate += 1
-            offered["always"][0] += sc.get("candidate_visible_runs") or 0
-            offered["always"][1] += sc.get("candidate_fired_runs") or 0
+        n_gate[(g.get("screen") or {}).get("candidate_tier")] += 1
+        for ph in ("screen", "confirm"):
+            sc = g.get(ph) or {}
+            if sc.get("candidate_tier") in offered:
+                offered[sc["candidate_tier"]][0] += sc.get("candidate_visible_runs") or 0
+                offered[sc["candidate_tier"]][1] += sc.get("candidate_fired_runs") or 0
+    for tier, key in (("always", "AlwaysOn"), ("gated", "Gated")):
+        if (str(offered[tier][0]), str(offered[tier][1])) != (M[key + "Offered"], M[key + "Invoked"]):
+            raise SystemExit(f"gen_diagram_data.py: the {tier} tally is {offered[tier]}, the text's macros say otherwise")
     swept_by_tier = defaultdict(int)
     for c in cands:
         swept_by_tier[{"rule": "rule", "gated": "gated", "always": "always"}.get(c["tier"], c["tier"])] += 1
     D["loaded"] = {"kept_rules": sum(1 for i in kept if i.get("kind") == "rule"),
                    "kept_skills": len(kept_skills),
                    "kept_skill_paths": sorted({p for i in kept_skills for p in (i.get("paths") or [])}),
-                   "gated": {"offered": offered["gated"][0], "invoked": offered["gated"][1]},
+                   "gated": {"offered": offered["gated"][0], "invoked": offered["gated"][1],
+                             "candidates": n_gate["gated"] + swept_by_tier["gated"]},
                    "always": {"offered": offered["always"][0], "invoked": offered["always"][1],
-                              "candidates": n_always_gate + swept_by_tier["always"]},
+                              "candidates": n_gate["always"] + swept_by_tier["always"]},
                    "swept": dict(swept_by_tier)}
 
     # ---- the setup figures (§4): the design of the lab, the runs and the tests --------
@@ -245,7 +257,8 @@ def main():
         "ConfirmSweepRollouts", "MaxRunsDefault", "MaxRunsEval", "StopAfterBarrenEval",
         "ClaudeCodeVersion", "CompleteTasks", "GateCandidates", "Placebos", "PlaceboTopic",
         "PlaceboMoment", "Harmful", "Positives", "Planted", "RunOneItems", "ModelChangeK",
-        "SecondRepo", "SecondRepoHoldout", "SecondRepoK", "ExcludedScenario", "ExcludedFrom")}
+        "SecondRepo", "SecondRepoHoldout", "SecondRepoK", "ExcludedScenario", "ExcludedFrom",
+        "PlantedPlacebos", "MaxCorrections", "PruneRun", "ModelChangeSource")}
     D["setup"]["families"] = {f: {"train": M["TrainFam" + f], "holdout": M["HoldFam" + f]}
                               for f in "ABCDE"}
     # the lab's schedule: which family each round's sessions belong to (scenarios.py: ROUNDS)
@@ -255,6 +268,17 @@ def main():
                             for r in sorted(scenarios.ROUNDS)]
     autopilot = (PAPER.parent / "lab" / "bin" / "autopilot").read_text()
     D["setup"]["max_corrections"] = int(re.search(r"^MAX_CORRECTIONS = (\d+)", autopilot, re.M).group(1))
+    # the runs each benchmark arm was measured in (the arms table of the benchmark figure)
+    arm_runs = defaultdict(set)
+    for r in roll:
+        if r.get("source") == "bench" and r["run"] in EVAL + ("C1",) and r.get("split") == "holdout":
+            arm_runs[r["arm"]].add(r["run"])
+
+    def run_list(v):                          # R1, R2, R3, R4, C1 -> "R1–R4, C1"
+        ev_ = [r for r in EVAL if r in v]
+        head = [f"{ev_[0]}–{ev_[-1]}"] if len(ev_) > 2 and ev_ == list(EVAL[EVAL.index(ev_[0]):EVAL.index(ev_[-1]) + 1]) else ev_
+        return ", ".join(head + sorted(set(v) - set(EVAL)))
+    D["setup"]["arm_runs"] = {a: run_list(v) for a, v in arm_runs.items()}
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text("// generated by lab/reports/analysis/gen_diagram_data.py from lab/reports/data — do not edit\n"

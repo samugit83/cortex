@@ -27,6 +27,8 @@ OUT = PAPER / "generated" / "numbers.tex"
 def tex(x):
     """A signed number as typeset text: a real minus sign, never a hyphen."""
     s = str(x).strip()
+    if s in ("+0.0", "-0.0"):                  # zero carries no sign, in the text as in the figures
+        return "0.0"
     return s.replace("-", r"\textminus{}", 1) if s.startswith("-") else s
 
 
@@ -85,7 +87,7 @@ def main():
              r"positives kept (\d+)/(\d+)", h5["estimate"], "H5")
     (M["PlaceboKept"], M["Placebos"], _harmful_kept, M["Harmful"], h5_kill, h5_rerun,
      M["PositivesKept"], M["Positives"]) = m.groups()
-    M["PlaceboUpper"] = interval(h5["interval"])[1]
+    M["PlaceboUpper"] = interval(h5["interval"])[1] + r"\%"
     h6 = cards["H6"]
     M["AcceptAllEst"] = tex(need(r"([+-][0-9.]+)", h6["estimate"], "H6").group(1))
     M["AcceptAllLo"], M["AcceptAllHi"] = map(tex, interval(h6["interval"]))
@@ -98,6 +100,12 @@ def main():
     M["MarginNotBetter"] = tex(not_better)
     M["MarginClose"] = need(r"within (\d+) points", cards["H8"]["margin"], "H8 margin").group(1)
     M["MarginDescShare"] = need(r"at least (\d+)%", cards["H12"]["margin"], "H12 margin").group(1) + r"\%"
+    # and the one the hypothesis table states besides: H5's bar on kept placebos
+    M["MarginPlaceboUpper"] = need(r"upper bound below (\d+)%", h5["margin"], "H5 margin").group(1) + r"\%"
+    mp = need(r"at least (\d+) of (\d+) positives kept", h5["margin"], "H5 margin, known-good")
+    if mp.group(2) != M["Positives"]:
+        raise SystemExit("gen_numbers.py: H5's margin counts the known-good candidates differently from its estimate")
+    M["MarginPositives"] = mp.group(1)
 
     # context cost
     h8 = cards["H8"]
@@ -143,6 +151,10 @@ def main():
     M["PruneMatched"] = str(sum(1 for r in pr if r.get("matches")))
     M["Planted"] = str(sum(1 for r in pr if r.get("planted")))
     M["PlantedMatched"] = str(sum(1 for r in pr if r.get("planted") and r.get("matches")))
+    # the planted items the pass should delete: the placebo always-on skills
+    M["PlantedPlacebos"] = str(sum(1 for r in pr if r.get("planted") and r.get("expected") == "ACCEPT"))
+    if any("placebo" not in r.get("role", "") for r in pr if r.get("planted") and r.get("expected") == "ACCEPT"):
+        raise SystemExit("gen_numbers.py: a planted item that should be deleted is not a placebo")
     m = need(r"(\d+) of (\d+) matched", cards["H10"]["estimate"], "H10")
     if m.groups() != (M["PruneMatched"], M["PruneTested"]):
         raise SystemExit("gen_numbers.py: prune.jsonl and the scorecard's H10 disagree")
@@ -157,10 +169,13 @@ def main():
     if sum(1 for c in cs if c["verdict"] == "KEEP") != len(kept):
         raise SystemExit("gen_numbers.py: the rules and the loop disagree on what was kept")
     ex = next(c for c in cs if (c["run"], c["name"]) == ("R3", "exporter-checklist-v2"))
-    M["SweepExampleTasks"] = str(next(x for x in ex["sweeps"] if x["phase"] == "confirm")["tasks"])
+    ex_conf = next(x for x in ex["sweeps"] if x["phase"] == "confirm")
+    M["SweepExampleTasks"] = str(ex_conf["tasks"])
+    M["SweepExampleExposed"] = str(len(ex_conf["exposed"]))
 
     # loaded or chosen: runs in which a candidate was offered, and in which it acted
-    # (the loop's sweeps, and the gate test's screens; tiers as each sweep recorded them)
+    # (the loop's sweeps, and the gate test's screens and confirms; tiers as each sweep
+    # recorded them)
     offered = {"always": [0, 0], "gated": [0, 0]}
     for r in d.rollouts:
         if (r.get("source") == "sweep" and r["run"] in ev and r.get("arm") == "cand"
@@ -170,11 +185,14 @@ def main():
                 offered[r["candidate_tier"]][1] += r["candidate"] in (r.get("fired") or [])
     gates = [json.loads(l) for l in (DATA / "gates.jsonl").read_text().splitlines() if l.strip()]
     for g in gates:
-        sc = g.get("screen") or {}
-        if sc.get("candidate_tier") == "always":
-            offered["always"][0] += sc.get("candidate_visible_runs") or 0
-            offered["always"][1] += sc.get("candidate_fired_runs") or 0
+        for ph in ("screen", "confirm"):
+            sc = g.get(ph) or {}
+            if sc.get("candidate_tier") in offered:
+                offered[sc["candidate_tier"]][0] += sc.get("candidate_visible_runs") or 0
+                offered[sc["candidate_tier"]][1] += sc.get("candidate_fired_runs") or 0
     M["AlwaysOnOffered"], M["AlwaysOnInvoked"] = map(str, offered["always"])
+    if offered["always"][1] != 0:
+        raise SystemExit("gen_numbers.py: an always-on candidate was opened; the introduction says none was")
     M["GatedOffered"], M["GatedInvoked"] = map(str, offered["gated"])
     # the gate test's screens, by the scorer's own verdict (score.sh RERUN is not a KILL)
     for kind, key in (("harmful", "Harmful"), ("placebo", "Placebo")):
@@ -238,21 +256,13 @@ def main():
     M["RunOneItems"] = str(sum(1 for i in d.items if i["run"] == "R1" and i.get("fate") == "kept"))
     ext = [json.loads(l) for l in (DATA / "external.jsonl").read_text().splitlines() if l.strip()]
     M["SecondRepo"] = ext[0]["repo"].split("/")[-1]
+    M["SecondRepoSlug"] = ext[0]["repo"]
+    a8 = (CORTEX / "lab" / "reports" / "appendix" / "A8-external-tasks.md").read_text()
+    M["SecondRepoBase"] = need(r"at base `([0-9a-f]{7,40})`", a8, "the second repository's base commit").group(1)
     M["SecondRepoHoldout"] = str(len({e["task"] for e in ext if e["split"] == "holdout"}))
     M["SecondRepoK"] = str(max(e["n"] for e in ext))
     M["BootReps"] = f"{S.N_BOOT:,}".replace(",", "{,}")
     M["PermReps"] = f"{S.N_PERM:,}".replace(",", "{,}")
-    dev_text = (CORTEX / "lab" / "reports" / "DEVIATIONS.md").read_text()
-    M["DeviationsRecorded"] = str(len(re.findall(r"^## D-\d+", dev_text, re.M)))
-    # the judge's own validation (J0): what it measured, the bar it was gated on, and the
-    # bar it was then given (D-07, which quotes the run's own output)
-    d07 = need(r"(?s)## D-07(.*?)\n## ", dev_text, "D-07").group(1)
-    j0 = need(r"agreement\s+([0-9.]+)%\s+\((\d+)/(\d+)\)\s+— needed >= (\d+)%\s+FAIL", d07, "J0's result")
-    M["JzeroAgree"], M["JzeroBarOld"] = j0.group(1) + r"\%", j0.group(4) + r"\%"
-    M["JzeroBarNew"] = f"{float(need(r'`PASS_AGREEMENT` is now `([0-9.]+)`', d07, 'the new bar').group(1)) * 100:.0f}" + r"\%"
-    if not float(j0.group(4)) > float(j0.group(1)) >= float(M["JzeroBarNew"][:-2]):
-        stop_ = "J0 did not fail the old bar and pass the new one"
-        raise SystemExit(f"gen_numbers.py: {stop_}")
     mani0 = json.loads((DATA / "manifest.json").read_text())
     # the rollout model, as every evaluation sweep row recorded it
     models = {r.get("model") for r in d.rollouts if r.get("source") == "sweep" and r["run"] in ev}
@@ -281,6 +291,12 @@ def main():
         raise SystemExit("gen_numbers.py: manifest and spend.json disagree on the programme's cost")
     M["DevSpend"] = f"{mani0['cost_usd']['development_run_D0']:,.0f}".replace(",", "{,}")
 
+    # the release whose scripts and data regenerate the paper: this checkout's, as its tag
+    version = (CORTEX / "VERSION").read_text().strip()
+    if not re.fullmatch(r"\d+\.\d+\.\d+", version):
+        raise SystemExit(f"gen_numbers.py: VERSION holds {version!r}, not a version such as 1.0.1")
+    M["ReleaseTag"] = "v" + version
+
     # scale and cost
     M["EvalRuns"] = str(len(ev))
     M["HoldoutTasks"] = str(len({r["task"] for r in d.bench(runs=ev, split="holdout")}))
@@ -288,7 +304,6 @@ def main():
     M["Rollouts"] = f"{len(d.rollouts):,}".replace(",", "{,}")
     M["Spend"] = f"{spend['total']:,.0f}".replace(",", "{,}")
     M["BudgetCap"] = f"{spend['cap']:,.0f}".replace(",", "{,}")
-    M["Defects"] = str(len(json.loads((DATA / "defects.json").read_text())))
 
     # the design's parameters: the defaults `cortex init` writes, AT THE FROZEN TAG —
     # the paper describes the system as evaluated, not as it may have changed since
@@ -307,6 +322,14 @@ def main():
     M["MaxInvalidPct"] = f"{float(conf('max_invalid_rate')) * 100:.0f}\\%"
     M["MinThemeOccurrences"] = conf("min_theme_occurrences")
     M["StopAfterBarren"] = conf("stop_after_barren_cycles")
+    # the other side of the theme bar: a cause behind this many currently failing tasks
+    M["MinThemeFailingTasks"] = need(r"explains \*\*(\d+) or more\*\* currently-failing tasks",
+                                     at_tag("commands/evolve.md"), "theme failing-task bar").group(1)
+    # an overloaded machine: more than this many runnable processes per CPU
+    M["OverloadFactor"] = need(r"\.load > \((\d+) \* \$cpus\)", at_tag("bin/score.sh"), "overload factor").group(1)
+    # how often the lab's scripted reviewer sends the agent back
+    M["MaxCorrections"] = need(r"\nMAX_CORRECTIONS = (\d+)", (CORTEX / "lab" / "bin" / "autopilot").read_text(),
+                               "MAX_CORRECTIONS").group(1)
     # the settings our runs changed from those defaults (lab/rounds/round-00.md §0.4,
     # copied byte for byte into every run by lab/bin/run-eval)
     r00 = (CORTEX / "lab" / "rounds" / "round-00.md").read_text()
@@ -319,7 +342,7 @@ def main():
     M["AlwaysOnBudget"] = f"{int(conf('always_on_budget_chars')):,}".replace(",", "{,}")
     M["RolloutTimeoutMin"] = f"{int(conf('rollout_timeout_s')) // 60}"
     # the implementation's size at the tag: the scripts and the command prompts
-    files = subprocess.run(["git", "ls-tree", "-r", "--name-only", "v1.0-eval", "bin/", "commands/"],
+    files = subprocess.run(["git", "ls-tree", "-r", "--name-only", "v1.0-eval", "bin/", "hooks/", "commands/"],
                            cwd=CORTEX, capture_output=True, text=True, check=True).stdout.split()
     code = [f for f in files if f.endswith((".sh", ".py")) or f == "bin/cortex"]
     prompts = [f for f in files if f.endswith(".md")]
@@ -327,16 +350,6 @@ def main():
     M["ImplCodeFiles"] = str(len(code))
     M["ImplPromptLines"] = f"{sum(at_tag(f).count(chr(10)) for f in prompts):,}".replace(",", "{,}")
     M["ImplJevLines"] = f"{at_tag('bin/jev.py').count(chr(10)):,}".replace(",", "{,}")
-    # the pre-registration: the day it was first committed, before any evaluation rollout
-    import datetime as _dt
-    first = subprocess.run(["git", "log", "--diff-filter=A", "--format=%aI", "--",
-                            "lab/reports/PREREGISTRATION.md"], cwd=CORTEX, capture_output=True,
-                           text=True, check=True).stdout.split()[-1]
-    day = _dt.datetime.fromisoformat(first)
-    M["PreregDate"] = f"{day.day} {day:%B %Y}"
-    sweeps = [json.loads(l) for l in (DATA / "sweeps.jsonl").read_text().splitlines() if l.strip()]
-    if min(_dt.datetime.fromisoformat(x["started"]) for x in sweeps if x["run"] in ev) <= day:
-        raise SystemExit("gen_numbers.py: an evaluation sweep predates the pre-registration")
     # the Claude Code version every evaluated rollout ran, and the minimum the tag demands
     mani = json.loads((DATA / "manifest.json").read_text())
     M["ClaudeCodeVersion"] = need(r"([0-9.]+)", " ".join(mani["claude_code"]), "CLI version").group(1)
@@ -384,6 +397,7 @@ def results(d, M, cards, ev, gates_all, sessions, at_tag):
     if sorted(set(fams) - set(below)) != ["E"] or cards["H0"]["verdict"] != "SUPPORTED":
         stop("H0's margin is not missed by E alone, or H0 is no longer supported")
     M["HzeroBar"] = f"{bar}" + r"\%"
+    M["HzeroBelowN"] = str(len(below))
     dbar = int(need(r"D at or above (\d+)%", cards["H0"]["margin"], "H0 margin, family D").group(1))
     if int(h0[3]) < dbar:
         stop("family D is below H0's bar for it, and the text says it is above")
@@ -404,6 +418,9 @@ def results(d, M, cards, ev, gates_all, sessions, at_tag):
     if len({f"{h:.4f}" for h in holm}) != 1:
         stop("the four rule families' Holm-adjusted p differ")
     M["FamHolmP"] = f"= {holm[0]:.4f}"
+    # ... and says that no shuffle reached any family's gain: each raw p is the test's floor
+    if any(abs(p_ - 1 / (S.N_PERM + 1)) > 1e-9 for p_ in ps):
+        stop("a rule family's permutation p is not the test's floor")
     # the A/A pair: which run measured it (the same run as the ceiling arms)
     aa_runs = sorted({run for run, _t in S.cells(d.bench(runs=ev, arms=("none", "none2"), split="holdout"),
                                                 "none", "none2", families=list("ABCDE"), split="holdout")})
@@ -456,17 +473,33 @@ def results(d, M, cards, ev, gates_all, sessions, at_tag):
         for f in fams:
             lift[key, f] = pooled(rows, "evolved", (f,))
             M[f"{key}Evo{f}"] = rate(lift[key, f])
-    # what the text reads into them: a larger gain on the training scenarios, mostly from a
-    # lower baseline there; the evolved rate lower on held-out, falling most in C, and in A
-    # and E by less than five points and less than in B and C
+    M["SeenNoneE"], M["HeldNoneE"] = (rate(pooled(r_, "none", ("E",))) for r_ in (seen["rows"], pool["rows"]))
+    # what the text reads into them: a larger gain on the training scenarios, more from a
+    # lower baseline there than from the evolved rate; the evolved rate falling most in C,
+    # and there in every run; B's fall all NarrowRun's (without it, the rate rose); E's rate
+    # holding (under five points) while its gain falls, its held-out baseline the higher
     base_gap = pooled(pool["rows"], "none") - pooled(seen["rows"], "none")
     evo_gap = pooled(seen["rows"], "evolved") - pooled(pool["rows"], "evolved")
     if not (seen["mean"] > pool["mean"] and base_gap > evo_gap > 0):
-        stop("training against held-out no longer reads: larger gain, mostly from the baseline")
+        stop("training against held-out no longer reads: larger gain, more from the baseline")
     fall = {f: lift["Seen", f] - lift["Held", f] for f in fams}
-    if (max(fall, key=fall.get) != "C" or max(fall["A"], fall["E"]) >= 0.05
-            or min(fall["B"], fall["C"]) <= max(fall["A"], fall["E"])):
-        stop("the evolved rate no longer falls most in C, and least (under five points) in A and E")
+    if max(fall, key=fall.get) != "C":
+        stop("the evolved rate no longer falls most in C")
+    for run in ev:
+        sr = [r_ for r_ in seen["rows"] if r_["run"] == run]
+        hr = [r_ for r_ in pool["rows"] if r_["run"] == run]
+        if pooled(sr, "evolved", ("C",)) <= pooled(hr, "evolved", ("C",)):
+            stop(f"the evolved rate on C does not fall in {run}")
+    rest = [run for run in ev if run != narrow]
+    sr = [r_ for r_ in seen["rows"] if r_["run"] in rest]
+    hr = [r_ for r_ in pool["rows"] if r_["run"] in rest]
+    if not (fall["B"] > 0 and pooled(hr, "evolved", ("B",)) > pooled(sr, "evolved", ("B",))):
+        stop(f"B's evolved rate no longer falls only because of {narrow}")
+    seen_e = RB.arm_pair(d, ev, "none", "evolved", families=("E",), split="train", complete_case=True)
+    held_e = RB.arm_pair(d, ev, "none", "evolved", families=("E",), complete_case=True)
+    if not (abs(fall["E"]) < 0.05 and seen_e["mean"] > held_e["mean"]
+            and pooled(pool["rows"], "none", ("E",)) > pooled(seen["rows"], "none", ("E",))):
+        stop("E's evolved rate no longer holds while its gain falls on an easier baseline")
     # corrections per session (H4): what the lab computed, over all sessions
     es = [x for x in sessions if x["run"] in ev]
     cs_ = [x for x in sessions if x["run"] in d.control]
@@ -491,12 +524,38 @@ def results(d, M, cards, ev, gates_all, sessions, at_tag):
     if tex(m.group(4)) != M["HoneAllEst"] or tuple(map(tex, interval(cards["H13"]["interval"]))) != (
             M["HoneAllLo"], M["HoneAllHi"]):
         stop("H13 is not compared with the all-valid interval")
+    # H13's margin sets one run's gain against the interval of the mean of R1 to R4; a single
+    # run varies more, so the text also gives the range of the runs' own gains on that set
+    own_gain = {run: S.paired_mean(S.cells(d.bench(runs=[run], arms=("none", "evolved"), split="holdout"),
+                                           "none", "evolved", families=list(fams), split="holdout"))
+                for run in ev}
+    M["RunGainAllLo"], M["RunGainAllHi"] = pts(min(own_gain.values())), pts(max(own_gain.values()))
+    if not 100 * min(own_gain.values()) <= float(m.group(1)) <= 100 * max(own_gain.values()):
+        stop("the development run's gain is outside the range of the evaluation runs' own gains")
+    # the runs, counted (the text never types a count)
+    M["ControlRuns"] = str(len(d.control))
+    # the held-out scenarios the development run did not have: written after it
+    d0_hold = {r["task"] for r in d.bench(runs=d.development, split="holdout")}
+    held_all = {r["task"] for r in d.bench(runs=ev, split="holdout")}
+    if not d0_hold or not d0_hold < held_all or str(len(d0_hold)) != M["DzeroOwnTasks"]:
+        stop("the development run's held-out scenarios are not a part of the present ones")
+    M["HoldoutLate"] = str(len(held_all) - len(d0_hold))
 
     # ---- what the loop did --------------------------------------------------------------
     cyc = [json.loads(l) for l in (DATA / "cycles.jsonl").read_text().splitlines() if l.strip()]
     evc = [c for c in cyc if c["run"] in ev and c.get("is_cycle")]
     M["LoopCycles"] = str(len(evc))
     M["LoopBarren"] = str(sum(1 for c in evc if c.get("verdict") == "BARREN"))
+    # the cycles that swept a candidate. A candidate with no journal entry of its own was
+    # swept inside another candidate's cycle: the text says one cycle swept more than one
+    # candidate, and names its run (gen_diagram_data.py checks it against the cycles it draws)
+    active = len(evc) - int(M["LoopBarren"])
+    M["LoopActive"] = str(active)
+    journaled = {(c["run"], c["name"]) for c in evc if c.get("verdict") != "BARREN"}
+    extra = [c for c in rescore.candidates() if (c["run"], c["name"]) not in journaled]
+    if len(extra) != 1 or len(journaled) != active or int(M["LoopSwept"]) != active + len(extra):
+        stop("the candidates swept without a journal entry of their own are not one, in one cycle")
+    M["SplitCycleSwept"], M["SplitCycleRun"] = str(len(extra) + 1), extra[0]["run"]
     sweeps = [json.loads(l) for l in (DATA / "sweeps.jsonl").read_text().splitlines() if l.strip()]
     by_phase = defaultdict(int)
     for s in sweeps:
@@ -545,6 +604,8 @@ def results(d, M, cards, ev, gates_all, sessions, at_tag):
     nb = [(pa, pb) for (run, _t), (f, pa, pb, _na, _nb) in pool["cells"].items() if run == narrow and f == "B"]
     M["NarrowMoneyNone"] = rate(sum(a for a, _ in nb) / len(nb))
     M["NarrowMoneyEvolved"] = rate(sum(b for _, b in nb) / len(nb))
+    if M["NarrowMoneyEvolved"] != M["NarrowMoneyNone"]:
+        stop("the narrow run's money pass rate did not stay the same in both arms")
     broad = [loaded(run, [n for (r_, n), f in fam_of.items() if r_ == run and f == "B"], "B", "holdout")
              for run in ev if run != narrow]
     M["BroadMoneyFiredMin"] = str(min(a for a, _ in broad))
@@ -662,6 +723,10 @@ def results(d, M, cards, ev, gates_all, sessions, at_tag):
            or screen(g).get("candidate_fired_runs") != screen(g).get("rollouts", 0) // 2 for g in hrules):
         stop("the harmful rules were not all loaded in every rollout and left unscored")
     M["HarmfulRules"] = str(len(hrules))
+    pathless = [g["name"] for g in hrules if screen(g).get("candidate_tier") == "rule-always"]
+    if len(pathless) != 1:
+        stop("the gate test has not exactly one harmful rule without paths")
+    M["HarmfulPathlessRule"] = pathless[0]
     if sum(1 for g in hrules if screen(g).get("protected_broken")) != 1:
         stop("the text says one harmful screen broke a task that passed without it")
     lost = [g for g in pos if g["verdict"] != "KEEP"]
@@ -725,6 +790,11 @@ def results(d, M, cards, ev, gates_all, sessions, at_tag):
         stop("the kitchen gap is not the introduction's")
     h7 = need(r"always-on (\d+) → (\d+) chars", cards["H7"]["estimate"], "H7")
     M["FlatChars"] = f"{int(h7.group(2)):,}".replace(",", "{,}")
+    # H7 the way its margin reads it, flat minus evolved, for the hypothesis table
+    r = arm("flat")
+    M["FlatMinusEst"], M["FlatMinusLo"], M["FlatMinusHi"] = pts(r["mean"]), pts(r["lo"] + 0.0), pts(r["hi"] + 0.0)
+    if (M["FlatMinusLo"], M["FlatMinusHi"]) != tuple(map(tex, interval(cards["H7"]["interval"]))):
+        stop("flat minus evolved is not the scorecard's H7 interval")
     # per family: where each arm's text reached the agent, and where it did not
     def fam_rate(a, f):
         rs_ = [r for r in d.bench(runs=[run1], arms=(a,), split="holdout") if r.get("family") == f and r.get("valid", 1)]
@@ -785,12 +855,14 @@ def results(d, M, cards, ev, gates_all, sessions, at_tag):
     if len({p["from_run"] for p in pr}) != 1:
         stop("the prune test ran on more than one run's copy")
     M["PruneRun"] = pr[0]["from_run"]
+    if M["PruneRun"] != "R1" or M["ModelChangeSource"] != M["PruneRun"]:
+        stop("the prune test and the model change are not on R1's harness, whose items §4 counts")
     pm = [json.loads(l) for l in (DATA / "prune-model-change.jsonl").read_text().splitlines() if l.strip()]
     if (sorted(p["item"] for p in pm if p["verdict"] == "ACCEPT") != ["billing-helpers", "exporter-checklist"]
             or sorted(p["item"] for p in pm if p["verdict"] == "REJECT") != ["changelog-requirement", "shop-clock-rule"]):
         stop("the stronger model's prune verdicts are not the ones the text names")
 
-    # the prune sweeps themselves (data/prune-sweeps.jsonl, from scripts/extract_prune.py;
+    # the prune sweeps themselves (data/prune-sweeps.jsonl, from extract_prune.py;
     # the lab's export records only the verdicts), scored again by score.sh's replace mode
     rtol, minnet = float(M["RegressionTolerance"]), int(M["MinNetRuns"])
     prs = [json.loads(l) for l in (DATA / "prune-sweeps.jsonl").read_text().splitlines() if l.strip()]
@@ -856,21 +928,27 @@ def results(d, M, cards, ev, gates_all, sessions, at_tag):
     h15 = cards["H15"]
     M["ExtAAEst"] = tex(need(r"([+-][0-9.]+) points", h15["estimate"], "H15").group(1))
     M["ExtAALo"], M["ExtAAHi"] = map(tex, interval(h15["interval"]))
-    d12 = need(r"(?s)## D-12(.*?)\n## ", (CORTEX / "lab" / "reports" / "DEVIATIONS.md").read_text() + "\n## ",
-               "D-12").group(1)
-    words = {w: str(i) for i, w in enumerate("zero one two three four five six seven eight nine ten".split())}
-    m = need(r"harvested (\w+) valid tasks but only \*\*(\w+)\*\* lesson", d12, "D-12 tasks")
-    M["ExtTasks"], M["ExtLessons"] = words[m.group(1)], words[m.group(2)]
-    m = need(r"(\w+) of the (\w+) sessions passed", d12, "D-12 first attempt")
-    M["ExtFirstTime"] = words[m.group(1)]
-    if words[m.group(2)] != M["ExtTasks"] or M["ExtLessons"] != "1":
-        stop("D-12 counts its sessions two ways, or the text's single lesson is not one")
+    # its training, from the run's own records (data/external-training.json, written by
+    # extract_external.py): the sessions, the tasks and lessons they left, and the cycles
+    xtr = json.loads((DATA / "external-training.json").read_text())
+    xruns = {e["run"] for e in (json.loads(l) for l in (DATA / "external.jsonl").read_text().splitlines() if l.strip())}
+    if xruns != {xtr["run"]} or not xtr["base"].startswith(M["SecondRepoBase"]) or not xtr["cycles"]:
+        stop("the second repository's training rows are not the benchmark's run and commit, or hold no cycle")
+    M["ExtTasks"], M["ExtLessons"] = str(xtr["tasks"]), str(xtr["lessons"])
+    M["ExtFirstTime"] = str(sum(1 for x in xtr["sessions"] if x["verdicts"] == ["ok"]))
+    if len(xtr["sessions"]) != xtr["tasks"] or M["ExtLessons"] != "1":
+        stop("the second repository's sessions did not each leave a task, or its single lesson is not one")
+    xrows = [json.loads(l) for l in (DATA / "external.jsonl").read_text().splitlines() if l.strip()]
+    if (any(c["verdict"] != "BARREN" for c in xtr["cycles"]) or xtr["kept"]
+            or not all(e["harness_identical"] and not e["evolved_items"] for e in xrows)):
+        stop("a cycle on the second repository was not barren, or the loop kept an item there")
 
     # ---- predicting a verdict -----------------------------------------------------------
     h16 = need(r"relevance: lowest KEPT (\d+)% vs highest BURIED (\d+)% · breadth: (\d+)% vs (\d+)%",
                cards["H16"]["estimate"], "H16").groups()
     floor = float(need(r'"relevance_floor":\s*([0-9.]+)', at_tag("bin/jev.py"), "the relevance floor").group(1))
     M["RelevanceFloor"] = f"{floor:.2f}"
+    M["RelevanceFloorPct"] = f"{100 * floor:.0f}" + r"\%"     # relevance is quoted in percent
     flagged = [s for s in d.scope if isinstance(s.get("relevance"), (int, float)) and s["relevance"] < floor]
     t19 = {r["run"]: r for r in csv.DictReader(open(CORTEX / "lab" / "reports" / "tables" / "T19-scope.csv"))}
     # the development run, reported apart: its candidates (the journal's fates) do not
@@ -908,6 +986,7 @@ def results(d, M, cards, ev, gates_all, sessions, at_tag):
         stop("H16 or the relevance floor's counterfactual disagrees with the lab's report")
     h17 = re.findall(r"predicted (\d+)% vs measured (\d+)%", cards["H17"]["estimate"])
     M["JudgeItems"] = str(len(h17))
+    M["JudgeItemsDev"] = "2"                   # checked below: the development run's kept gated skills
     M["JudgeOver"] = str(sum(1 for p, m_ in h17 if int(p) > int(m_)))
     M["JudgeTied"] = str(max(sum(1 for p, _ in h17 if p == q) for q, _ in h17))
     M["JudgeMissMax"] = str(max(int(p) - int(m_) for p, m_ in h17))
@@ -916,7 +995,7 @@ def results(d, M, cards, ev, gates_all, sessions, at_tag):
     # they are the path-gated skills the runs kept, two of them in the development run
     gated = [i for i in d.items if i.get("fate") == "kept" and i.get("kind") == "skill" and i.get("paths")
              and i["run"] in list(ev) + list(d.development)]
-    if len(gated) != len(h17) or sum(1 for i in gated if i["run"] in d.development) != 2:
+    if len(gated) != len(h17) or str(sum(1 for i in gated if i["run"] in d.development)) != M["JudgeItemsDev"]:
         stop("H17's items are not the kept gated skills, two of them the development run's")
     low = re.findall(r"([\w-]+) predicted (\d+)% vs", cards["H17"]["estimate"])
     low = [n for n, p_ in low if int(p_) < 100]
@@ -945,7 +1024,7 @@ def results(d, M, cards, ev, gates_all, sessions, at_tag):
              if r.get("valid", 1) and r["task"] in cc and r["family"] == "C" and not r["pass"]]
     M["FailCRuleEvolved"] = str(sum(1 for r in cfail if r.get("verdict") == "C"))
 
-    # ---- what a held-out rollout costs (table in §5.4), and what the loop cost ---------
+    # ---- what a held-out rollout costs, and what the loop cost (§5.4) -------------------
     def per(arm):
         rs = [r for r in d.bench(runs=ev, arms=(arm,), split="holdout") if r.get("valid", 1)]
         return {k: sum(r.get(k) or 0 for r in rs) / len(rs) for k in ("cost_usd", "turns", "secs", "tokens")}
@@ -997,61 +1076,22 @@ def results(d, M, cards, ev, gates_all, sessions, at_tag):
         stop("a run other than the development run had invalid rollouts")
     M["InvalidDev"] = str(len(bad))
 
-    threats(d, M, ev, sessions, cs)
+    reads(d, M, ev, cs)
 
 
-def threats(d, M, ev, sessions, cs):
-    """§6: the defect catalogue, the loop's own records, and what rollouts read that their
-    harness did not give them (data/transcripts.jsonl, from Claude Code's own session
-    records; scripts/extract_transcripts.py). Every pattern the text states is checked."""
-    from collections import Counter, defaultdict
+def reads(d, M, ev, cs):
+    """What rollouts read that their harness did not give them (data/transcripts.jsonl, from
+    Claude Code's own session records; extract_transcripts.py), which Limitations quotes,
+    and the sweeps the rules were applied to again. Every pattern the text states is checked."""
+    from collections import Counter
 
     def stop(why):
-        raise SystemExit(f"gen_numbers.py (§6): {why} — revise the text")
+        raise SystemExit(f"gen_numbers.py (limitations): {why} — revise the text")
 
     def rate(n, k):                             # a pass rate as typeset text: 23.6\%
         return f"{100 * n / k:.1f}" + r"\%"
 
-    # ---- the catalogue: when each defect was found, and what it threatened -------------
-    D = json.loads((DATA / "defects.json").read_text())
-    prog = [x for x in D if x["where"] == "the evaluation programme"]
-    M["DefectsProg"], M["DefectsDev"] = str(len(prog)), str(len(D) - len(prog))
-    cls = Counter(x["class"] for x in D)
-    names = {"task validity": "Task", "scoring": "Scoring", "isolation": "Isolation",
-             "tooling": "Tooling", "attribution": "Attribution"}
-    if set(cls) != set(names):
-        stop(f"the catalogue's classes are {sorted(cls)}")
-    for c, key in names.items():
-        M[f"Defects{key}"] = str(cls[c])
-    # the rows of Table 8, by catalogue id: the first five were found in the development
-    # run, the other five in the programme, and the text names the class of each
-    table = {"T16-02": ("dev", "task validity"), "T16-04": ("dev", "scoring"),
-             "T16-23": ("dev", "task validity"), "T16-32": ("dev", "scoring"),
-             "T16-37": ("dev", "scoring"), "T16-42": ("prog", "isolation"),
-             "T16-51": ("prog", "isolation"), "T16-52": ("prog", "task validity"),
-             "T16-53": ("prog", "attribution"), "T16-48": ("prog", "task validity"),
-             # the second repository's two, in the text below the table
-             "T16-57": ("prog", "isolation"), "T16-61": ("prog", "task validity"),
-             # found after their data existed: the linter after one session, the prune record
-             "T16-60": ("prog", "scoring")}
-    by_id = {x["id"]: x for x in D}
-    for i, (phase, c) in table.items():
-        x = by_id.get(i)
-        if x is None or ("prog" if x in prog else "dev") != phase or x["class"] != c:
-            stop(f"catalogue entry {i} is not a {phase} {c} defect")
-    # the suite size against which the old gate 3 killed most good candidates by chance
-    M["GateThreeSuite"] = need(r"with ~(\d+) tasks, most good candidates killed by chance",
-                               by_id["T16-04"]["why_serious"], "T16-04").group(1)
-
-    # ---- the records the model driving Cortex writes ----------------------------------
-    ps = [x for x in sessions if x["run"] in list(ev) + list(d.control)]
-    M["ProgSessions"] = str(len(ps))
-    wrong = [x for x in ps if x.get("wrong_base")]
-    M["WrongBase"] = str(len(wrong))
-    if len({x["run"] for x in wrong}) != len(wrong):
-        stop("a run had more than one harvest with a wrong base commit")
-    es = [x for x in sessions if x["run"] in ev]
-    M["LostLessons"] = str(sum(max(0, x["corrections"] - (x.get("lessons_added") or 0)) for x in es))
+    # ---- the sweeps the rules were applied to again ------------------------------------
     sw = [json.loads(l) for l in (DATA / "sweeps.jsonl").read_text().splitlines() if l.strip()]
     M["EvalSweeps"] = str(sum(1 for s in sw if s["run"] in ev))
     if sum(len(c["sweeps"]) for c in cs) != int(M["EvalSweeps"]):
@@ -1071,16 +1111,6 @@ def threats(d, M, ev, sessions, cs):
     if any(v["recorded"] != v["matched"] for k, v in cover.items() if k.endswith("bench")):
         stop("a benchmark rollout has no transcript")
     M["TranscriptUnmatched"] = str(sum(v["recorded"] - v["matched"] for v in cover.values()))
-    # the one sweep record an agent deleted: the prune test's, whose rollouts only the
-    # session records keep; the programme's spend counts its cost from them
-    gone = report["deleted"]
-    if len(gone) != 1 or gone[0]["run"] != "PRUNE" or not gone[0]["rollouts"]:
-        stop(f"the deleted sweep records are {gone}")
-    M["DeletedSweepRollouts"] = str(gone[0]["rollouts"])
-    M["DeletedSweepCost"] = f"{gone[0]['cost_usd']:.2f}"
-    spend_ = json.loads((DATA / "spend.json").read_text())
-    if abs(spend_["per_run"]["PRUNE"].get("sweeps_deleted", 0) - gone[0]["cost_usd"]) > 0.005:
-        stop("the spend does not count the deleted sweep; revise the text")
     has = lambda r, *f: bool(set(f) & set(r["reads"]))
     sel = lambda **kw: [r for r in T if all((r.get(k) in v) if isinstance(v, tuple) else r.get(k) == v
                                              for k, v in kw.items())]
@@ -1192,9 +1222,10 @@ def threats(d, M, ev, sessions, cs):
     if M["XBenchImplPass"] != M["XBenchImpl"] or M["XTrainImpl"] != "1":
         stop("a structlog rollout that printed the implementation failed, or training is not one session")
     if (not all(r.get("right_first_time") for r in xt if has(r, "impl"))
-            or str(sum(r.get("right_first_time", 0) for r in xt)) != M["ExtFirstTime"]):
+            or str(sum(r.get("right_first_time", 0) for r in xt)) != M["ExtFirstTime"]
+            or M["XTrainSessions"] != M["ExtTasks"]):
         stop("the structlog session that read the fix did not pass at its first attempt, or the "
-             "first-attempt count disagrees with D-12")
+             "session records and the run's own records count its sessions differently")
 
 
 if __name__ == "__main__":

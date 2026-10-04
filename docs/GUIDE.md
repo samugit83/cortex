@@ -3237,6 +3237,8 @@ Cortex/
 ├── README.md                  start here: what Cortex is, install, quick start
 ├── LICENSE                    MIT
 ├── CITATION.cff               how to cite Cortex and its lab
+├── CHANGELOG.md               what changed in each release, newest first
+├── VERSION                    the current version; each release is the tag v<version>
 ├── install.sh                 symlinks cortex into ~/.local/bin
 │
 ├── .env.example               committed: every Jev setting, documented. Copy to .env

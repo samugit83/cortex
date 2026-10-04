@@ -48,8 +48,9 @@ the report, and `T18` lists every claim beside the table or figure that carries 
 If a claim in the report is not in `T18`, that is a defect in the report.
 
 **The paper's numbers.** Every number, table and chart in the paper is computed from
-the same rows by four scripts beside the analysis. Run them in a clone (`gen_numbers.py`
-also reads the tag `v1.0-eval`), in this order, with the environment `run.sh` made:
+the same rows by four scripts beside the analysis. Run them in a clone of the release the
+paper cites, `v1.0.1` or later (`gen_numbers.py` also reads the tag `v1.0-eval`), in this
+order, with the environment `run.sh` made:
 
 ```bash
 PY=lab/reports/analysis/.venv/bin/python
@@ -77,6 +78,7 @@ sources that state the same number, and stops if they disagree.
 | `prune-model-change.jsonl` | `/prune`'s verdict on each item under the stronger model (H14) |
 | `scope-replay-<run>.jsonl` | the judge's prediction beside each candidate's fate (H16, H17) |
 | `prune-sweeps.jsonl` | one rollout of a `/prune` removal sweep, both passes (the verdicts above rest on these) |
+| `external-training.json` | the second repository's training: its sessions with their verdicts and corrections, the tasks and lessons they left, and the `/evolve` cycles |
 | `transcripts.jsonl` | one rollout, with what it read through git that its harness did not give it (flags only), from Claude Code's own record of each session; `transcripts-coverage.json` says how many were matched, and names the one sweep whose record an agent deleted |
 | `spend.json` | the programme's measured spend per block — the only source of the cost totals |
 | `defects.json` | T16 |
@@ -90,9 +92,10 @@ replicates without knowing anything about the directory layout.
 
 The loop's verdicts are recomputed, not read from the journals: `analysis/rescore.py`
 applies `score.sh`'s rules at `v1.0-eval` to the recorded rollouts of every sweep of the
-evaluation runs, and agrees with `score.sh` itself on all of them. The two extracts above
-are made by `analysis/extract_prune.py` and `analysis/extract_transcripts.py` from data that
-does not ship (the raw run directories and the session records).
+evaluation runs, and agrees with `score.sh` itself on all of them. The three extracts above
+are made by `analysis/extract_prune.py`, `analysis/extract_external.py` and
+`analysis/extract_transcripts.py` from data that does not ship (the raw run directories and
+the session records).
 
 ---
 
@@ -217,7 +220,8 @@ finished lab, report and data:
 |---|---|
 | `8014a11` | the instrument and `PREREGISTRATION.md`, committed before any evaluation rollout |
 | `23bd5e4` | tag `v1.0-eval`: the frozen Cortex every run used (`runs.jsonl`, `manifest.json`) |
-| tag `v1.0-paper` | the finished lab, report and data |
+| tag `v1.0-paper` | the finished lab, report and data (release 1.0.0) |
+| tag `v1.0.1` | the same, with the scripts and data that regenerate every number in the paper; `CHANGELOG.md` lists what changed |
 
 The other commits `DEVIATIONS.md` cites for timing (`a23bb26`, `57cc68a`, `a9b86f2`), and
 the `analysis_commit` in `manifest.json`, belong to the working history between the freeze

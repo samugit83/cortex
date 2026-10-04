@@ -1,0 +1,84 @@
+{
+ "base": "73393f34b40c15688b3fdd0982889b225f11b59b",
+ "cycles": [
+  {
+   "verdict": "BARREN"
+  },
+  {
+   "verdict": "BARREN"
+  },
+  {
+   "verdict": "BARREN"
+  },
+  {
+   "verdict": "BARREN"
+  },
+  {
+   "verdict": "BARREN"
+  }
+ ],
+ "kept": 0,
+ "lessons": 1,
+ "model": "claude-haiku-4-5-20251001",
+ "run": "X1",
+ "sessions": [
+  {
+   "corrections": 1,
+   "task": "X12",
+   "verdicts": [
+    "lint",
+    "ok"
+   ]
+  },
+  {
+   "corrections": 0,
+   "task": "X11",
+   "verdicts": [
+    "ok"
+   ]
+  },
+  {
+   "corrections": 0,
+   "task": "X10",
+   "verdicts": [
+    "ok"
+   ]
+  },
+  {
+   "corrections": 0,
+   "task": "X09",
+   "verdicts": [
+    "ok"
+   ]
+  },
+  {
+   "corrections": 0,
+   "task": "X08",
+   "verdicts": [
+    "ok"
+   ]
+  },
+  {
+   "corrections": 0,
+   "task": "X07",
+   "verdicts": [
+    "ok"
+   ]
+  },
+  {
+   "corrections": 0,
+   "task": "X06",
+   "verdicts": [
+    "ok"
+   ]
+  },
+  {
+   "corrections": 0,
+   "task": "X05",
+   "verdicts": [
+    "ok"
+   ]
+  }
+ ],
+ "tasks": 8
+}

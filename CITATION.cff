@@ -6,7 +6,8 @@ authors:
   - family-names: Giampieri
     given-names: Samuele
 license: MIT
-version: "v1.0-paper"
+version: "1.0.1"
+date-released: "2026-10-04"
 repository-code: "https://github.com/samugit83/cortex"
 abstract: >-
   Cortex measures whether a skill, rule or instruction earns its place in an
