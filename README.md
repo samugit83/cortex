@@ -44,6 +44,10 @@ flowchart LR
     P -->|removal costs nothing| G
 ```
 
+**Visual guides:** [how Cortex works](https://samugit83.github.io/cortex/diagram/) ·
+[why tasks rewind to the broken commit](https://samugit83.github.io/cortex/diagram/timeline.html) ·
+[the lab, step by step](https://samugit83.github.io/cortex/diagram/lab.html)
+
 A **rollout** is one headless `claude -p` run of a task in a sandbox clone. `/evolve`
 first screens the candidate on the tasks its lessons came from (2 runs per task, per
 arm), then confirms survivors on every task (3 runs per task, per arm). The verdict
@@ -69,7 +73,8 @@ and the gain belongs to a weak model. Under `claude-sonnet-5` the same harness g
 +5.6 points, because the stronger model already follows most house rules.
 
 [One-page summary](lab/reports/SUMMARY.md) · [Full report](lab/reports/REPORT.md) ·
-[Rebuild every number offline](lab/reports/REPRODUCE.md)
+[Rebuild every number offline](lab/reports/REPRODUCE.md) ·
+[Visual walk-through](https://samugit83.github.io/cortex/diagram/lab.html)
 
 ## Requirements
 
@@ -181,6 +186,7 @@ already sets `JEV_ENABLED=1`), then run `cortex doctor`.
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | every known failure mode and its fix |
 | [docs/JEV.md](docs/JEV.md) | the optional judge: what it is asked and exactly what leaves your machine |
 | [lab/README.md](lab/README.md) | how the evaluation lab is built |
+| [Visual guides](https://samugit83.github.io/cortex/diagram/) | the three commands, why tasks rewind, and the lab, as illustrated pages (their sources are in [`diagram/`](diagram/)) |
 | [CHANGELOG.md](CHANGELOG.md) | what changed in each release; the current version is in [`VERSION`](VERSION) |
 
 ## Repository layout
@@ -194,7 +200,7 @@ docs/         guide, theory, troubleshooting, Jev
 jev/          the evidence and validation gate behind the optional judge
 lab/          the evaluation lab, its report and its data
 test/         the test suite: ./test/run-tests.sh (no API calls)
-diagram/      visual overviews, as HTML pages
+diagram/      the visual guides, as HTML pages (served by GitHub Pages)
 ```
 
 ## Citation

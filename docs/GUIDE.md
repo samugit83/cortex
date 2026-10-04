@@ -3244,6 +3244,7 @@ Cortex/
 ├── .env.example               committed: every Jev setting, documented. Copy to .env
 │                                   (gitignored) and paste your key. Optional —
 │                                   Cortex runs fully without one
+├── .nojekyll                  empty: tells GitHub Pages to serve the files as they are
 │
 ├── bin/
 │   ├── cortex                 CLI: init, status, doctor, config, cycle, phase, baseline,
@@ -3299,7 +3300,8 @@ Cortex/
 │   │                               the only check that catches the stub drifting
 │   └── jev-openapi.json       that schema, vendored so the check needs no network
 │
-├── diagram/
+├── diagram/                   the visual guides, served by GitHub Pages at
+│   │                               https://samugit83.github.io/cortex/diagram/
 │   ├── index.html             a one-page visual overview of the three commands
 │   ├── lab.html               "Does it actually work?" — the end-to-end lab, step by step:
 │   │                               one correction → a task → a measurement → a verdict

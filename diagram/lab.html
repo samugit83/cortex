@@ -9,9 +9,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
-  /* D0 is the DEVELOPMENT run: one run, on a Cortex that changed 39 times while it
-     ran, before the optional judge existed. Every number on this page is its
-     number, and saying so is the difference between evidence and a brochure. */
+  /* The headline numbers are the evaluation programme's: four independent runs
+     (R1 to R4) and one control run, on a Cortex frozen at v1.0-eval. The worked
+     examples in steps 2 to 7 come from the development run, D0, which is shown
+     beside the evaluation and never pooled with it. Every number is in
+     lab/reports/REPORT.md; D0's own are in lab/results/FINAL.md. */
   .runbadge{display:inline-flex; align-items:center; gap:8px; margin:0 auto 18px;
     padding:7px 14px; border-radius:999px; font-family:var(--mono); font-size:12px;
     background:var(--amber-soft); color:var(--amber); border:1px dashed var(--amber)}
@@ -19,6 +21,14 @@
     background:var(--panel-2); border:1px solid var(--line); color:var(--ink-soft);
     font-size:13.5px; line-height:1.6; text-align:left}
   .provenance b{color:var(--ink)}
+  /* page switcher, shared by the three pages */
+  .pages{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:0 0 26px}
+  .pages a{font-family:var(--mono); font-size:12px; padding:6px 13px; border-radius:999px;
+    border:1px solid var(--line); background:var(--panel); color:var(--ink-soft); text-decoration:none;
+    transition:color .15s, border-color .15s}
+  .pages a:hover{color:var(--ink)}
+  .pages a[aria-current="page"]{color:var(--ink); border-color:var(--evolve); font-weight:500}
+  .pages a:focus-visible, .chip:focus-visible{outline:2px solid var(--evolve); outline-offset:2px}
   :root{
     --bg:#f6f4ef; --panel:#fffdfa; --panel-2:#efece4;
     --ink:#1b2230; --ink-soft:#5a6474; --line:#d5cfc2;
@@ -146,7 +156,7 @@
   .act-head .step .dotn{width:22px; height:22px; border-radius:7px; background:var(--accent);
     color:#fff; display:grid; place-items:center; font-size:11px; letter-spacing:0}
   .act-head h2{font-family:var(--disp); font-weight:700; font-size:clamp(24px,4vw,36px);
-    letter-spacing:-.02em; margin:0 0 10px; text-wrap:balance}
+    letter-spacing:-.02em; line-height:1.15; margin:0 0 10px; text-wrap:balance}
   .act-head p{margin:0; color:var(--ink-soft); font-size:15.5px}
   .act{--accent:var(--evolve); --accent-soft:var(--evolve-soft)}
   .act.h{--accent:var(--harvest); --accent-soft:var(--harvest-soft)}
@@ -316,8 +326,8 @@
   .meter{padding:20px; background:var(--panel); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow)}
   .meter h4{font-family:var(--disp); margin:0 0 3px; font-size:16px}
   .meter .cap{font-size:12.5px; color:var(--ink-soft); margin:0 0 18px}
-  .brow{display:grid; grid-template-columns:132px 1fr 92px; align-items:center; gap:12px; margin:12px 0}
-  @media (max-width:560px){ .brow{grid-template-columns:96px 1fr 74px; gap:8px} }
+  .brow{display:grid; grid-template-columns:150px 1fr 92px; align-items:center; gap:12px; margin:12px 0}
+  @media (max-width:560px){ .brow{grid-template-columns:104px 1fr 74px; gap:8px} }
   .brow .name{font-family:var(--mono); font-size:12px}
   .brow .name .sub{display:block; color:var(--ink-soft); font-size:10.5px}
   .stack{display:grid; gap:5px}
@@ -366,6 +376,19 @@
   footer.end .backlink:hover{transform:translateY(-1px)}
   footer.end code{font-family:var(--mono); color:var(--ink)}
 
+  .chip{text-decoration:none}
+  code{font-family:var(--mono); font-size:.92em}
+  .fam .alone{margin-top:9px; font-family:var(--mono); font-size:11px; color:var(--ink-soft)}
+  .tbl td small{display:block; font-family:var(--mono); font-size:11px; color:var(--ink-soft); margin-top:2px}
+  .tbl td.none{color:var(--ink-soft)}
+  .tbl tr.sum td{font-family:var(--mono); font-size:12px}
+  .tbl tr.dev td, .tbl th.dev{color:var(--ink-soft)}
+  .funnelnote{margin:10px 0 0; text-align:center; font-size:12.5px; color:var(--ink-soft)}
+  .quote code{font-size:.9em}
+  footer.end a{color:var(--evolve); text-decoration:none}
+  footer.end a:hover{text-decoration:underline}
+  footer.end .backlink{color:var(--ink)}
+
   @media (prefers-reduced-motion: reduce){
     html{scroll-behavior:auto}
     .dashflow{animation:none; stroke-dasharray:none}
@@ -382,80 +405,86 @@
 <div class="wrap">
 
   <header class="top">
+    <nav class="pages" aria-label="Cortex visual guides">
+      <a href="index.html">how it works</a>
+      <a href="timeline.html">why tasks rewind</a>
+      <a href="lab.html" aria-current="page">does it work?</a>
+    </nav>
     <p class="kicker">Cortex · the lab</p>
     <h1>Does it actually work<span class="q">?</span></h1>
-    <div style="text-align:center"><span class="runbadge">run D0 · the development run · one run, n = 1</span></div>
+    <div style="text-align:center"><span class="runbadge">4 independent runs + 1 control · Cortex frozen at v1.0-eval · Claude Haiku 4.5</span></div>
     <p class="lede">
-      Cortex claims it can learn your house rules from your corrections, and keep only the
-      skills that measurably help. So we ran it for real — a working repository, real Claude
-      sessions, ten rounds — and then gave it an <b>exam it had never seen</b>.
+      Cortex claims it can learn a codebase's house rules from your corrections, and keep only
+      what measurably helps. So it was run for real: a working repository, real Claude Code
+      sessions, the documented commands. Then it sat an <b>exam it had never seen</b>.
     </p>
 
     <div class="headline">
-      <p class="big"><span class="from">36%</span> &nbsp;→&nbsp; <span class="to">76%</span></p>
-      <p class="cap">Tasks solved on <b>held-out work</b> — scenarios never shown to Cortex during learning —
-      without the evolved skills, and with them. Three small files did that, at <b>zero</b> always-on context cost.</p>
+      <p class="big"><span class="from">22%</span> &nbsp;→&nbsp; <span class="to">77%</span></p>
+      <p class="cap">Tasks solved on <b>held-out work</b> (scenarios never shown to Cortex while it learned),
+      without what Cortex evolved and with it: <b>+55.0 points</b>, 95% CI +34.1 to +74.1, pooled over the four
+      task families that have a house rule. The control family, which has none, moved by <b>−0.8</b>.</p>
     </div>
 
     <div class="scoreboard">
-      <div class="sc"><div class="v">10</div><div class="k">rounds</div></div>
-      <div class="sc"><div class="v">26</div><div class="k">sessions</div></div>
-      <div class="sc"><div class="v">1,230</div><div class="k">rollouts</div></div>
-      <div class="sc"><div class="v">10</div><div class="k">candidates</div></div>
-      <div class="sc"><div class="v">3</div><div class="k">kept</div></div>
-      <div class="sc"><div class="v">$155</div><div class="k">total cost</div></div>
+      <div class="sc"><div class="v">4</div><div class="k">evaluation runs</div></div>
+      <div class="sc"><div class="v">56</div><div class="k">scenarios, 30 held out</div></div>
+      <div class="sc"><div class="v">6,462</div><div class="k">rollouts recorded</div></div>
+      <div class="sc"><div class="v">18</div><div class="k">items kept</div></div>
+      <div class="sc"><div class="v">9</div><div class="k">candidates buried</div></div>
+      <div class="sc"><div class="v">$1,196</div><div class="k">programme cost</div></div>
     </div>
 
     <div class="provenance">
-      <b>What these numbers are, and are not.</b> This page reports <b>D0</b>, a single
-      development run. Cortex itself was fixed 39 times while it ran, so the system under
-      test moved; one run cannot separate “Cortex works” from “this run went well”; and the
-      exam, though never shown to Cortex, was written by the same people who built the
-      repository. The replicate runs, the control runs, the ablations and the gate
-      calibration that answer those objections are specified in
-      <code>lab/BRIEF.md</code> and have not been run yet.
+      <b>What these numbers are.</b> The evaluation ran Cortex from scratch <b>four times</b>
+      (R1 to R4) on a frozen version, plus one control run with the same sessions and
+      <code>/evolve</code> switched off. Every headline number is Claude Haiku 4.5, with the
+      optional judge (Jev) <b>off</b>. The intervals are bootstraps over runs and tasks, not
+      over single rollouts.
       <br><br>
-      <b>D0 also predates the judge.</b> Cortex has since gained an optional calibrated
-      model in its <b>proposal</b> layer — which theme recurs, which tier fits, how much of
-      the task suite a candidate is actually about. It is off by default, it took no part in
-      anything on this page, and it is barred from the decision: <code>cortex score</code>,
-      the six gates, <code>check.sh</code> and preflight contain no reference to it, and a
-      test in Cortex's own suite asserts that. Every verdict below was reached exactly the
-      way it would be reached today with the judge switched off.
+      <b>What the worked examples are.</b> Steps 2 to 7 follow real files from an earlier
+      <b>development run, D0</b>. Cortex was still being fixed while D0 ran, so its numbers
+      are shown beside the evaluation and never pooled with it.
     </div>
 
     <div class="scrollcue">the whole pipeline, step by step<span class="a">↓</span></div>
   </header>
 
-  <nav class="rail-nav" id="railnav">
+  <nav class="rail-nav" id="railnav" aria-label="Steps on this page">
     <div class="chips">
-      <a class="chip" data-target="a1"><span class="num">1</span> the bench</a>
-      <a class="chip" data-target="a2"><span class="num">2</span> a session</a>
-      <a class="chip" data-target="a3"><span class="num">3</span> the task</a>
-      <a class="chip" data-target="a4"><span class="num">4</span> the candidate</a>
-      <a class="chip" data-target="a5"><span class="num">5</span> the measurement</a>
-      <a class="chip" data-target="a6"><span class="num">6</span> the gates</a>
-      <a class="chip" data-target="a7"><span class="num">7</span> two twins</a>
-      <a class="chip" data-target="a8"><span class="num">8</span> the exam</a>
+      <a class="chip" href="#a1" data-target="a1"><span class="num">1</span> the bench</a>
+      <a class="chip" href="#a2" data-target="a2"><span class="num">2</span> a session</a>
+      <a class="chip" href="#a3" data-target="a3"><span class="num">3</span> the task</a>
+      <a class="chip" href="#a4" data-target="a4"><span class="num">4</span> the candidate</a>
+      <a class="chip" href="#a5" data-target="a5"><span class="num">5</span> the measurement</a>
+      <a class="chip" href="#a6" data-target="a6"><span class="num">6</span> the gates</a>
+      <a class="chip" href="#a7" data-target="a7"><span class="num">7</span> two twins</a>
+      <a class="chip" href="#a8" data-target="a8"><span class="num">8</span> the ledger</a>
+      <a class="chip" href="#a9" data-target="a9"><span class="num">9</span> the exam</a>
+      <a class="chip" href="#a10" data-target="a10"><span class="num">10</span> rule or skill</a>
+      <a class="chip" href="#a11" data-target="a11"><span class="num">11</span> limits</a>
     </div>
   </nav>
 
-  <!-- ============ ACT 1 — THE BENCH ============ -->
+  <!-- ============ 1 · THE BENCH ============ -->
   <section class="act h" id="a1">
     <div class="act-head will-reveal">
       <span class="step"><span class="dotn">1</span> the bench</span>
       <h2>A repository with rules a model cannot guess</h2>
       <p>To measure whether a skill helps, you need work where being <i>right</i> and being <i>house-style</i>
-      are two different things — and a machine that can tell them apart.</p>
+      are two different things, and a machine that can tell them apart.</p>
     </div>
 
     <div class="card will-reveal">
-      <h3>shopkit — a small invoicing toolkit</h3>
+      <h3>shopkit, a small invoicing toolkit</h3>
       <p>70 unit tests, no dependencies, eight commits by two fictional teammates. Its house rules are
-      written in <code>CONTRIBUTING.md</code> — a careful agent <b>can</b> find them — and enforced by
-      <code>make lint</code>. Nothing in the repo ever reveals the answers.</p>
+      written in <code>CONTRIBUTING.md</code>, so a careful agent <b>can</b> find them, and they are enforced
+      by <code>make lint</code>. Nothing in the repository reveals the answers. Left alone, Claude opened
+      that file in 0.5% of 595 exam rollouts: the rules can be discovered, and they are not.</p>
       <p><b>The linter is the judge.</b> Not a human, not Claude. Every number on this page comes from a
-      script returning pass or fail, which is what makes them facts rather than opinions.</p>
+      script returning pass or fail.</p>
+      <p>The work comes as <b>56 scenarios</b> in five families: 26 for learning and 30 held out for the
+      exam, six per family. Each card shows how often Claude passes that family's exam with no help.</p>
     </div>
 
     <div class="fams will-reveal">
@@ -464,49 +493,54 @@
         <div class="what">Changelog</div>
         <div class="ruleline">Every user-visible change gets a <code>CHANGELOG.md</code> line.</div>
         <div class="mistake">builds it, forgets the entry</div>
+        <div class="alone">alone: 0% pass</div>
       </div>
       <div class="fam" style="--fc:var(--harvest)">
         <div class="letter">B</div>
         <div class="what">Money</div>
         <div class="ruleline">Integer cents via the billing helpers. Never <code>float</code>, <code>round()</code>, <code>Decimal</code>.</div>
         <div class="mistake">fixes rounding with float()</div>
+        <div class="alone">alone: 26% pass</div>
       </div>
       <div class="fam" style="--fc:var(--prune)">
         <div class="letter">C</div>
         <div class="what">Exporters</div>
-        <div class="ruleline">A new plugin needs a registry entry, a docs row <i>and</i> a golden file.</div>
+        <div class="ruleline">A new exporter needs a registry entry, a docs row <i>and</i> a golden file.</div>
         <div class="mistake">writes the plugin, stops</div>
+        <div class="alone">alone: 2% pass</div>
       </div>
       <div class="fam ctrl" style="--fc:var(--amber)">
         <div class="letter">D</div>
         <div class="what">Control</div>
-        <div class="ruleline">No house rule at all. Just plain bugs that need plain fixes.</div>
+        <div class="ruleline">No house rule at all. Plain bugs that need plain fixes.</div>
         <div class="ctrltag">◆ the deliberate trap</div>
+        <div class="alone">alone: 100% pass</div>
       </div>
       <div class="fam" style="--fc:var(--kill)">
         <div class="letter">E</div>
         <div class="what">Time</div>
         <div class="ruleline">Read the clock only through <code>shop.clock</code>.</div>
         <div class="mistake">calls date.today()</div>
+        <div class="alone">alone: 55% pass</div>
       </div>
     </div>
 
     <div class="callout will-reveal">
       <span class="tag">why family D exists</span>
-      <p>D is a trap for Cortex itself. There is no rule to learn, so the correct behaviour is to
+      <p>D is a trap for Cortex itself. There is no rule to learn, so the right behaviour is to
       <b>produce nothing</b>. A system that invents skills to look busy would create one here.
-      Across ten rounds, Cortex proposed <b>zero</b> candidates for D — and D scored 100% in both arms
-      of the final exam.</p>
+      Across the four evaluation runs Cortex kept <b>zero</b> items for D. It proposed one once (a rule
+      about a text utility, in R3) and the gates killed it: it won no run and lost four.</p>
     </div>
   </section>
 
-  <!-- ============ ACT 2 — ONE SESSION ============ -->
+  <!-- ============ 2 · ONE SESSION ============ -->
   <section class="act h" id="a2">
     <div class="act-head will-reveal">
       <span class="step"><span class="dotn">2</span> a session</span>
       <h2>Everything starts with you correcting Claude</h2>
-      <p>Not with a prompt, a config or a framework. Here is one real session from round 1, exactly
-      as it happened.</p>
+      <p>Not with a prompt, a config or a framework. Here is the first session of the development
+      run, as its records show it.</p>
     </div>
 
     <div class="card will-reveal">
@@ -514,123 +548,131 @@
         <li data-n="1">
           <span class="who">a teammate</span>
           <h4>A failing test arrives</h4>
-          <p>QA commits a test: tax on a fractional rate like 8.25% comes out wrong. The bug is real —
-          the old code throws away everything after the decimal point.</p>
-          <div class="pane"><div class="ph"><span class="dot3"><i></i><i></i><i></i></span> shop/billing/tax.py <span style="margin-left:auto">the bug</span></div><pre><span class="c">def tax_for(amount, rate):</span>
-    whole = <span class="del">int(rate.split(".")[0])</span>   <span class="c"># 8.25 → 8</span>
+          <p>QA commits a test: tax at a fractional rate like 8.25% comes out wrong. The bug is real:
+          the code throws away everything after the decimal point.</p>
+          <div class="pane"><div class="ph"><span class="dot3"><i></i><i></i><i></i></span> shop/billing/tax.py <span style="margin-left:auto">the bug</span></div><pre><span class="c">def tax_for(amount: Money, rate: str) -> Money:</span>
+    whole = <span class="del">int(rate.split(".")[0])</span>   <span class="c"># "8.25" becomes 8</span>
     return Money(amount.cents * whole // 100)</pre></div>
         </li>
 
         <li data-n="2">
           <span class="who">you</span>
           <h4>You ask Claude to fix it</h4>
-          <p>An ordinary request, in an ordinary chat. No mention of house rules — you would not think
-          to mention them, and that is the point.</p>
+          <div class="quote"><span class="lbl">your request</span>
+          “CI has been red since QA added tests/test_tax_rates.py: tax_for() gives the wrong tax for
+          fractional rates like 8.25%, and it doesn't round the way the tests expect. Can you fix it?”</div>
+          <p>An ordinary request. No mention of house rules: you would not think to mention them,
+          and that is the point.</p>
         </li>
 
         <li data-n="3">
           <span class="who">Claude · Haiku 4.5</span>
-          <h4>It fixes the bug — and breaks the house style</h4>
-          <p>The arithmetic is now <b>correct</b>. Every test passes. And it is still wrong for this
-          codebase, because money here is integer cents and <code>Decimal</code> is banned.</p>
-          <div class="pane bad"><div class="ph"><span class="dot3"><i></i><i></i><i></i></span> the first attempt <span style="margin-left:auto" class="del">house rule broken</span></div><pre><span class="add">+ from decimal import Decimal</span>
-<span class="add">+ cents = int(Decimal(amount.cents) * Decimal(rate) / 100)</span></pre></div>
+          <h4>It fixes the bug and breaks the house style</h4>
+          <p>The arithmetic is now <b>correct</b> and the new test passes. It is still wrong for this
+          codebase: the fix reaches for <code>Decimal</code>, and money here is integer cents.</p>
         </li>
 
         <li data-n="4">
           <span class="who">CI</span>
           <h4>The linter catches it</h4>
-          <div class="pane"><div class="ph"><span class="dot3"><i></i><i></i><i></i></span> make lint</div><pre>tests ........................ <span class="add">ok</span>
-lint: <span class="del">shop/billing/tax.py — Decimal is not allowed in billing/</span>
-<span class="warn">CI is red</span></pre></div>
+          <div class="pane bad"><div class="ph"><span class="dot3"><i></i><i></i><i></i></span> make lint <span style="margin-left:auto">message shortened</span></div><pre><span class="c">$ make lint</span>
+<span class="del">shop/billing/tax.py: money: Decimal()</span>
+<span class="del">  amounts are integer cents; use the helpers in shop/billing/rates.py</span>
+<span class="warn">CI is red, although the new test passes</span></pre></div>
         </li>
 
         <li data-n="5">
           <span class="who">you</span>
-          <h4>You correct it — <b>this is the only teaching signal in the system</b></h4>
-          <div class="quote"><span class="lbl">your reply</span>
-          “The test passes now, but CI is still red: <code>make lint</code> rejects that arithmetic in
-          <code>shop/billing/</code>. Use the helpers in <code>rates.py</code>.”</div>
-          <p>Claude fixes it properly. Session over — the kind of exchange you have every day and forget
-          by Friday.</p>
+          <h4>You correct it. This is the only teaching signal in the system</h4>
+          <div class="quote"><span class="lbl">your reply, shortened</span>
+          “The test passes now, but CI is still red: <code>make lint</code> rejects float arithmetic in
+          <code>shop/billing/</code>. […] Please redo it with the helpers in <code>shop/billing/rates.py</code>.”</div>
+          <p>Claude redoes it with the house helper. Session over: the kind of exchange you have
+          every day and forget by Friday.</p>
           <div class="pane good"><div class="ph"><span class="dot3"><i></i><i></i><i></i></span> the corrected fix <span style="margin-left:auto" class="add">house style</span></div><pre><span class="add">+ from .rates import percent_of</span>
-<span class="add">+ return percent_of(amount, rate)</span></pre></div>
+<span class="add">+     return percent_of(amount, rate)</span></pre></div>
         </li>
       </ol>
 
       <div class="callout">
         <span class="tag">the raw material</span>
-        <p>Cortex never invents a rule. It only ever amplifies <b>a correction you actually made</b>.
-        Of the 26 sessions in this lab, 17 contained one — and those 17 are the entire input to
-        everything that follows.</p>
+        <p>Cortex never invents a rule. It only amplifies <b>a correction you actually made</b>.
+        In the development run, 16 of the 26 sessions contained one (17 corrections in all), and
+        those are the entire input to everything that follows.</p>
       </div>
     </div>
   </section>
 
-  <!-- ============ ACT 3 — THE TASK ============ -->
+  <!-- ============ 3 · THE TASK ============ -->
   <section class="act h" id="a3">
     <div class="act-head will-reveal">
       <span class="step"><span class="dotn">3</span> <code>/harvest</code> · the task</span>
       <h2>Freeze that moment into something replayable</h2>
       <p>A session is a story, and you cannot measure a story. <code>/harvest</code> turns it into a
-      <b>task</b>: a checkpoint you can drop any agent back into, forever.</p>
+      <b>task</b>: a checkpoint you can drop any agent back into, as often as you like.</p>
     </div>
 
     <div class="tree will-reveal">
-      <div class="root">.evolve/tasks/<b>01</b>/ &nbsp;<span style="color:var(--ink-soft)">— the real one, from the session above</span></div>
-      <div class="trow"><div class="fn">task.yaml</div><div class="fd"><b>base_sha: 2b5173a</b> — the commit <i>before</i> Claude touched anything. Rewind here and the bug is alive again.</div></div>
+      <div class="root">.evolve/tasks/<b>01</b>/ &nbsp;<span style="color:var(--ink-soft)">the real one, from the session above</span></div>
+      <div class="trow"><div class="fn">task.yaml</div><div class="fd"><b>base_sha: 2b5173a</b>, the commit <i>before</i> Claude touched anything. Rewind here and the bug is alive again.</div></div>
       <div class="trow"><div class="fn">prompt.txt</div><div class="fd">What you asked, word for word. Replayed identically every time, so runs are comparable.</div></div>
-      <div class="trow"><div class="fn">check.sh</div><div class="fd">The judge: <b>the new test</b> + <b>the whole suite</b> (no regressions) + <b><code>make lint</code></b> (the house rule). Returns pass or fail, nothing else.</div></div>
-      <div class="trow"><div class="fn">fix.patch</div><div class="fd">The reference fix — proof the task is solvable at all.</div></div>
-      <div class="trow"><div class="fn">notes.md</div><div class="fd">What went wrong, and which skills cover that area.</div></div>
+      <div class="trow"><div class="fn">check.sh</div><div class="fd">The judge. It runs <b>the test that was failing</b> and <b>the project's own linter</b> for the rule you had to correct. Exit 0 means solved, and it says nothing else.</div></div>
+      <div class="trow"><div class="fn">fix.patch</div><div class="fd">The reference fix: proof the task can be solved at all.</div></div>
+      <div class="trow"><div class="fn">notes.md</div><div class="fd">One line on what was actually wrong, and the area it belongs to.</div></div>
     </div>
 
     <div class="callout will-reveal">
       <span class="tag">the detail that makes it work</span>
-      <p><code>check.sh</code> runs <b>both</b> the tests and the linter. A check that ran only the tests
-      would have passed the <code>Decimal</code> version too — and would be blind to the exact thing we are
-      trying to teach. The correction is what turns a test into a <i>house-rule</i> test.</p>
+      <p><code>check.sh</code> tests <b>the correction too</b>. A check that ran only the unit test would
+      have passed the <code>Decimal</code> version, and would be blind to the exact thing we are trying to
+      teach. The correction is what turns a test into a <i>house-rule</i> test.</p>
     </div>
 
     <div class="interlude will-reveal">
-      <span>Ten rounds produced <b>27 tasks</b> and <b>17 lessons</b>. Now there is a ruler.<span class="down">↓</span></span>
+      <span>The development run ended with <b>27 tasks</b> and <b>17 lessons</b>. Now there is a ruler.<span class="down">↓</span></span>
     </div>
   </section>
 
-  <!-- ============ ACT 4 — THE CANDIDATE ============ -->
+  <!-- ============ 4 · THE CANDIDATE ============ -->
   <section class="act" id="a4">
     <div class="act-head will-reveal">
       <span class="step"><span class="dotn">4</span> <code>/evolve</code> · the candidate</span>
-      <h2>Write one skill aimed at what keeps recurring</h2>
+      <h2>Write one item aimed at what keeps recurring</h2>
       <p>Cortex reads the lessons, finds something that happened <b>more than once</b>, and writes a
-      proposal. It is staged, not installed — nothing is live yet.</p>
+      proposal. It is staged, not installed: nothing is live yet.</p>
     </div>
 
     <div class="card will-reveal">
       <h3>Two billing corrections → one rule</h3>
-      <p>Round 1 produced two lessons about the same thing: money arithmetic in <code>shop/billing/</code>.
-      Cortex wrote a <b>rule</b> scoped to exactly those files — its name, its wording and its scope all
-      chosen by the model, unattended.</p>
-      <div class="pane"><div class="ph"><span class="dot3"><i></i><i></i><i></i></span> candidate · .claude/rules/use-billing-helpers.md</div><pre><span class="fm">---</span>
-<span class="key">name:</span> use-billing-helpers
-<span class="key">paths:</span> ["shop/billing/**"]
+      <p>Round 1 left two lessons about the same thing: money arithmetic in <code>shop/billing/</code>.
+      Cortex wrote a <b>rule</b> scoped to exactly those files. Its name, its wording and its scope were
+      all chosen by the model, unattended. This is the file, word for word:</p>
+      <div class="pane"><div class="ph"><span class="dot3"><i></i><i></i><i></i></span> .evolve/candidate/use-billing-helpers/RULE.md</div><pre><span class="fm">---</span>
+<span class="key">paths:</span>
+  - "shop/billing/**"
 <span class="fm">---</span>
-Never use float, round() or Decimal in shop/billing/.
-Scale money only with the helpers in billing/rates.py.</pre></div>
+
+# Billing arithmetic
+
+- NEVER parse string rates or percentages with
+  `int(rate.split(".")[0])` or similar patterns that
+  truncate decimals. Use `percent_of(amount, rate)` for
+  percentage calculations and `times(amount, rate)` for
+  currency conversions from the `.rates` module instead.</pre></div>
       <div class="callout">
         <span class="tag">staged, not live</span>
         <p>This file sits in a holding area. Nothing has been proved yet, and Cortex is not allowed to
-        install it on the strength of it sounding reasonable — which, notably, it does.</p>
+        install it because it sounds reasonable, which it does.</p>
       </div>
     </div>
   </section>
 
-  <!-- ============ ACT 5 — THE MEASUREMENT ============ -->
+  <!-- ============ 5 · THE MEASUREMENT ============ -->
   <section class="act" id="a5">
     <div class="act-head will-reveal">
       <span class="step"><span class="dotn">5</span> the measurement</span>
       <h2>The same jobs, twice: with it and without it</h2>
-      <p>This is the heart of Cortex, and it is the oldest idea in science — a controlled comparison,
+      <p>This is the heart of Cortex, and it is the oldest idea in science: a controlled comparison,
       where exactly one thing differs between the two worlds.</p>
     </div>
 
@@ -638,8 +680,8 @@ Scale money only with the helpers in billing/rates.py.</pre></div>
       <h3>First, what a <i>rollout</i> is</h3>
       <p>One rollout = <b>one complete headless Claude session</b>, alone in a throwaway clone of the
       repository, rewound to a task's broken commit, handed that task's prompt, with no human present.
-      When it stops, <code>check.sh</code> scores it <b>1</b> or <b>0</b>. Then the clone is deleted.</p>
-      <p>Your working copy is never touched. This lab ran <b>1,230</b> of them.</p>
+      When it stops, <code>check.sh</code> scores it <b>1</b> or <b>0</b>.</p>
+      <p>Your working copy is never touched. The lab's records hold <b>6,462</b> of them.</p>
     </div>
 
     <figure class="fig will-reveal">
@@ -672,25 +714,25 @@ Scale money only with the helpers in billing/rates.py.</pre></div>
         <text x="380" y="258" text-anchor="middle" class="mono t-acc" font-size="12">difference = the candidate</text>
       </svg>
       </div>
-      <figcaption>Only <b>one file</b> differs between the two sides. So any change in the score can only have
-      been caused by it — never by luck, a different prompt, or a different day.</figcaption>
+      <figcaption>Only <b>one file</b> differs between the two sides. So a change in the score comes from that
+      file or from run-to-run luck, never from a different prompt or a different day.</figcaption>
     </figure>
 
     <div class="card will-reveal">
       <h3>Why every task is run three times</h3>
       <p>Claude is not deterministic: the same prompt can pass once and fail the next time. So each task
-      is run <b>k times per arm</b> and the score is an average — 0, 0.33, 0.67 or 1.0. One run proves
-      nothing; three runs tell you whether an effect is real or a coin flip.</p>
+      is run <b>several times per arm</b> and its score is the share that passed: 0, 0.33, 0.67 or 1.
+      One run proves nothing. Three runs begin to separate an effect from a coin flip.</p>
     </div>
 
     <div class="funnel will-reveal" style="margin-top:18px">
       <div class="fstep">
         <div class="ftitle">1 · the screen</div>
         <div class="fsub">a cheap first filter</div>
-        <div class="price"><span class="tagp">~12 rollouts</span><span class="tagp">~$1</span><span class="tagp">~1 min</span></div>
+        <div class="price"><span class="tagp">12 rollouts</span><span class="tagp">about $1</span><span class="tagp">about a minute</span></div>
         <ul>
-          <li>only the tasks that are <b>currently failing</b></li>
-          <li>k = 2</li>
+          <li>only the tasks the candidate was <b>written for</b></li>
+          <li>2 runs per task, per arm</li>
           <li>may say <b>“worth confirming”</b> or <b>“dead”</b></li>
           <li>may <b>never</b> approve anything</li>
         </ul>
@@ -699,77 +741,84 @@ Scale money only with the helpers in billing/rates.py.</pre></div>
       <div class="fstep big">
         <div class="ftitle">2 · the confirm</div>
         <div class="fsub">the verdict that counts</div>
-        <div class="price"><span class="tagp hot">138 rollouts</span><span class="tagp hot">~$9.50</span><span class="tagp hot">~10 min</span></div>
+        <div class="price"><span class="tagp hot">138 rollouts</span><span class="tagp hot">about $15</span><span class="tagp hot">about 10 min</span></div>
         <ul>
-          <li><b>every</b> task in the suite, not just the broken ones</li>
-          <li>k = 3</li>
+          <li><b>every</b> task in the suite</li>
+          <li>3 runs per task, per arm</li>
           <li>this is where damage elsewhere shows up</li>
-          <li>says <b>KEEP</b> or <b>KILL</b></li>
+          <li>says <b>KEEP</b>, <b>KILL</b> or <b>RECHECK</b></li>
         </ul>
       </div>
     </div>
+    <p class="funnelnote will-reveal">Typical sizes late in the development run: a screen on 3 target tasks, a confirm on 23 tasks, 12 rollouts at a time.</p>
 
     <div class="callout will-reveal">
       <span class="tag">why two stages</span>
-      <p>A screen only looks at broken tasks, so it cannot see what a skill <i>breaks</i> — which is why it
-      is allowed to kill but never to approve. It is also optimistic: in round 3 the screen measured a gain
-      of <b>1.5</b> and the confirm measured <b>0.67</b>. The screen throws away losers for a dollar; the
-      confirm decides.</p>
+      <p>A screen looks only at the tasks the candidate targets, so it cannot see what the candidate
+      <i>breaks</i>. That is why it may kill but never approve. It is also optimistic: for one candidate
+      the screen measured a gain of <b>1.5</b> and the confirm <b>0.67</b>. The screen throws away losers
+      for a dollar; the confirm decides.</p>
     </div>
   </section>
 
-  <!-- ============ ACT 6 — THE GATES ============ -->
+  <!-- ============ 6 · THE GATES ============ -->
   <section class="act k" id="a6">
     <div class="act-head will-reveal">
       <span class="step"><span class="dotn">6</span> the gates</span>
       <h2>Five questions. One “no” and it is buried.</h2>
-      <p>The confirm produces numbers; the gates turn numbers into a verdict. Every gate below actually
-      fired in this lab — the red box names the candidate it killed.</p>
+      <p>The confirm produces numbers; the gates turn numbers into a verdict. <code>cortex score</code>
+      applies them, and it contains no model of any kind. Each red box names a real candidate that
+      gate stopped, and the run it came from.</p>
     </div>
 
     <div class="gates will-reveal">
       <div class="gate">
         <div class="gn">1</div>
-        <div><div class="gq">Did it help at all?</div><div class="gd">At least one task has to get better. “It feels cleaner” is not a result.</div></div>
-        <div class="victim">enforce-shop-clock<br>gain 0 — helped nothing</div>
+        <div><div class="gq">Did it help at all?</div><div class="gd">At least one task has to pass more often. “It feels cleaner” is not a result.</div></div>
+        <div class="victim">enforce-shop-clock · D0<br>gain 0: it helped nothing</div>
       </div>
       <div class="gate">
         <div class="gn">2</div>
-        <div><div class="gq">Did any single task get much worse?</div><div class="gd">A drop bigger than the tolerance kills it, even if the average improved.</div></div>
-        <div class="victim">changelog-rule-v2<br>one task −0.5</div>
+        <div><div class="gq">Did any single task get much worse?</div><div class="gd">A drop of more than one run in three on any task kills it, even if the total improved.</div></div>
+        <div class="victim">text-utilities-correctness · R3<br>one task lost two of its three runs</div>
       </div>
       <div class="gate">
         <div class="gn">3</div>
-        <div><div class="gq">Did it break work it has nothing to do with?</div><div class="gd">The <b>protected set</b>: everything that already passed must keep passing. This is the gate that does the real work.</div></div>
-        <div class="victim">clock-in-billing<br>broke 10 unrelated tasks</div>
+        <div><div class="gq">Did it break work that already passed?</div><div class="gd">The <b>protected set</b>: every task that passed every run without it must still pass every run. This is the gate that does the real work.</div></div>
+        <div class="victim">shop-clock-access · R3<br>net +8 runs, but a task that always passed lost one, twice</div>
       </div>
       <div class="gate">
         <div class="gn">4</div>
-        <div><div class="gq">Is the gain bigger than noise?</div><div class="gd">A win of one lucky run is not a win. The net has to clear a floor.</div></div>
-        <div class="victim">the floor: net ≥ 2 runs</div>
+        <div><div class="gq">Is the gain bigger than noise?</div><div class="gd">A win of one lucky run is not a win. The net has to reach two runs.</div></div>
+        <div class="victim">exporter-checklist (a skill) · R3<br>net gain of 1 run, under the floor of 2</div>
       </div>
       <div class="gate">
         <div class="gn">5</div>
-        <div><div class="gq">Did the model even use it?</div><div class="gd">A candidate that sat in context and was never opened cannot have caused the difference — so the difference was noise.</div></div>
-        <div class="victim">changelog-updates<br>in context 10× · used 0×</div>
+        <div><div class="gq">Did the model even load it?</div><div class="gd">A candidate that was never loaded cannot have caused the difference, so the difference was noise.</div></div>
+        <div class="victim">changelog-updates · D0<br>offered in 10 rollouts, opened in 0</div>
       </div>
     </div>
 
     <div class="callout rerun will-reveal">
-      <span class="tag">and a sixth answer</span>
-      <p>Sometimes the right verdict is <b>neither</b>: <code>RERUN</code> — “the measurement itself was
-      broken, decide nothing.” It fires when, for instance, no target task could possibly have passed.
-      It is the safety valve that stops a tooling failure from being recorded as “this idea is bad”.</p>
+      <span class="tag">and two more answers</span>
+      <p><b>RECHECK.</b> At three runs per task, one unlucky run on a task that always passed looks
+      exactly like a broken task. So when the only failure is a per-task drop, those tasks are measured
+      again before anything is buried. In R1 a clock rule lost one run on a protected task, the re-run
+      did not repeat it, and the rule was <b>kept</b>. In R3 the same thing happened to another clock
+      rule, the drop repeated, and it was <b>killed</b>.</p>
+      <p style="margin-top:10px"><b>RERUN.</b> “The measurement itself was not trustworthy, so decide nothing”: a sweep
+      that was cut short, too many rollouts lost to infrastructure, or no task in the sweep that could
+      have shown a gain. It stops a tooling failure from being recorded as “this idea is bad”.</p>
     </div>
   </section>
 
-  <!-- ============ ACT 7 — THE TWINS ============ -->
+  <!-- ============ 7 · THE TWINS ============ -->
   <section class="act" id="a7">
     <div class="act-head will-reveal">
       <span class="step"><span class="dotn">7</span> two twins</span>
-      <h2>The best argument for measuring anything</h2>
-      <p>These two files came out of the same lab, for the same house rule, with the same name and the
-      same scope. One is dead. One is live today. <b>Read them and try to tell which is which.</b></p>
+      <h2>You cannot tell by reading</h2>
+      <p>These two files came out of the development run, for the same house rule, with the same name
+      and the same scope. One is buried. One was kept. <b>Read them and try to tell which is which.</b></p>
     </div>
 
     <div class="duel will-reveal">
@@ -777,268 +826,372 @@ Scale money only with the helpers in billing/rates.py.</pre></div>
         <div class="fh"><span>✗ buried</span><span class="where">.evolve/graveyard/</span></div>
         <pre><span class="fm">---</span>
 <span class="fm">name:</span> check-changelog-on-shop-edits
-<span class="hl">description: When editing shop code,
-  verify CHANGELOG.md is updated for
-  user-visible changes</span>
-<span class="fm">paths:</span> ["shop/**"]
+<span class="hl">description: When editing shop code, verify
+  CHANGELOG.md is updated for user-visible
+  changes</span>
+<span class="fm">paths:</span>
+  - "shop/**"
 <span class="fm">---</span>
 
-When you modify files in the shop
-directory, verify that the change is
-user-visible. If it introduces a new
-feature or a user-facing change:
+When you modify files in the shop directory,
+verify that the change is user-visible. If it
+introduces a new feature, bug fix, or
+user-facing behavior change:
 
-1. Check whether CHANGELOG.md has been
-   updated under [Unreleased]
-2. If not, add a brief entry
-3. Put it in the same commit</pre>
-        <div class="fv">In context in <b>6 of 6</b> rollouts. Chosen by the model <span class="n">0</span> times.</div>
+1. Check whether CHANGELOG.md has been updated
+   under `[Unreleased]`
+2. If the change is user-visible but
+   CHANGELOG.md has not been updated, update it
+   by adding a brief entry under `[Unreleased]`
+3. Add the CHANGELOG.md update in the same
+   commit as the feature implementation</pre>
+        <div class="fv">On its screen it was offered in <b>6 of 6</b> rollouts and opened in <span class="n">0</span>. No task improved.</div>
       </div>
 
       <div class="fileC alive">
-        <div class="fh"><span>✓ live</span><span class="where">.claude/skills/</span></div>
+        <div class="fh"><span>✓ kept</span><span class="where">.claude/skills/</span></div>
         <pre><span class="fm">---</span>
 <span class="fm">name:</span> check-changelog-on-shop-edits
-<span class="hl">description: Before finishing changes
-  to shop/ code, verify CHANGELOG.md
-  was updated</span>
-<span class="fm">paths:</span> ["shop/**"]
+<span class="hl">description: Before finishing changes to shop/
+  code, verify CHANGELOG.md was updated</span>
+<span class="fm">paths:</span>
+  - "shop/**"
 <span class="fm">---</span>
 
 1. After modifying shop/ code, check if
    CHANGELOG.md needs an entry.
-2. If you added a user-visible feature or
-   fix, ensure CHANGELOG.md has an
+2. If you added a user-visible feature or fix
+   to shop/ code, ensure CHANGELOG.md has an
    [Unreleased] entry describing it.
-3. If [Unreleased] is missing, add it at
-   the top of the file.
-4. Do not skip it for refactoring users
-   would notice.</pre>
-        <div class="fv">Same scope, same instructions. Worth <span class="n">+67</span> points on its family.</div>
+3. If the [Unreleased] section is missing, add
+   it at the top of the file above the latest
+   version header.
+4. Do not skip CHANGELOG updates even for
+   internal refactoring — if users would notice
+   the change, it needs documenting.</pre>
+        <div class="fv">Kept. On D0's own exam its family went from 0% to <span class="n">67%</span>.</div>
       </div>
     </div>
 
-    <p class="sameline will-reveal">Same name. Same <code>paths</code>. Near-identical bodies. The only meaningful
-    difference is the highlighted line — the <b>description</b>, the one part the model reads before deciding
-    whether to open the file at all.</p>
+    <p class="sameline will-reveal">Same name. Same <code>paths</code>. Similar instructions. Reading them, nobody could
+    say which one helps. The sweep could: with the first, nothing changed; with the second, the
+    changelog tasks started passing.</p>
 
     <div class="punch will-reveal">
-      <p class="p1">“When editing shop code…” describes a condition.<br>“Before finishing changes…” describes a <span style="color:var(--evolve)">moment</span>.</p>
-      <p class="p2">A condition is something the model can always argue it is not currently in. A moment is
-      something it notices arriving. That is the entire difference between a dead skill and a live one —
-      and <b>no amount of reading either file would have told you</b>. Six rollouts and a counter did.</p>
+      <p class="p1">Whether a skill helps is not visible in its text.<br>It is visible in a <span style="color:var(--evolve)">measurement</span>.</p>
+      <p class="p2">Two reasonable drafts, one verdict each, and the verdicts differ. That is the whole case
+      for measuring instead of reviewing.</p>
+    </div>
+
+    <div class="callout will-reveal">
+      <span class="tag">why did the second one work?</span>
+      <p>The development run's guess was the <b>description</b>, the one line Claude always sees. Even the
+      kept version was opened in only 7 of the 123 exam rollouts where it was offered, yet its family
+      improved. The evaluation tested that idea directly, by replacing skill bodies with filler, and the
+      answer was <b>inconclusive</b>. What did repeat: in all four evaluation runs the loop ended up
+      encoding this duty as a <b>rule</b>, not as a skill.</p>
     </div>
 
     <div class="callout will-reveal">
       <span class="tag">why the dead one is kept</span>
       <p>The graveyard is not a bin of old drafts. Nothing in it loads, and it costs nothing. It exists so
-      that: the same experiment is never run twice; a retry must take a <b>new name</b>, keeping the record
-      unambiguous; a sweep can <b>refuse</b> to re-test a buried idea unmeasured; and after a model upgrade
-      you can ask the question again — with the old score to compare against.</p>
+      that the same experiment is not run twice, and so that after a model upgrade you can ask the
+      question again with the old result to compare against. Today the sweep also refuses a candidate
+      whose name is already buried, so a retry takes a new name: these two would now be a v1 and a v2.</p>
     </div>
   </section>
 
-  <!-- ============ ACT 8 — KEEP / BURY ============ -->
-  <section class="act p">
+  <!-- ============ 8 · THE LEDGER ============ -->
+  <section class="act p" id="a8">
     <div class="act-head will-reveal">
       <span class="step"><span class="dotn">8</span> the ledger</span>
-      <h2>Ten candidates. Three survived.</h2>
-      <p>Seven burials is not a failure rate. It is the product — the seven are why the three can be trusted.</p>
+      <h2>Four runs, started from nothing</h2>
+      <p>Each evaluation run began with an empty harness and worked through the same sessions.
+      Each one learned all four house rules, and none kept anything for the control family.</p>
     </div>
 
-    <div class="split will-reveal">
-      <div class="bucket live">
-        <h4>✓ Live</h4>
-        <div class="cnt">3 items · 0 always-on characters</div>
-        <div class="item"><span class="tier">rule</span><span><span class="nm">use-billing-helpers</span><br><span class="rs">shop/billing/** — worth +89 points</span></span></div>
-        <div class="item"><span class="tier">gated skill</span><span><span class="nm">check-changelog-on-shop-edits</span><br><span class="rs">shop/** — worth +67 points</span></span></div>
-        <div class="item"><span class="tier">gated skill</span><span><span class="nm">complete-exporter-setup</span><br><span class="rs">shop/plugins/** — worth +44 points</span></span></div>
+    <div class="card will-reveal">
+      <h3>What each run kept, house rule by house rule</h3>
+      <div class="tblwrap">
+      <table class="tbl">
+        <thead><tr><th>House rule</th><th>R1</th><th>R2</th><th>R3</th><th>R4</th><th class="dev">D0 (development)</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">A changelog</td>
+            <td>rule<small>shop/**</small></td><td>rule<small>shop/**</small></td>
+            <td>2 rules<small>shop/** and 3 named files</small></td><td>rule<small>shop/**</small></td>
+            <td class="none">gated skill<small>shop/**</small></td></tr>
+          <tr><td class="nm">B money</td>
+            <td>rule<small>shop/billing/**</small></td><td>rule<small>shop/billing/**</small></td>
+            <td>2 rules<small>5 named files</small></td><td>rule<small>shop/billing/**</small></td>
+            <td class="none">rule<small>shop/billing/**</small></td></tr>
+          <tr><td class="nm">C exporters</td>
+            <td>gated skill<small>shop/plugins/**</small></td><td>rule<small>shop/plugins/**</small></td>
+            <td>rule<small>shop/plugins/*_export.py</small></td><td>gated skill<small>shop/plugins/**</small></td>
+            <td class="none">gated skill<small>shop/plugins/**</small></td></tr>
+          <tr><td class="nm">E time</td>
+            <td>rule<small>shop/**</small></td><td>rule<small>shop/**</small></td>
+            <td>rule<small>3 named files</small></td><td>rule<small>shop/**</small></td>
+            <td class="none">nothing kept</td></tr>
+          <tr><td class="nm">D control</td>
+            <td class="none">nothing</td><td class="none">nothing</td><td class="none">nothing</td><td class="none">nothing</td>
+            <td class="none">nothing</td></tr>
+          <tr class="sum"><td class="nm">cycles · kept · buried</td>
+            <td>9 · 4 · 0</td><td>9 · 4 · 1</td><td>11 · 6 · 4</td><td>10 · 4 · 4</td>
+            <td class="none">17 · 3 · 7</td></tr>
+        </tbody>
+      </table>
       </div>
-      <div class="bucket dead">
-        <h4>✗ Buried</h4>
-        <div class="cnt">7 items · inert, with the reason attached</div>
-        <div class="item"><span class="nm">check-changelog…v1</span><span class="rs">in context 6×, used 0×</span></div>
-        <div class="item"><span class="nm">changelog-updates</span><span class="rs">always-on version — used 0 of 10</span></div>
-        <div class="item"><span class="nm">changelog-rule-v2</span><span class="rs">gained +2, cost −0.5 on one task</span></div>
-        <div class="item"><span class="nm">enforce-shop-clock</span><span class="rs">gain 0</span></div>
-        <div class="item"><span class="nm">enforce-shop-clock-v2</span><span class="rs">fixed its task, broke an exporter</span></div>
-        <div class="item"><span class="nm">clock-in-billing</span><span class="rs">broke 10 tasks on re-test</span></div>
-        <div class="item"><span class="nm">shop-clock-usage</span><span class="rs">biggest gain of the lab — still killed</span></div>
-      </div>
+      <p style="margin-top:14px">Across the four runs: 39 cycles, <b>18 items kept</b>, 9 candidates buried.
+      In <b>14</b> of those cycles Cortex found nothing recurring and proposed nothing, which costs no
+      rollout. A cycle that changes nothing is a correct outcome.</p>
+      <p>The runs agree on <b>what</b> to learn and less on <b>how wide</b> to make it. Three runs chose broad
+      globs; R3 named individual files, and its narrow money rules then loaded in none of its 30 exam
+      rollouts on money. The gates judge a scope only on the tasks already harvested: they cannot see
+      that it is too narrow for work they have not met.</p>
     </div>
 
     <div class="callout will-reveal">
       <span class="tag">the hardest one to swallow</span>
-      <p><code>shop-clock-usage</code> scored the <b>largest gain in the entire lab</b> (+4.33) and was
-      buried anyway, because it dropped one unrelated task from 100% to 67%. Five different attempts were
-      made at that one house rule; all five helped where they were aimed and hurt somewhere else. So the
-      clock family shipped <b>nothing</b> — and scores +0 in the exam below. That is the system being
-      honest rather than flattering.</p>
+      <p>In the development run, <code>shop-clock-usage</code> scored the <b>largest gain of that run</b> (+4.33)
+      and was buried anyway, because one unrelated task that always passed dropped from 100% to 67%,
+      and the drop repeated when it was measured again. That run made four attempts at the clock rule
+      and kept none. Each evaluation run did land one, which is why a single run is never the whole
+      story.</p>
     </div>
   </section>
 
-  <!-- ============ ACT 9 — THE EXAM ============ -->
-  <section class="act" id="a8">
+  <!-- ============ 9 · THE EXAM ============ -->
+  <section class="act" id="a9">
     <div class="act-head will-reveal">
       <span class="step"><span class="dotn">9</span> the exam</span>
       <h2>Work it had never seen</h2>
-      <p>Everything so far is training — Cortex optimised against those tasks. So the final test uses
-      <b>nine fresh scenarios per family</b>, written before the lab started and never shown to
-      <code>/harvest</code> or <code>/evolve</code>. Both arms, three runs each, 246 rollouts.</p>
+      <p>Everything so far is training: Cortex optimised against those tasks. The exam uses
+      <b>30 fresh scenarios</b>, six per family, never shown to <code>/harvest</code> or <code>/evolve</code>.
+      Each was run five times without the evolved items and five times with them, in each of the
+      four runs.</p>
     </div>
 
     <div class="meter will-reveal">
-      <h4>Solve rate on held-out work</h4>
-      <p class="cap">Grey = without the evolved skills. Blue = with them. 9 rollouts per family per arm.</p>
+      <h4>Pass rate on held-out work</h4>
+      <p class="cap">Grey: the bare repository. Blue: with what that run evolved. Pooled over the four evaluation runs; the line under each name is the 95% interval of the gain.</p>
 
       <div class="brow">
-        <div class="name">A changelog<span class="sub">3 tasks</span></div>
+        <div class="name">A changelog<span class="sub">+91.0 to +100.0</span></div>
         <div class="stack">
           <div class="track2"><div class="fill2 base" style="--w:0%"></div></div>
-          <div class="track2"><div class="fill2 cand" style="--w:67%"></div></div>
+          <div class="track2"><div class="fill2 cand" style="--w:97%"></div></div>
         </div>
-        <div class="pct"><span class="z">0%</span> → 67%<br><span class="g">+67</span></div>
+        <div class="pct"><span class="z">0%</span> → 97%<br><span class="g">+97.0</span></div>
       </div>
-
       <div class="brow">
-        <div class="name">B money<span class="sub">3 tasks</span></div>
+        <div class="name">B money<span class="sub">+17.5 to +88.3</span></div>
         <div class="stack">
-          <div class="track2"><div class="fill2 base" style="--w:11%"></div></div>
-          <div class="track2"><div class="fill2 cand" style="--w:100%"></div></div>
+          <div class="track2"><div class="fill2 base" style="--w:26%"></div></div>
+          <div class="track2"><div class="fill2 cand" style="--w:79%"></div></div>
         </div>
-        <div class="pct"><span class="z">11%</span> → 100%<br><span class="g">+89</span></div>
+        <div class="pct"><span class="z">26%</span> → 79%<br><span class="g">+53.3</span></div>
       </div>
-
       <div class="brow">
-        <div class="name">C exporters<span class="sub">3 tasks</span></div>
+        <div class="name">C exporters<span class="sub">+25.0 to +73.3</span></div>
         <div class="stack">
-          <div class="track2"><div class="fill2 base" style="--w:0%"></div></div>
-          <div class="track2"><div class="fill2 cand" style="--w:44%"></div></div>
+          <div class="track2"><div class="fill2 base" style="--w:2%"></div></div>
+          <div class="track2"><div class="fill2 cand" style="--w:52%"></div></div>
         </div>
-        <div class="pct"><span class="z">0%</span> → 44%<br><span class="g">+44</span></div>
+        <div class="pct"><span class="z">2%</span> → 52%<br><span class="g">+50.0</span></div>
       </div>
-
       <div class="brow">
-        <div class="name">D control<span class="sub">no house rule</span></div>
+        <div class="name">E time<span class="sub">+1.7 to +60.0</span></div>
+        <div class="stack">
+          <div class="track2"><div class="fill2 base" style="--w:55%"></div></div>
+          <div class="track2"><div class="fill2 cand" style="--w:82%"></div></div>
+        </div>
+        <div class="pct"><span class="z">55%</span> → 82%<br><span class="g">+26.7</span></div>
+      </div>
+      <div class="brow">
+        <div class="name">D control<span class="sub">−5.0 to 0.0</span></div>
         <div class="stack">
           <div class="track2"><div class="fill2 base" style="--w:100%"></div></div>
-          <div class="track2"><div class="fill2 cand" style="--w:100%"></div></div>
+          <div class="track2"><div class="fill2 cand" style="--w:99%"></div></div>
         </div>
-        <div class="pct"><span class="z">100%</span> → 100%<br><span class="z">+0</span></div>
+        <div class="pct"><span class="z">100%</span> → 99%<br><span class="z">−0.8</span></div>
       </div>
-
       <div class="brow">
-        <div class="name">E time<span class="sub">nothing shipped</span></div>
+        <div class="name"><b>A+B+C+E</b><span class="sub">+34.1 to +74.1</span></div>
         <div class="stack">
-          <div class="track2"><div class="fill2 base" style="--w:67%"></div></div>
-          <div class="track2"><div class="fill2 cand" style="--w:67%"></div></div>
+          <div class="track2"><div class="fill2 base" style="--w:22%"></div></div>
+          <div class="track2"><div class="fill2 cand" style="--w:77%"></div></div>
         </div>
-        <div class="pct"><span class="z">67%</span> → 67%<br><span class="z">+0</span></div>
+        <div class="pct"><span class="z">22%</span> → 77%<br><span class="g">+55.0</span></div>
       </div>
 
       <div class="legend">
-        <span><i style="background:var(--ink-soft)"></i>without skills</span>
-        <span><i style="background:var(--evolve)"></i>with the evolved skills</span>
+        <span><i style="background:var(--ink-soft)"></i>without the evolved items</span>
+        <span><i style="background:var(--evolve)"></i>with them</span>
       </div>
     </div>
 
     <div class="callout will-reveal">
-      <span class="tag">read the flat rows too</span>
-      <p><b>D is flat because it must be</b> — a control family with no house rule, untouched and unharmed.
-      <b>E is flat because nothing shipped</b> — five candidates, five burials, so there is nothing to
-      gain from. Both zeros are the system behaving correctly, and a benchmark where every row went up
-      would be the suspicious one.</p>
+      <span class="tag">read the small rows too</span>
+      <p><b>D is flat because it must be</b>: a control family with no house rule, left alone.
+      <b>E gains least, with the widest interval</b>: without help Claude already passes 55% of the
+      clock tasks, so there is less room. A benchmark where every row jumped would be the suspicious one.</p>
+    </div>
+
+    <div class="card will-reveal" style="margin-top:18px">
+      <h3>Is the difference real?</h3>
+      <p><b>The noise floor.</b> The same bare repository was built twice and measured as if one copy
+      were a treatment. The two differ by −3.3 points (interval −7.3 to 0.0). The gains above are far
+      outside that.</p>
+      <p><b>The development run agrees.</b> Its three items, measured again on the same 30 scenarios,
+      gain +42.5 points on the rule families. On its own smaller exam of 15 scenarios, D0 had shown
+      36% → 76% over all five families.</p>
     </div>
   </section>
 
-  <!-- ============ ACT 10 — THE TIER LAW ============ -->
-  <section class="act a">
+  <!-- ============ 10 · RULE OR SKILL ============ -->
+  <section class="act a" id="a10">
     <div class="act-head will-reveal">
       <span class="step"><span class="dotn">10</span> the finding</span>
-      <h2>Getting into the room beats being well written</h2>
+      <h2>A rule is loaded. A skill has to be chosen.</h2>
       <p>Every rollout records what was <i>available</i> to the model and what it <i>actually used</i>.
-      Across 123 rollouts of the exam, that gap turned out to be the whole story.</p>
+      That gap explains most of what the loop kept.</p>
     </div>
 
     <div class="card will-reveal">
       <div class="tblwrap">
       <table class="tbl">
-        <thead><tr><th>Item</th><th></th><th class="r">In context</th><th class="r">Actually used</th></tr></thead>
+        <thead><tr><th>Item</th><th>Run</th><th></th><th class="r">Offered</th><th class="r">Used</th></tr></thead>
         <tbody>
-          <tr class="good"><td class="nm">use-billing-helpers</td><td><span class="tier">rule</span></td><td class="r">52</td><td class="r"><b>52 / 52</b></td></tr>
-          <tr class="good"><td class="nm">complete-exporter-setup</td><td><span class="tier">gated skill</span></td><td class="r">27</td><td class="r"><b>20 / 27</b></td></tr>
-          <tr class="bad"><td class="nm">check-changelog-on-shop-edits</td><td><span class="tier">gated skill</span></td><td class="r">123</td><td class="r"><b>7 / 123</b></td></tr>
+          <tr class="good"><td class="nm">the 16 kept rules</td><td>R1 to R4</td><td><span class="tier">rule</span></td><td class="r">whenever a matching file was read</td><td class="r"><b>every time</b></td></tr>
+          <tr class="good"><td class="nm">exporter-checklist</td><td>R1</td><td><span class="tier">gated skill</span></td><td class="r">48</td><td class="r"><b>48 / 48</b></td></tr>
+          <tr class="good"><td class="nm">exporter-checklist</td><td>R4</td><td><span class="tier">gated skill</span></td><td class="r">48</td><td class="r"><b>40 / 48</b></td></tr>
+          <tr class="good"><td class="nm">complete-exporter-setup</td><td>D0</td><td><span class="tier">gated skill</span></td><td class="r">27</td><td class="r"><b>20 / 27</b></td></tr>
+          <tr class="bad"><td class="nm">check-changelog-on-shop-edits</td><td>D0</td><td><span class="tier">gated skill</span></td><td class="r">123</td><td class="r"><b>7 / 123</b></td></tr>
         </tbody>
       </table>
       </div>
-      <p style="margin-top:14px">A <b>rule</b> does not have to be noticed — when the agent opens a matching
-      file it is simply there, and it worked <b>every single time</b>. A <b>skill</b> has to be chosen, and it
-      gets chosen when its description names <b>the task at hand</b> (“when implementing a new exporter”:
-      20 of 27) and ignored when it names <b>a side duty</b> (“verify the CHANGELOG was updated”:
-      7 of 123, and 0 of 10 as an always-on skill).</p>
+      <p style="margin-top:14px">Counts are exam rollouts with the evolved items installed. A <b>rule</b> does not have
+      to be noticed: when the agent reads a matching file it is simply there. A <b>skill</b> has to be
+      chosen. It gets chosen when its description names <b>the task at hand</b> (“when implementing a new
+      exporter”) and mostly ignored when it names <b>a side duty</b> (“verify the CHANGELOG was updated”).</p>
+      <p>So across the four evaluation runs the loop kept <b>16 rules and 2 skills</b>. It is not expressing
+      a taste. A candidate that never loads is stopped by gate 5, so the same advice survives as a rule
+      and dies as a skill.</p>
       <div class="callout">
-        <span class="tag">the uncomfortable part</span>
-        <p>The changelog skill was opened 7 times in 123 rollouts and still moved its family by 67 points.
-        Its <b>description alone</b>, sitting in context, appears to be doing the work its body was written
-        to do. Nobody designed that. The measurement found it anyway — which is rather the point of
-        measuring.</p>
+        <span class="tag">what to take from it</span>
+        <p>A side duty tied to an area (a changelog line, a docs row, a house helper to use) belongs in a
+        <b>rule</b> on that area. A procedure for the task itself can be a <b>skill</b>, with a description
+        that names the task.</p>
       </div>
     </div>
   </section>
 
-  <!-- ============ ACT 11 — LIMITS ============ -->
-  <section class="act">
+  <!-- ============ 11 · LIMITS ============ -->
+  <section class="act" id="a11">
     <div class="act-head will-reveal">
       <span class="step"><span class="dotn">11</span> honesty</span>
-      <h2>What this proves, and what it does not</h2>
+      <h2>What this shows, and what it does not</h2>
     </div>
 
     <div class="twocol will-reveal">
       <div class="col yes">
         <h4>✓ What the lab shows</h4>
         <ul>
-          <li>On <b>unseen work</b>, the evolved harness raised the solve rate from <b>36% to 76%</b>.</li>
-          <li>It added <b>nothing</b> to the family that needed nothing, and broke nothing there.</li>
-          <li>It <b>refused</b> seven of its own ten ideas, including the highest-scoring one.</li>
-          <li>Tier beats wording: rules fire every time, skills only when their description names the job.</li>
-          <li>The whole loop cost <b>$155</b> and ran unattended.</li>
+          <li>On <b>unseen work</b>, what Cortex evolved raised the pass rate on the four rule families from <b>22% to 77%</b>, in four independent runs.</li>
+          <li>The control family was <b>left alone</b>: −0.8 points, and no item was kept for it.</li>
+          <li>Every run learned <b>all four</b> house rules, mostly as path-scoped rules that cost nothing until their area is touched.</li>
+          <li>It <b>refused</b> its own ideas when they failed: 9 candidates buried, and 14 cycles that proposed nothing.</li>
+          <li>None of 20 planted placebos and none of 5 planted harmful items was kept.</li>
+          <li><code>/prune</code> never deleted an item that had not fired.</li>
+          <li>The whole programme cost <b>$1,196</b>, plus $155 for the development run. On Haiku 4.5 a rollout cost about $0.125.</li>
         </ul>
       </div>
       <div class="col no">
         <h4>△ What it does not show</h4>
         <ul>
-          <li><b>One model, one repository, one experimenter.</b> Every number is conditional on all three.</li>
-          <li>Nine scenarios per family is a <b>small exam</b>. The confidence intervals are wide; the +44 is the weakest.</li>
-          <li>The house rules here are <b>machine-checkable</b>. Rules that need judgement were never tested.</li>
-          <li>The sessions were driven by a script that plays a user faithfully but never gets confused.</li>
-          <li>Family E ended with <b>nothing</b>. A user with that problem would finish ten rounds empty-handed.</li>
-          <li><b>n = 1.</b> One run, on a Cortex that was fixed 39 times while it ran. Replicates, controls and ablations are specified but unrun.</li>
+          <li><b>One synthetic repository, four lintable rules.</b> A machine can check them. Rules that need judgement were not tested at all.</li>
+          <li><b>The gain belongs to a weak model.</b> See the card below.</li>
+          <li><b>The gates were not shown to be calibrated.</b> The agent opened none of the 20 placebos, so only gate 5 was exercised, and of 4 known-good items the gates kept 2.</li>
+          <li><b><code>/prune</code> matched 6 of 8</b> planted expectations.</li>
+          <li><b>On a real repository nobody here built</b> (structlog), Claude was rarely corrected, nothing recurred, and the loop <b>kept nothing</b>. That shows when the loop has work to do, not whether what it learns transfers.</li>
+          <li><b>Scripted corrections.</b> The lab's user never gets confused or changes their mind.</li>
+          <li><b>No check before a sweep predicted its verdict.</b> Neither how many tasks a glob reaches nor a judge's relevance score separated what was kept from what was buried.</li>
+          <li><b>A sandbox is a git clone</b>, so a rollout could in principle read a later fix from history. Measured: 2 of 1,809 loop rollouts did.</li>
         </ul>
       </div>
     </div>
 
-    <div class="provenance" style="margin-top:28px">
-      <b>The most expensive thing on this page is family E.</b> Four attempts at one house
-      rule — read the time through <code>shop.clock</code> — cost <b>694 rollouts and
-      $77.70</b> and landed nothing. Each was killed for the same reason: it helped its own
-      family and broke something else, because a rule scoped to <code>shop/**</code> is
-      injected into every task in that tree, including the great majority that have nothing
-      to do with time.
-      <br><br>
-      That failure is visible <i>before</i> a sweep is paid for, and it is what
-      <code>cortex scope</code> was built to report. The obvious free version does not work:
-      over these ten candidates, what a glob <i>reaches</i> overlaps between the items that
-      were kept (19%, 50%, 96%) and the items that were buried for breaking things
-      (12%, 12%, 46%, 58%, 96%). What separates them is the share of injections that are
-      actually <i>about</i> the candidate — and that is the one quantity here that needs a
-      model. Whether a model can compute it is an open question, scored against this run's
-      own verdicts by <code>lab/bin/scope-replay</code>, and it is not answered yet.
+    <div class="meter will-reveal" style="margin-top:18px">
+      <h4>The same harness under a stronger model</h4>
+      <p class="cap">R1's four items, measured again on the exam under <code>claude-sonnet-5</code>. Grey: the bare repository. Blue: with the items.</p>
+
+      <div class="brow">
+        <div class="name">A changelog<span class="sub"></span></div>
+        <div class="stack">
+          <div class="track2"><div class="fill2 base" style="--w:94%"></div></div>
+          <div class="track2"><div class="fill2 cand" style="--w:100%"></div></div>
+        </div>
+        <div class="pct"><span class="z">94%</span> → 100%<br><span class="g">+6</span></div>
+      </div>
+      <div class="brow">
+        <div class="name">B money<span class="sub"></span></div>
+        <div class="stack">
+          <div class="track2"><div class="fill2 base" style="--w:100%"></div></div>
+          <div class="track2"><div class="fill2 cand" style="--w:100%"></div></div>
+        </div>
+        <div class="pct"><span class="z">100%</span> → 100%<br><span class="z">+0</span></div>
+      </div>
+      <div class="brow">
+        <div class="name">C exporters<span class="sub"></span></div>
+        <div class="stack">
+          <div class="track2"><div class="fill2 base" style="--w:78%"></div></div>
+          <div class="track2"><div class="fill2 cand" style="--w:89%"></div></div>
+        </div>
+        <div class="pct"><span class="z">78%</span> → 89%<br><span class="g">+11</span></div>
+      </div>
+      <div class="brow">
+        <div class="name">E time<span class="sub"></span></div>
+        <div class="stack">
+          <div class="track2"><div class="fill2 base" style="--w:83%"></div></div>
+          <div class="track2"><div class="fill2 cand" style="--w:89%"></div></div>
+        </div>
+        <div class="pct"><span class="z">83%</span> → 89%<br><span class="g">+6</span></div>
+      </div>
+      <div class="brow">
+        <div class="name">D control<span class="sub"></span></div>
+        <div class="stack">
+          <div class="track2"><div class="fill2 base" style="--w:100%"></div></div>
+          <div class="track2"><div class="fill2 cand" style="--w:100%"></div></div>
+        </div>
+        <div class="pct"><span class="z">100%</span> → 100%<br><span class="z">+0</span></div>
+      </div>
+      <div class="brow">
+        <div class="name"><b>A+B+C+E</b><span class="sub">−2.8 to +13.9</span></div>
+        <div class="stack">
+          <div class="track2"><div class="fill2 base" style="--w:89%"></div></div>
+          <div class="track2"><div class="fill2 cand" style="--w:94%"></div></div>
+        </div>
+        <div class="pct"><span class="z">89%</span> → 94%<br><span class="g">+5.6</span></div>
+      </div>
+
+      <p class="cap" style="margin:16px 0 0">Without any harness the stronger model already passes 89% of the rule-family tasks, so there
+      is little left to gain: <b>+5.6 points</b>, where the same harness gained <b>+66.7</b> under Haiku. One
+      <code>/prune</code> pass after the upgrade found 2 of the 4 items removable. Read that with care: a single
+      pass at three runs per task cannot tell a small effect from none.</p>
+    </div>
+
+    <div class="callout will-reveal">
+      <span class="tag">where to run it</span>
+      <p>The loop is worth most where the model is weakest, and it should be asked again after every
+      model upgrade. That is what <code>/prune</code> is for.</p>
     </div>
   </section>
 
   <footer class="end">
-    <p>The full write-up, with every round, every burial and every cost: <code>lab/results/FINAL.md</code>.<br>
-    Raw numbers: <code>lab/results/round-NN.md</code> · <code>lab/bench/REPORT.md</code> · the journal in <code>.evolve/journal.md</code>.</p>
+    <p>One page: <a href="https://github.com/samugit83/cortex/blob/main/lab/reports/SUMMARY.md"><code>lab/reports/SUMMARY.md</code></a> &nbsp;·&nbsp;
+    every hypothesis and its verdict: <a href="https://github.com/samugit83/cortex/blob/main/lab/reports/REPORT.md"><code>lab/reports/REPORT.md</code></a><br>
+    Rebuild every number offline: <a href="https://github.com/samugit83/cortex/blob/main/lab/reports/REPRODUCE.md"><code>lab/reports/REPRODUCE.md</code></a> &nbsp;·&nbsp;
+    the development run: <a href="https://github.com/samugit83/cortex/blob/main/lab/results/FINAL.md"><code>lab/results/FINAL.md</code></a></p>
     <a class="backlink" href="index.html">← how Cortex works</a>
   </footer>
 
@@ -1068,7 +1221,7 @@ feature or a user-facing change:
     }
     addEventListener('scroll',onScroll,{passive:true}); onScroll();
 
-    /* reveal on scroll — fail-safe: visible unless JS arms the hide */
+    /* reveal on scroll, fail-safe: visible unless JS arms the hide */
     var reveals=[].slice.call(document.querySelectorAll('.will-reveal'));
     if(!reduce && ('IntersectionObserver' in window)){
       reveals.forEach(function(el){el.classList.add('armed');});
@@ -1089,9 +1242,9 @@ feature or a user-facing change:
     /* chip nav */
     var chips=[].slice.call(document.querySelectorAll('.chip'));
     chips.forEach(function(c){
-      c.addEventListener('click',function(){
+      c.addEventListener('click',function(ev){
         var el=document.getElementById(c.getAttribute('data-target'));
-        if(el) el.scrollIntoView({behavior:reduce?'auto':'smooth', block:'start'});
+        if(el){ ev.preventDefault(); el.scrollIntoView({behavior:reduce?'auto':'smooth', block:'start'}); }
       });
     });
     if('IntersectionObserver' in window){
@@ -1102,8 +1255,8 @@ feature or a user-facing change:
             chips.forEach(function(c){c.classList.toggle('active', c.getAttribute('data-target')===id);});
           }
         });
-      },{threshold:.35});
-      ['a1','a2','a3','a4','a5','a6','a7','a8'].forEach(function(id){
+      },{rootMargin:'-45% 0px -50% 0px', threshold:0});
+      ['a1','a2','a3','a4','a5','a6','a7','a8','a9','a10','a11'].forEach(function(id){
         var s=document.getElementById(id); if(s) so.observe(s);
       });
     }
