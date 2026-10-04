@@ -4,6 +4,12 @@
 
 <h3>Measure your Claude Code skills and rules.<br>Keep only the ones that help.</h3>
 
+<a href="https://samugit83.github.io/cortex/diagram/"><img src="https://img.shields.io/badge/%E2%96%B6%20%20Visual%20guide-See%20how%20Cortex%20works-f08a3c?style=for-the-badge&labelColor=0f1420" alt="Visual guide: see how Cortex works" height="42"></a>
+
+<b><a href="https://samugit83.github.io/cortex/diagram/">How it works</a></b> &nbsp;·&nbsp;
+<b><a href="https://samugit83.github.io/cortex/diagram/timeline.html">Why tasks rewind</a></b> &nbsp;·&nbsp;
+<b><a href="https://samugit83.github.io/cortex/diagram/lab.html">Does it work? The lab, step by step</a></b>
+
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![Claude Code](https://img.shields.io/badge/Claude%20Code-%E2%89%A5%202.1.276-d97757.svg)](#requirements) [![Cite](https://img.shields.io/badge/cite-CITATION.cff-555.svg)](CITATION.cff)
 
 </div>
