@@ -13,5 +13,5 @@ model would have installed on day one.
 | C | the four files a new exporter needs | gated skill on `shop/plugins/**` | an area it **creates in**, named by the task |
 | E | read the clock through `shop.clock` | always-on skill | repo-wide, and not tied to any one file |
 
-`swapped/` is the same four rules in the other form, and the pair is the test of
-whether the form matters at all (H11).
+`swapped/` is the same four rules in the other form, and the pair is a test of
+whether the form matters at all.

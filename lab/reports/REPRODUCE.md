@@ -33,7 +33,7 @@ if present, otherwise `python -m venv`), installs the five packages in
 `analysis/requirements.txt`, and writes:
 
 ```
-lab/reports/tables/    T1…T20, each as Markdown AND CSV from one list of rows
+lab/reports/tables/    T1…T19, each as Markdown AND CSV from one list of rows
 lab/reports/figures/   F1…F19, each as 300-dpi PNG and SVG
 lab/reports/data/scorecard.json    every hypothesis, its estimate, interval and verdict
 ```
@@ -44,12 +44,12 @@ iterating: `lab/reports/analysis/run.sh --only T4,F2`.
 
 **What you are checking.** Every number the report asserts comes from a script in
 `analysis/` reading a `.jsonl` file in `data/`. There are no hand-typed numbers in
-the report, and `T18` lists every claim beside the table or figure that carries it.
-If a claim in the report is not in `T18`, that is a defect in the report.
+the report, and `T17` lists every claim beside the table or figure that carries it.
+If a claim in the report is not in `T17`, that is a defect in the report.
 
 **The paper's numbers.** Every number, table and chart in the paper is computed from
 the same rows by four scripts beside the analysis. Run them in a clone of the release the
-paper cites, `v1.0.1` or later (`gen_numbers.py` also reads the tag `v1.0-eval`), in this
+paper cites, `v1.0.2` or later (`gen_numbers.py` also reads the tag `v1.0-eval`), in this
 order, with the environment `run.sh` made:
 
 ```bash
@@ -75,16 +75,15 @@ sources that state the same number, and stops if they disagree.
 | `items.jsonl` | one item a run produced, kept or buried, with its full text |
 | `runs.jsonl` | one run: its Cortex tag and commit, its model, whether a judge was on |
 | `gates.jsonl`, `prune.jsonl`, `scope.jsonl`, `external.jsonl` | the four testbeds |
-| `prune-model-change.jsonl` | `/prune`'s verdict on each item under the stronger model (H14) |
-| `scope-replay-<run>.jsonl` | the judge's prediction beside each candidate's fate (H16, H17) |
+| `prune-model-change.jsonl` | `/prune`'s verdict on each item under the stronger model (H13) |
+| `scope-replay-<run>.jsonl` | the judge's prediction beside each candidate's fate (H15, H16) |
 | `prune-sweeps.jsonl` | one rollout of a `/prune` removal sweep, both passes (the verdicts above rest on these) |
 | `external-training.json` | the second repository's training: its sessions with their verdicts and corrections, the tasks and lessons they left, and the `/evolve` cycles |
 | `transcripts.jsonl` | one rollout, with what it read through git that its harness did not give it (flags only), from Claude Code's own record of each session; `transcripts-coverage.json` says how many were matched, and names the one sweep whose record an agent deleted |
 | `spend.json` | the programme's measured spend per block — the only source of the cost totals |
-| `defects.json` | T16 |
 
 Paths in the rows are scrubbed (`<workspace>/…`); nothing in the analysis needs them —
-each run's §5.1 exclusions travel in its own `runs.jsonl` row. To point the analysis
+each run's scenario exclusions travel in its own `runs.jsonl` row. To point the analysis
 at another copy of the rows, set `CORTEX_REPORT_DATA=/path/to/data`.
 
 Every row carries `run`, so a reader can separate the development run from the
@@ -165,7 +164,7 @@ python3 lab/external/run-external.py export
 
 Its lint stage runs the ruff version the project pinned at each commit
 (`.pre-commit-config.yaml`), not the newest: today's ruff fails structlog's own
-upstream commits (DEVIATIONS D-11).
+upstream commits.
 
 ---
 
@@ -180,7 +179,7 @@ data rather than asserted:
 | **The agent is stochastic.** | The same task, the same harness, five times, does not give five identical answers. `F13a` is the per-task pass-rate spread in the `none` arm: read it before concluding that a difference is real. |
 | **Model versions move.** | Every number here is conditional on `claude-haiku-4-5-20251001`. `F16` shows what changed under a stronger model, which is the honest way to say how far that conditioning goes. |
 | **`/evolve` proposes, and proposals differ.** | Two runs of the same ten rounds do not propose the same candidate text, and sometimes not the same *form*. `F7` is the replicate matrix: which families each run learned, and in which form. |
-| **The judge is a service.** | If `JEV_ENABLED=1`, the proposal layer consults a model on someone else's server reached through a moving alias. Every primary number here was produced with it **off**, and `T20` proves which runs had it on. |
+| **The judge is a service.** | If `JEV_ENABLED=1`, the proposal layer consults a model on someone else's server reached through a moving alias. Every primary number here was produced with it **off**, and `T19` proves which runs had it on. |
 | **Cost and wall time depend on the machine.** | Twelve workers on twelve CPUs. Fewer CPUs is not slower per rollout; it is fewer rollouts at once. |
 
 The A/A arm (`none2`) is the calibration for all of this: it is the `none` harness
@@ -207,23 +206,22 @@ python3 jev/validate.py --corpus jev/corpus     # needs a key
 python3 jev/validate.py --dry-run               # the free baseline, no key, no network
 ```
 
-`jev/RESULTS.md` records the verdict and the model it was measured against. Read
-`DEVIATIONS.md` **D-07** before quoting it: the pass threshold was lowered from 90 %
-to 85 % after the first measurement returned 89.4 %, and both numbers are preserved.
+`jev/RESULTS.md` records the verdict and the model it was measured against. Before
+quoting it, note that the pass threshold was lowered from 90 % to 85 % after the first
+measurement returned 89.4 % (`PASS_AGREEMENT` in `jev/validate.py`).
 
 ## The commits this report cites
 
-The published history holds the commits up to the freeze, then one commit with the
-finished lab, report and data:
+The published history holds the commits up to the freeze, then the release commits
+with the finished lab, report and data:
 
 | Commit | What it is |
 |---|---|
-| `8014a11` | the instrument and `PREREGISTRATION.md`, committed before any evaluation rollout |
+| `8014a11` | the instrument, committed before any evaluation rollout |
 | `23bd5e4` | tag `v1.0-eval`: the frozen Cortex every run used (`runs.jsonl`, `manifest.json`) |
 | tag `v1.0-paper` | the finished lab, report and data (release 1.0.0) |
 | tag `v1.0.1` | the same, with the scripts and data that regenerate every number in the paper; `CHANGELOG.md` lists what changed |
+| tag `v1.0.2` | the release the paper cites: the report numbers its hypotheses H0 to H16 and its tables T1 to T19 |
 
-The other commits `DEVIATIONS.md` cites for timing (`a23bb26`, `57cc68a`, `a9b86f2`), and
-the `analysis_commit` in `manifest.json`, belong to the working history between the freeze
-and `v1.0-paper`, which is not published. Each deviation's **When:** line and the dated
-entries of `RUNLOG.md` give the same timing.
+The `analysis_commit` in `manifest.json` belongs to the working history between the freeze
+and `v1.0-paper`, which is not published.

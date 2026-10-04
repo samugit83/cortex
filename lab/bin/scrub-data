@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""scrub-data — strip personal paths from the shipped rows (brief §7.4).
+"""scrub-data — strip personal paths from the shipped rows.
 
   scrub-data [--check]      --check: report what would change, change nothing
 
 The rows under lab/reports/data/ record where each run lived on the machine that
 ran it: absolute paths under the operator's home directory. They are not needed to
-rebuild anything — the §5.1 exclusions travel inside each run's row — so they are
+rebuild anything — the scenario exclusions travel inside each run's row — so they are
 replaced by stable placeholders:
 
   <home>/Progetti didattici/   ->  <workspace>/
@@ -34,7 +34,7 @@ def scrub(text):
 
 
 def files():
-    """The shipped rows, and the report's own Markdown (DEVIATIONS, RESUME, …)."""
+    """The shipped rows, and the report's own Markdown."""
     return (sorted(DATA.glob("*.json*")) + sorted(DATA.glob("*.md"))
             + sorted(DATA.parent.glob("*.md")))
 

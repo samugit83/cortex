@@ -1,6 +1,6 @@
 # T2 · Scenario inventory
 
-A scenario is excluded from a run when, on that run's final code, its test does not fail or its reference fix does not apply and pass (PREREGISTRATION.md §5.1). Exclusion is identical in every arm.
+A scenario is excluded from a run when, on that run's final code, its test does not fail or its reference fix does not apply and pass. Exclusion is identical in every arm.
 
 | id | family | split | title | round | test | rule-breaking fix | excluded from |
 |---|---|---|---|---|---|---|---|

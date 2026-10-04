@@ -1,4 +1,4 @@
-# T19 · Predicting the verdict before paying for it
+# T18 · Predicting the verdict before paying for it
 
 Predictions are computed from each candidate's own text and its run's task suite, never from the verdict — which is what makes them predictions. `fate` is score.sh's verdict for the evaluation runs' candidates (kept, killed-regression, killed on another gate, or unscored: buried by the /evolve agent after a RERUN), and the journal's for the development run. The saving is never reported without the false-alarm count beside it.
 

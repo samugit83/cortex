@@ -307,7 +307,7 @@ def main():
         for s in sessions(folder):
             if m.group(1) == "structlog":
                 # a session opens with its task's request; /harvest and /evolve open with a
-                # command; the first attempt, before the restart, was discarded (DEVIATIONS D-11)
+                # command; the first attempt, before the restart, was discarded
                 if s["prompt"].lstrip().startswith("<command") or (s["start"] or "") < utc(split["at"]):
                     continue
                 training.append({"run": "X1", "source": "session", "split": "train", "start": s["start"],

@@ -378,7 +378,7 @@ def main():
         "sweep_rollouts": sum(1 for r in rolls if r["source"] == "sweep"),
         "bench_rollouts": sum(1 for r in rolls if r["source"] == "bench"),
         "arms": {k: v for k, v in arms.items() if k not in ("built", "repo")} if arms else None,
-        # the §5.1 exclusions travel IN the row: read from beside the repository, they
+        # the scenario exclusions travel IN the row: read from beside the repository, they
         # were lost the moment the shipped rows' absolute paths were scrubbed or the
         # data was read on a machine without cortex-eval/
         "excluded": read_json(repo.parent / "excluded.json", None),

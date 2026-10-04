@@ -1,6 +1,6 @@
 # T10 · The prune experiment: planted items and their verdicts
 
-6 of 8 matched the expectation fixed in PREREGISTRATION.md §8 before the testbed was built. `fired in its sweep` is measured: the base rollouts of the item's own removal sweep in which it fired (data/prune-sweeps.jsonl).
+6 of 8 matched the expected verdict, written for each item before the testbed was built. `fired in its sweep` is measured: the base rollouts of the item's own removal sweep in which it fired (data/prune-sweeps.jsonl).
 
 | run | item | planted role | expected | verdict | matches | fired in its sweep | chosen by | rollouts | what the planted role expected |
 |---|---|---|---|---|---|---|---|---|---|

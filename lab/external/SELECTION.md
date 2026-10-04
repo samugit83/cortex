@@ -1,10 +1,10 @@
 # Choosing the second repository
 
-`PREREGISTRATION.md` §10 fixes the rule. This file fixes the **search order**, and
-is committed **before any candidate is inspected**, so that "the first repository
+This file states the rule and fixes the **search order**. It was
+committed **before any candidate was inspected**, so that "the first repository
 meeting every criterion" is a fact about the order rather than about the result.
 
-## The rule (from the pre-registration, unchanged)
+## The rule
 
 1. Python.
 2. Permissively licensed: MIT, BSD or Apache-2.0.

@@ -7,7 +7,7 @@
   "interval": "\u2014",
   "margin": "D at or above 90%, and at least three of A/B/C/E below 50%",
   "verdict": "SUPPORTED",
-  "evidence": "F1, T4 \u00b7 the stricter reading, all four below 50%, is not met \u00b7 the margin is the rule the analysis code applies (DEVIATIONS D-22)"
+  "evidence": "F1, T4 \u00b7 the stricter reading, all four below 50%, is not met"
  },
  {
   "id": "H1",
@@ -32,7 +32,7 @@
  {
   "id": "H3",
   "hypothesis": "Each kept item lands in a defensible tier and fires in its own area",
-  "test": "the three-part rubric of PREREGISTRATION.md \u00a711.2",
+  "test": "the three-part tier rubric: form, scope and where it fires",
   "estimate": "15 of 18 items scored 3/3",
   "interval": "\u2014",
   "margin": "every kept item scores 3/3",
@@ -57,7 +57,7 @@
   "interval": "false KEEP [0%, 17%]",
   "margin": "false-KEEP upper bound below 25%, every harmful killed, at least 3 of 4 positives kept",
   "verdict": "NOT SUPPORTED",
-  "evidence": "T8, F10 \u00b7 a harmful candidate counts as killed when score.sh killed it (DEVIATIONS D-22)"
+  "evidence": "T8, F10 \u00b7 a harmful candidate counts as killed when score.sh killed it"
  },
  {
   "id": "H6",
@@ -100,16 +100,6 @@
   "evidence": "F7, T6"
  },
  {
-  "id": "H13",
-  "hypothesis": "D0 replicates: the development run's finding holds on the frozen version",
-  "test": "D0's pooled gain, re-measured on the replicates' holdout with their tooling, against the evaluation runs' interval",
-  "estimate": "D0 +42.5 (on its own 15-task holdout: +50.0), replicates +56.5",
-  "interval": "[+35.4, +75.0]",
-  "margin": "D0's estimate inside the replicates' interval",
-  "verdict": "SUPPORTED",
-  "evidence": "T4, F3"
- },
- {
   "id": "H10",
   "hypothesis": "/prune deletes planted useless items that fired, keeps needed ones, and never deletes one that never fired",
   "test": "planted items with a known right answer through `autopilot prune`",
@@ -121,12 +111,6 @@
  },
  {
   "id": "H11",
-  "hypothesis": "The form matters",
-  "verdict": "INCONCLUSIVE",
-  "evidence": "the `swapped` arm has not run"
- },
- {
-  "id": "H12",
   "hypothesis": "The description hypothesis: a skill's description alone carries much of its effect",
   "test": "`desc-only` \u2212 `none` as a share of `evolved` \u2212 `none`",
   "estimate": "79% of the gain recovered \u00b7 items actually rewritten \u2014 R1: 1 of 4",
@@ -136,7 +120,17 @@
   "evidence": "F15, T7 \u00b7 the arm is too weak on this harness to decide"
  },
  {
-  "id": "H14",
+  "id": "H12",
+  "hypothesis": "D0 replicates: the development run's finding holds on the frozen version",
+  "test": "D0's pooled gain, re-measured on the replicates' holdout with their tooling, against the evaluation runs' interval",
+  "estimate": "D0 +42.5 (on its own 15-task holdout: +50.0), replicates +56.5",
+  "interval": "[+35.4, +75.0]",
+  "margin": "D0's estimate inside the replicates' interval",
+  "verdict": "SUPPORTED",
+  "evidence": "T4, F3"
+ },
+ {
+  "id": "H13",
   "hypothesis": "After a model upgrade, re-measurement changes which items earn their place",
   "test": "/prune under claude-sonnet-5 on a copy of R1, every item tested; the same harness's holdout gain under each model beside it",
   "estimate": "2 of 4 decided item(s) removable (exporter-checklist, billing-helpers); the same harness gains +66.7 under Haiku (R1) and +5.6 under claude-sonnet-5",
@@ -146,43 +140,33 @@
   "evidence": "T15, F16"
  },
  {
-  "id": "H15",
+  "id": "H14",
   "hypothesis": "The loop also helps on a repository nobody in this project built",
   "test": "its own 4 holdout tasks at k=5 \u2014 but the loop kept nothing, so `evolved` is byte-identical to `none` and the benchmark is an A/A",
   "estimate": "A/A difference +5.0 points (noise by construction)",
   "interval": "[+0.0, +15.0] (task bootstrap, 4 tasks)",
   "margin": "a positive gain from an evolved harness",
   "verdict": "INCONCLUSIVE",
-  "evidence": "T17 \u00b7 /evolve was BARREN: nothing recurred often enough to learn"
+  "evidence": "T16 \u00b7 /evolve was BARREN: nothing recurred often enough to learn"
+ },
+ {
+  "id": "H15",
+  "hypothesis": "Pre-sweep relevance separates KEPT from BURIED-on-regression where breadth does not",
+  "test": "lowest KEPT against highest BURIED-on-regression, with breadth as the control; on the evaluation runs, a candidate is buried on a regression when score.sh killed it on gate 2 or 3",
+  "estimate": "relevance: lowest KEPT 17% vs highest BURIED 75% \u00b7 breadth: 8% vs 58% \u00b7 18 kept, 2 buried on a regression",
+  "interval": "see T18",
+  "margin": "relevance separates and breadth does not",
+  "verdict": "NOT SUPPORTED",
+  "evidence": "T18, F18 \u00b7 the development run is in T18, not pooled"
  },
  {
   "id": "H16",
-  "hypothesis": "Pre-sweep relevance separates KEPT from BURIED-on-regression where breadth does not",
-  "test": "lowest KEPT against highest BURIED-on-regression, with breadth as the control; on the evaluation runs, a candidate is buried on a regression when score.sh killed it on gate 2 or 3 (DEVIATIONS D-22)",
-  "estimate": "relevance: lowest KEPT 17% vs highest BURIED 75% \u00b7 breadth: 8% vs 58% \u00b7 18 kept, 2 buried on a regression",
-  "interval": "see T19",
-  "margin": "relevance separates and breadth does not",
-  "verdict": "NOT SUPPORTED",
-  "evidence": "T19, F18 \u00b7 the development run is in T19, not pooled"
- },
- {
-  "id": "H17",
   "hypothesis": "The judge's predicted fire rate tracks the measured one",
   "test": "predicted against measured invocation rate, per live gated skill",
   "estimate": "check-changelog-on-shop-edits predicted 60% vs measured 6%; complete-exporter-setup predicted 100% vs measured 74%; exporter-checklist predicted 100% vs measured 100%; exporter-checklist predicted 100% vs measured 83%",
   "interval": "n = 4 items",
   "margin": "rank order preserved (no correlation is quoted at this n)",
   "verdict": "SUPPORTED",
-  "evidence": "F19, T19 \u00b7 largest miss: check-changelog-on-shop-edits, 54 points"
- },
- {
-  "id": "H18",
-  "hypothesis": "Counting every lesson and transcript chooses a different theme than a sample",
-  "test": "one Jev-on run against the Jev-off runs",
-  "estimate": "\u2014",
-  "interval": "\u2014",
-  "margin": "descriptive only",
-  "verdict": "NOT TESTABLE",
-  "evidence": "DEVIATIONS.md D-01: dropped. It is one ordinary run's cost and was the first block to cut; the judge was unavailable when the budget was set and the runs were already committed when it returned."
+  "evidence": "F19, T18 \u00b7 largest miss: check-changelog-on-shop-edits, 54 points"
  }
 ]

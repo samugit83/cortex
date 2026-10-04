@@ -1,6 +1,6 @@
-# T20 · Judge provenance: which runs saw one
+# T19 · Judge provenance: which runs saw one
 
-Every run appears, including the ones that were off: "off" is the claim that has to be checkable. A run with a judge may never feed H1, H2 or H13.
+Every run appears, including the ones that were off: "off" is the claim that has to be checkable. A run with a judge may never feed H1, H2 or H12.
 
 | run | kind | jev | exact model id | endpoint | requests | answered | may feed a primary |
 |---|---|---|---|---|---|---|---|

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# model-change — the same harness under a stronger model (brief §4.8, H14).
+# model-change — the same harness under a stronger model (H13).
 #
 #   lab/bin/model-change pilot          10 rollouts, to measure what the model costs
 #   lab/bin/model-change bench [k]      the holdout, none vs evolved, stronger model
@@ -104,10 +104,10 @@ PY
       echo "model-change: the /prune pass did not finish — nothing is recorded" >&2
       exit 1
     fi
-    # H14's verdict IS this step (brief §4.8.3: "does an item the weaker model needed
+    # H13's verdict IS this step ("does an item the weaker model needed
     # become removable for the stronger one?"), so each item's verdict is recorded
     # from Cortex's own plan, in a file of its own: the Haiku prune experiment's
-    # rows carry pre-registered expectations that these do not have.
+    # rows carry expected verdicts that these do not have.
     python3 - "$OUT" "$SRC" "$CORTEX/lab/reports/data/prune-model-change.jsonl" <<'PY'
 import json, sys
 from pathlib import Path

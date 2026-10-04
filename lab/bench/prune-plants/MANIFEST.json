@@ -1,5 +1,5 @@
 {
- "what": "planted items for the /prune experiment (brief \u00a74.6)",
+ "what": "planted items for the /prune experiment",
  "how": "planted directly in the testbed's .claude/skills/ (a copy of R1's final repository), then `autopilot prune` runs the pass as a user would. prune.max_items is raised to cover every live item.",
  "plants": [
   {

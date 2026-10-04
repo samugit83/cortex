@@ -2,8 +2,8 @@
 
 D0 (`cortex-lab` and `lab/state/state.json`) is evidence, not a workspace: every
 number in the report's development-run column comes from it, and a single
-`lab build --force` or stray `autopilot` would destroy it silently. §3.1 of the
-brief therefore asks that the tools refuse to run against it at all.
+`lab build --force` or stray `autopilot` would destroy it silently. The tools
+therefore refuse to run against it at all.
 
 The protected paths are listed in `lab/D0-PROTECTED.txt`, in Cortex — never in
 the lab repository itself, so that switching the guard on leaves D0 byte for byte
@@ -11,8 +11,8 @@ as the development run ended. Lines are absolute paths (`~` allowed); blank line
 and `#` comments are ignored.
 
 A tool calls `protect(path, what)` before anything that writes. The escape hatch
-is deliberate and loud: `LAB_ALLOW_D0=1`, which the report must record as a
-deviation if it is ever used.
+is deliberate and loud: `LAB_ALLOW_D0=1`, which the report must record if it is
+ever used.
 """
 import os
 import sys
@@ -66,11 +66,11 @@ def protect(path, what="write"):
         return
     if os.environ.get(ALLOW) == "1":
         print(f"lab: {ALLOW}=1 — allowing {what} on protected {hit} "
-              f"(record this in DEVIATIONS.md)", file=sys.stderr)
+              f"(record this in the report)", file=sys.stderr)
         return
     sys.exit(
         f"lab: refusing to {what} {path}\n"
         f"  It is under {hit}, which is the finished development run D0 and is\n"
         f"  evidence for the report. Point the tools somewhere else:\n"
         f"    LAB_REPO=.../cortex-lab-R1 LAB_STATE=.../R1/state.json BENCH_OUT=.../R1/bench\n"
-        f"  If you really mean to write to D0, set {ALLOW}=1 and say so in DEVIATIONS.md.")
+        f"  If you really mean to write to D0, set {ALLOW}=1 and say so in the report.")

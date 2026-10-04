@@ -125,11 +125,11 @@ def main():
                   "strong": pair(d, mc, "none", "evolved", fams, False),
                   "weak_by_family": {f: pair(d, src, "none", "evolved", (f,), False) for f in "ABCDE"},
                   "strong_by_family": {f: pair(d, mc, "none", "evolved", (f,), False) for f in "ABCDE"}}
-    h14 = cards["H14"]["estimate"]
-    haiku = float(re.search(r"gains ([+-][0-9.]+) under Haiku", h14).group(1))
-    strong = float(re.search(r"and ([+-][0-9.]+) under", h14).group(1))
+    h13 = cards["H13"]["estimate"]
+    haiku = float(re.search(r"gains ([+-][0-9.]+) under Haiku", h13).group(1))
+    strong = float(re.search(r"and ([+-][0-9.]+) under", h13).group(1))
     if abs(R["model"]["weak"]["diff"] - haiku) > 0.051 or abs(R["model"]["strong"]["diff"] - strong) > 0.051:
-        raise SystemExit("gen_results_data.py: the model-change gains disagree with H14")
+        raise SystemExit("gen_results_data.py: the model-change gains disagree with H13")
 
     # ---- why held-out rollouts fail: the oracle's verdict on every primary-arm rollout
     # of the scenarios valid in every run (the headline's set, so the passes are its bars)

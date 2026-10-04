@@ -6,7 +6,7 @@ authors:
   - family-names: Giampieri
     given-names: Samuele
 license: MIT
-version: "1.0.1"
+version: "1.0.2"
 date-released: "2026-10-04"
 repository-code: "https://github.com/samugit83/cortex"
 abstract: >-

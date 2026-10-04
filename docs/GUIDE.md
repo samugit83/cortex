@@ -29,17 +29,12 @@ here built.
 |---|---|
 | [`lab/reports/SUMMARY.md`](../lab/reports/SUMMARY.md) | one page: the claim, the numbers, the three limits |
 | [`lab/reports/REPORT.md`](../lab/reports/REPORT.md) | the whole thing, with every hypothesis's verdict |
-| [`lab/reports/PREREGISTRATION.md`](../lab/reports/PREREGISTRATION.md) | what was promised, before the data existed |
-| [`lab/reports/DEVIATIONS.md`](../lab/reports/DEVIATIONS.md) | every departure from it, and whether data had been seen |
 | [`lab/reports/REPRODUCE.md`](../lab/reports/REPRODUCE.md) | rebuild every number offline, no API key, in about two minutes |
 
-Two things worth knowing before you read any of it. **The defect catalogue
-([`T16`](../lab/reports/tables/T16-defects.md)) is part of the result**, not an
-apology: a measurement instrument that has never been wrong has never been
-checked. And **Cortex ships an optional judge** in its proposal layer whose own
-validation gate failed at its original threshold and passed only after that
-threshold was lowered — `DEVIATIONS.md` D-07 says so plainly, and every primary
-number in the report was produced with the judge switched off.
+One thing worth knowing before you read any of it: **Cortex ships an optional
+judge** in its proposal layer whose own validation gate failed at its original
+threshold and passed only after that threshold was lowered. The report says so
+plainly, and every primary number in it was produced with the judge switched off.
 
 ```bash
 lab/reports/analysis/run.sh     # rebuilds every table and figure from the shipped rows
@@ -1957,7 +1952,7 @@ That is the shape of the most expensive failure in the development run's history
 one house rule, four attempts, nothing landed.
 
 Whether this number predicts a verdict was measured afterwards, and it does not.
-On the four evaluation runs (`lab/reports/REPORT.md` §13b, H16), relevance did not
+On the four evaluation runs (`lab/reports/REPORT.md` §13b, H15), relevance did not
 separate the candidates the gates kept from those they killed on a regression, and
 neither did *breadth*, the fraction of the suite a glob reaches, which Cortex
 computes for nothing. That is why the check is advisory: it says where a candidate
@@ -3310,7 +3305,6 @@ Cortex/
 │
 ├── lab/                       the evaluation lab that tested Cortex (see lab/README.md)
 │   ├── README.md              the lab's design: the repository, the families, the rounds
-│   ├── BRIEF.md               the evaluation brief the programme followed
 │   ├── seed/                  the source of the lab repository, rebuilt by `lab build`
 │   ├── bin/                   the lab's own tools (lab, programme, run-eval, scenarios.py, …)
 │   ├── rounds/  results/      what each round asked for, and what each round found

@@ -1,4 +1,4 @@
-# T17 · The second repository
+# T16 · The second repository
 
 Reported on its own and never pooled with the lab. Paired over its 4 holdout tasks: `evolved` − `none` = +5 points, 95 % bootstrap interval [+0, +15] — wide, as four tasks must be: corroboration, not a second primary.
 

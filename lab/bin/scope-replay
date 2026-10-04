@@ -13,7 +13,7 @@ This replays that claim against the record. Zero new rollouts; the only cost is 
 Jev calls, and with Jev off it still reports the deterministic half (breadth), which
 is the alternative the prediction has to beat.
 
-It answers H16: does pre-sweep relevance separate KEPT from BURIED-on-regression,
+It answers H15: does pre-sweep relevance separate KEPT from BURIED-on-regression,
 where glob breadth demonstrably does not?
 
 READ-ONLY on the run being scored. It never plants a candidate in the source repo:
@@ -244,7 +244,7 @@ def main(argv):
         sc = rep["scope"]
         # J5, the fire-rate prediction, is asked for a SKILL only: a rule is loaded
         # when the agent reads a matching file and is never chosen, so there is
-        # nothing to predict. H17 scores `predicted_fire_rate` against the rate the
+        # nothing to predict. H16 scores `predicted_fire_rate` against the rate the
         # benchmark actually measured.
         # `would_fire` lives on the full report under `items`; older Cortex builds
         # left it out of the `scope` object entirely, so read both.

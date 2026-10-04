@@ -25,7 +25,7 @@ want when it happens. So the experiment is not "does /prune delete rubbish" but
 routine pass tests three and the planted ones are never reached for a reason that
 has nothing to do with their merit.
 
-Run with **Jev off**, which is what the pre-registration fixes. With Jev off
+Run with **Jev off**, as every primary measurement is. With Jev off
 `cortex prune plan` prints no `DOUBT` column and the items run in the order the
 plan shows, which is what this measures. A Jev-on pass, if run, is an observation
 only: `jev_rank` is a sort order, it cannot delete anything, and every verdict

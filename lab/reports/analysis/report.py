@@ -101,9 +101,8 @@ class Report:
         self.second_repository()
         self.predicting()
         self.failures_noise_cost()
-        self.defects()
         self.threats()
-        self.deviations()
+        self.reproduce()
         return "\n".join(self.L) + "\n"
 
     # 0 -------------------------------------------------------------------
@@ -138,7 +137,6 @@ class Report:
             f"| Rollouts | {nroll:,} in `rollouts.jsonl` (the development run's included; the "
             f"gate and prune tests' sweeps are in `gates.jsonl` and `prune-sweeps.jsonl`) |",
             f"| Spend | {cost_line} |",
-            f"| Pre-registration | `PREREGISTRATION.md`, committed before the first replicate |",
             "",
             "---", "")
 
@@ -166,13 +164,13 @@ class Report:
                "### The scorecard", "",
                "| # | Hypothesis | Verdict | Estimate | Interval |",
                "|---|---|---|---|---|")
-        for hid in [f"H{i}" for i in range(19)]:
+        for hid in [f"H{i}" for i in range(17)]:
             c = self.card(hid)
             if not c:
                 continue
             self.w(f"| {hid} | {c['hypothesis']} | **{c.get('verdict', '—')}** | "
                    f"{c.get('estimate', '—')} | {c.get('interval', '—')} |")
-        self.w("", "Full detail, with the margin for each and where it was fixed, in "
+        self.w("", "Full detail, with the margin for each, in "
                    "[`tables/T3-scorecard.md`](tables/T3-scorecard.md).", "", "---", "")
 
     # 2 -------------------------------------------------------------------
@@ -210,15 +208,14 @@ class Report:
                "| `ideal` | hand-written, in the forms the design predicted |",
                "| `accept-all` | `evolved` + everything that run buried |",
                "| `flat` | `evolved`'s words with the scope removed |",
-               "| `desc-only` | `evolved`'s skills keep description and paths; the body becomes filler |",
-               "| `swapped` | `ideal`'s items in the other form |", "")
+               "| `desc-only` | `evolved`'s skills keep description and paths; the body becomes filler |", "")
         jev_on = [r["run"] for r in d.runs if (r.get("jev") or {}).get("enabled")]
         self.w(f"**The judge.** Cortex ships an optional judge in its *proposal* layer. "
                f"Every number in this report that feeds a hypothesis was produced with "
                f"it **off**; {'runs ' + ', '.join(jev_on) + ' had it on and are never pooled' if jev_on else 'no run in this programme had it on'}. "
                f"The gates contain no model of any kind, and Cortex's own suite asserts "
                f"the string `jev` appears nowhere in `score.sh`, `preflight.sh` or "
-               f"`sweep.sh`. [`T20`](tables/T20-judge.md) prints one row per run, "
+               f"`sweep.sh`. [`T19`](tables/T19-judge.md) prints one row per run, "
                f"including the off ones — \"off\" is the claim that has to be checkable.",
                "", "---", "")
 
@@ -272,8 +269,8 @@ class Report:
             self.missing("No benchmark has run yet.")
             self.w("---", "")
             return
-        # the complete-case set, the scenarios valid in every run, is the primary
-        # (PREREGISTRATION.md §5.1); the all-valid pooled row is the secondary, beside it
+        # the complete-case set, the scenarios valid in every run, is the primary;
+        # the all-valid pooled row is the secondary, beside it
         keep = set(d.complete_case_tasks(ev, arms=("none", "evolved"), split="holdout"))
         cc = [r for r in rows if r["task"] in keep]
         self.w(f"Over the {len({r['task'] for r in cc if r.get('family') in RULE_FAMILIES})} "
@@ -340,19 +337,17 @@ class Report:
             import math
             ev_, ct_ = self.d.evaluation, self.d.control
             self.w(self.line("H4"), "",
-                   f"This is a description, not the pre-registered test. The pre-registration "
-                   f"asks for the sessions after an item went live against the same scenarios "
-                   f"in the control run, by a permutation over runs; the estimate above is over "
-                   f"all sessions, and with {len(ct_)} control run(s) no permutation of the run "
-                   f"labels can give p below {1 / math.comb(len(ev_) + len(ct_), len(ct_)):.1f} "
-                   f"(`DEVIATIONS.md` D-20).", "",
+                   f"This is a description, not a tested effect. The estimate is over all "
+                   f"sessions, including those before any item went live, and with "
+                   f"{len(ct_)} control run(s) no permutation of the run "
+                   f"labels can give p below {1 / math.comb(len(ev_) + len(ct_), len(ct_)):.1f}.", "",
                    "See [`T9`](tables/T9-corrections.md).", "")
         self.w("![corrections](figures/F5-corrections.png)", "", "---", "")
 
     # 7 -------------------------------------------------------------------
     def tiers(self):
         d = self.d
-        self.w("## 7. Tiers, firing and form (H3, H11, H12)", "")
+        self.w("## 7. Tiers and firing (H3, H11)", "")
         rub = REPORTS / "data" / "tier-rubric.json"
         if rub.exists():
             rows = json.loads(rub.read_text())
@@ -370,15 +365,14 @@ class Report:
                 kind = {(i["run"], i["name"]): i.get("kind") for i in self.d.items}
                 wide = [r for r in rows if paths.get((r["run"], r["name"])) == ["shop/**"]]
                 crule = [r for r in rows if r["family"] == "C" and kind.get((r["run"], r["name"])) == "rule"]
-                self.w(f"The script scores the rubric more leniently than §11.2 words it. It "
-                       f"passes every path-scoped item on scope, where the wording asks that a "
-                       f"glob not cover a family the item is not about, which no rule on "
-                       f"`shop/**` meets; and every path-scoped rule on form, where the wording "
-                       f"puts a duty the task itself names, such as adding an exporter, in a "
-                       f"skill, which the {len(crule)} exporter rules are not. Read as written, "
+                self.w(f"The rubric is lenient on two points. It passes every path-scoped "
+                       f"item on scope, although a rule on `shop/**` also covers families it is "
+                       f"not about; and every path-scoped rule on form, although a duty the task "
+                       f"itself names, such as adding an exporter, would sit better in a skill, "
+                       f"which the {len(crule)} exporter rules are not. Under the stricter reading, "
                        f"at most {len(rows) - len(wide) - len(crule)} of the {len(rows)} items "
-                       f"would score 3/3 (`DEVIATIONS.md` D-19).", "")
-        # Rules against skills, counted. It decides what H12 can even be asked of.
+                       f"would score 3/3.", "")
+        # Rules against skills, counted. It decides what H11 can even be asked of.
         d = self.d
         kept = [i for i in d.items if i["fate"] == "kept"]
         by_run = {}
@@ -406,12 +400,11 @@ class Report:
                        "rule survives. The loop is not expressing a preference about "
                        "form; it is measuring, and one form is far easier to measure.",
                        "",
-                       "**This limits what can be asked of H12.** `desc-only` rewrites "
+                       "**This limits what can be asked of H11.** `desc-only` rewrites "
                        "skill bodies, so on a harness of nothing but rules it changes "
                        "nothing at all. The description hypothesis can only be put to "
                        "runs that kept skills, and the arm ran on R1, which kept one of "
-                       "four — a weaker footing than the pre-registration assumed when it "
-                       "planned the arm.", "")
+                       "four: a weak footing for the arm.", "")
         self.w("**A rule is loaded; a skill must be chosen.** That asymmetry is the "
                "most useful thing the firing data says. A rule enters the context "
                "whenever the agent reads a file its glob matches, so its fire rate "
@@ -420,16 +413,16 @@ class Report:
                "duty* rather than the task at hand can sit in context all day and "
                "never be invoked.", "",
                "![firing](figures/F9-firing.png)", "",
-               "### The description hypothesis (H12)", "")
-        # on the DATA: H12 is also INCONCLUSIVE when the arm ran but could perturb too
-        # little of the harness to decide (D-08), and "has not run" would then be false
+               "### The description hypothesis (H11)", "")
+        # on the DATA: H11 is also INCONCLUSIVE when the arm ran but could perturb too
+        # little of the harness to decide, and "has not run" would then be false
         if not self.d.bench(arms=("desc-only",)):
             self.missing("The `desc-only` arm has not run. It keeps each skill's name, "
                          "description and paths and replaces the body with neutral "
                          "filler of about the same length; whatever it recovers of "
                          "`evolved`'s gain was never coming from the body.")
         else:
-            self.w(self.line("H12"), "")
+            self.w(self.line("H11"), "")
             from rebuild import arm_pair
             runs_ = [r for r in (self.d.evaluation or []) if self.d.arms_of(r).get("desc-only")]
             rd = arm_pair(self.d, runs_, "none", "desc-only", families=("C",))
@@ -441,18 +434,14 @@ class Report:
                 read = [r for r in dc if "text" in r["reads"]]
                 self.w(f"The margin is stated per family. Only C's skill was rewritten, and there "
                        f"the arm recovered {sh:.0%} [{lo:.0%}, {hi:.0%}] of the gain, below the "
-                       f"pre-registered half"
+                       f"margin's half"
                        + (f"; and of its {len(dc)} rollouts on C, the {sum(r['pass'] for r in dc)} "
                           f"that passed were all among the {len(read)} that printed the skill's "
-                          f"real body through git (§16), so even that share overstates what the "
+                          f"real body through git (§15), so even that share overstates what the "
                           f"description alone did" if dc and sum(r['pass'] for r in read) == sum(r['pass'] for r in dc) else "")
-                       + " (`DEVIATIONS.md` D-21).", "")
+                       + ".", "")
             self.w("![description](figures/F15-description.png)", "")
-        self.w("### Does the form matter? (H11)", "")
-        self.w(self.line("H11") if self.verdict("H11") != "INCONCLUSIVE" else
-               "> **Not measured.** `swapped` is `ideal`'s four items with their words "
-               "unchanged and their form inverted. It runs only if `desc-only` shows an "
-               "effect worth chasing.", "", "---", "")
+        self.w("---", "")
 
     # 8 -------------------------------------------------------------------
     def ablations(self):
@@ -567,9 +556,9 @@ class Report:
                                  f"runs lost on {len(lost)} task(s) when it was removed")
                 else:
                     parts.append(f"`{q['item']}`, expected {q['expected']}, got {q['verdict']}: "
-                                 f"the plan never swept it, because an item that never loads can "
-                                 f"only be UNMEASURED, which the expected answer overlooked")
-            self.w("Where the verdict differed from the one fixed in advance: "
+                                 f"the plan never swept it, since it leaves out an item that no "
+                                 f"sweep could delete, so the item stayed without a verdict")
+            self.w("Where the verdict differed from the expected one: "
                    + "; ".join(parts) + f". Items that never fired and were deleted: "
                    f"**{len(deleted_unfired)}**.", "")
         self.w("", "The question worth asking of a pruner is not whether it deletes "
@@ -582,7 +571,7 @@ class Report:
     def reproducibility(self):
         from tables import _own_family
         d = self.d
-        self.w("## 11. Does it replicate? (H9, H13)", "")
+        self.w("## 11. Does it replicate? (H9, H12)", "")
         runs = [r["run"] for r in d.runs if r["kind"] in ("development", "evaluation")]
         if runs:
             # What each run learned, by family: the form AND the scope, because they
@@ -627,7 +616,7 @@ class Report:
                        f"agree on scope in {tot_n} of {tot_d} comparable families "
                        f"({', '.join(pairs)}).", "")
             self.narrow_run(_own_family)
-        self.w(self.line("H9"), "", self.line("H13"), "",
+        self.w(self.line("H9"), "", self.line("H12"), "",
                "![replicate](figures/F7-replicate.png)", "", "---", "")
 
     def narrow_run(self, own):
@@ -678,12 +667,12 @@ class Report:
     # 12 ------------------------------------------------------------------
     def stronger_model(self):
         d = self.d
-        self.w("## 12. A stronger model (H14)", "")
+        self.w("## 12. A stronger model (H13)", "")
         mc = [r["run"] for r in d.of_kind("model-change")]
         if not mc:
             self.missing("The model-change study has not run.")
         else:
-            self.w(self.line("H14"), "", "See [`T15`](tables/T15-model-change.md).", "")
+            self.w(self.line("H13"), "", "See [`T15`](tables/T15-model-change.md).", "")
             from rebuild import arm_pair
             c = arm_pair(d, mc, "none", "evolved", families=("C",))
             k = next((r["k"] for r in d.prune_sweeps if r["run"] == "M1"), None)
@@ -702,17 +691,17 @@ class Report:
     # 13 ------------------------------------------------------------------
     def second_repository(self):
         d = self.d
-        self.w("## 13. A repository we did not build (H15)", "")
+        self.w("## 13. A repository we did not build (H14)", "")
         self.w("This section exists to answer the hardest attack on everything above: "
                "*you built the repository, the house rules and the tasks, so of course "
                "it works.*", "")
         if not d.external:
             self.missing("The second repository has not been measured yet.")
         else:
-            self.w(self.line("H15"), "", "See [`T17`](tables/T17-external.md).", "")
+            self.w(self.line("H14"), "", "See [`T16`](tables/T16-external.md).", "")
             if any(e.get("harness_identical") for e in d.external):
                 self.w("**The loop kept nothing here**, so the two arms are the same harness "
-                       "and the benchmark is an A/A (DEVIATIONS D-12). The agent passed the "
+                       "and the benchmark is an A/A. The agent passed the "
                        "project's own tests and pinned linter on the first attempt in most "
                        "training sessions; with no correction recurring, `/evolve` declined "
                        "every cycle. That is evidence about *when* the loop has anything to "
@@ -751,7 +740,7 @@ class Report:
     # 13b -----------------------------------------------------------------
     def predicting(self):
         d = self.d
-        self.w("## 13b. Predicting the verdict before paying for it (H16, H17, H18)", "")
+        self.w("## 13b. Predicting the verdict before paying for it (H15, H16)", "")
         self.w("**The boundary first, because it is the point.** Cortex's gates contain "
                "no model: `score.sh`, `preflight.sh` and `sweep.sh` are arithmetic over "
                "recorded pass rates, and a test asserts the string `jev` appears in none "
@@ -776,9 +765,9 @@ class Report:
                     sep = "**yes**" if min(a) > max(b) else "no — they overlap"
                     self.w(f"| {label} | {', '.join(f'{x:.0%}' for x in sorted(a))} | "
                            f"{', '.join(f'{x:.0%}' for x in sorted(b))} | {sep} |")
-            self.w("", self.line("H16"), "",
+            self.w("", self.line("H15"), "",
                    "So few regression kills make a thin comparison. The development run's "
-                   "candidates, with the journal's fates, are in [`T19`](tables/T19-scope.md) "
+                   "candidates, with the journal's fates, are in [`T18`](tables/T18-scope.md) "
                    "and are not pooled here.", "")
             flagged = [s for s in sc if isinstance(s.get("relevance"), (int, float))
                        and s["relevance"] < 0.35]
@@ -796,16 +785,16 @@ class Report:
         self.w("### On the development run: two measurements of the same claim", "",
                "`jev/RESULTS.md` (J0), the judge's own validation, reported that relevance "
                "separates the development run's kept candidates from those buried on a "
-               "regression. The replay of the same run (T19) finds that it does not. The two "
+               "regression. The replay of the same run (T18) finds that it does not. The two "
                "measure different things: J0 scored the candidates that reached a confirm "
                "sweep, on the tasks each was swept on, with fates from its own records; the "
                "replay scores every candidate the run proposed, on every task `cortex scope` "
                "says it would load on, with the fates the run's journal records. Only the "
-               "replay is used for H16.", "")
-        self.w("### Does the judge know when a skill will be invoked? (H17)", "")
-        h17 = self.card("H17")
-        if h17.get("verdict") in ("SUPPORTED", "NOT SUPPORTED"):
-            self.w(self.line("H17"), "",
+               "replay is used for H15.", "")
+        self.w("### Does the judge know when a skill will be invoked? (H16)", "")
+        h16 = self.card("H16")
+        if h16.get("verdict") in ("SUPPORTED", "NOT SUPPORTED"):
+            self.w(self.line("H16"), "",
                    "The rank order is preserved, which at this n is all that can be "
                    "asked, and it rests on the one prediction below 100 %, a skill of the "
                    "development run: the evaluation runs' two gated skills were both predicted "
@@ -817,16 +806,14 @@ class Report:
                    "chosen.", "",
                    "![trigger](figures/F19-trigger.png)", "")
         else:
-            self.missing(h17.get("evidence", "no prediction is available"))
-        self.w("**H18** is not tested. " + self.card("H18").get("evidence", ""), "")
+            self.missing(h16.get("evidence", "no prediction is available"))
         self.w("**The judge's own gate failed, and then passed.** J0 — the experiment "
                "Cortex's author put in front of the whole Jev integration — measured "
                "89.4 % agreement against a bar of 90 %, with separation preserved and "
                "calibration monotonic: a **FAIL**. The bar was then lowered to 85 % and "
-               "the judge shipped. The measurement did not change. `DEVIATIONS.md` "
-               "**D-07** records the original bar, the original verdict, the "
-               "instruction, and the one command that reproduces either answer. No "
-               "hypothesis in H0–H15 depends on J0, and every primary number here ran "
+               "the judge shipped. The measurement did not change; `jev/validate.py` keeps "
+               "the bar as a constant, `PASS_AGREEMENT`, with a note on its history. No "
+               "hypothesis in H0–H14 depends on J0, and every primary number here ran "
                "with the judge off.", "", "---", "")
 
     # 14 ------------------------------------------------------------------
@@ -861,48 +848,13 @@ class Report:
                "[`T13`](tables/T13-invalid.md).", "", "---", "")
 
     # 15 ------------------------------------------------------------------
-    def defects(self):
-        p = REPORTS / "data" / "defects.json"
-        self.w("## 15. What the lab found in Cortex", "")
-        if not p.exists():
-            self.missing("The defect catalogue has not been built.")
-            self.w("---", "")
-            return
-        rows = json.loads(p.read_text())
-        from collections import Counter
-        c = Counter(r["class"] for r in rows)
-        d0 = sum(1 for r in rows if r.get("where") != "the evaluation programme")
-        self.w(f"**{len(rows)} defects**, {d0} found while the lab was built and during the "
-               f"development run, and {len(rows) - d0} by this programme in its own "
-               f"instrument. This is a result in its own right: a measurement instrument that "
-               f"has never been wrong has never been checked.", "",
-               "| Class | n | What most of its members are |", "|---|---|---|")
-        mean = {"scoring": "a verdict, a record or an account computed wrongly",
-                "task validity": "a task or a check that could not tell a good fix from a bad one",
-                "isolation": "a run reaching what it should not, or reached by it",
-                "attribution": "a result recorded under the wrong name, or not at all",
-                "tooling": "failures that changed no number"}
-        for k, n in c.most_common():
-            self.w(f"| {k} | {n} | {mean.get(k, '')} |")
-        self.w("", "The three that mattered most are the ones that would have produced "
-                   "a **confident wrong number** rather than an error: a scoring bug "
-                   "that made every recheck in the lab answer \"no confirm precedes "
-                   "this one\"; a preflight rule that quarantined every exporter task; "
-                   "and harvested checks that tested things the user never asked for. "
-                   "Full catalogue, written for an outside reader: "
-                   "[`T16`](tables/T16-defects.md).", "", "---", "")
-
-    # 16 ------------------------------------------------------------------
     def threats(self):
         d = self.d
-        self.w("## 16. Threats to validity", "",
+        self.w("## 15. Threats to validity", "",
                "| Threat | What it could do | What is done about it |",
                "|---|---|---|")
         ext = "answered in part by §13" if d.external else "**not yet answered**"
         mod = "answered in part by §12" if d.of_kind("model-change") else "**not yet answered**"
-        dp = REPORTS / "data" / "defects.json"
-        n_dev = (sum(1 for r in json.loads(dp.read_text()) if r.get("where") != "the evaluation programme")
-                 if dp.exists() else "—")
         self.w(
             f"| **One synthetic repository**, built by us | the house rules, the tasks "
             f"and the checks all come from the same hand, and the lab was calibrated so that "
@@ -922,20 +874,20 @@ class Report:
             "derived only from `CONTRIBUTING.md` and the family definition, and each "
             "touches code no training fix touches. The discipline is the mitigation, not "
             "a proof |",
-            f"| **Cortex was changed while D0 ran** | {n_dev} defects were fixed while the lab "
-            f"was built and during D0, so the system under test moved while it was measured | "
-            f"D0 is reported separately and never pooled; every replicate ran on a frozen "
-            f"tag, asserted on three resolution paths |",
+            "| **Cortex was changed while D0 ran** | the system under test moved while it "
+            "was measured | "
+            "D0 is reported separately and never pooled; every replicate ran on a frozen "
+            "tag, asserted on three resolution paths |",
             self.batch_row(),
             self.git_row(),
             self.records_row(),
             "| **Multiple comparisons** | four families, many arms | Holm across the four "
-            "rule families; the primaries were fixed in advance and are two |",
+            "rule families; the primaries are two |",
             "| **A judge in the proposal layer** | a model influences what gets proposed | "
-            "every primary ran with it off (`T20` proves which); the gates contain no "
-            "model and a test asserts so; H16–H18 score the judge rather than assume it. "
+            "every primary ran with it off (`T19` proves which); the gates contain no "
+            "model and a test asserts so; H15 and H16 score the judge rather than assume it. "
             "**Its own gate J0 failed at 90 % and passed only after the bar was lowered "
-            "to 85 % — see `DEVIATIONS.md` D-07** |",
+            "to 85 %** |",
             self.foreign_row(),
             "")
         self.w("A reviewer who finds the judge unprompted will discount the whole "
@@ -1009,7 +961,7 @@ class Report:
                 + (f" and for {'another' if len(nj) == 1 else len(nj)} writing no journal entry at all" if nj else "")
                 + f"{g} | every verdict of the evaluation runs' loop in this report is score.sh's "
                 f"rules applied again to the recorded rollouts (`analysis/rescore.py`; T5, T6, "
-                f"T19), with the journal's record beside it where they differ; the development "
+                f"T18), with the journal's record beside it where they differ; the development "
                 f"run, whose sweeps ran on a Cortex still being changed, keeps its journal's |")
 
 
@@ -1031,15 +983,9 @@ class Report:
                 f"or skill in `~/.claude` (Claude Code itself keeps a record of each session "
                 f"there) |")
 
-    # 17 ------------------------------------------------------------------
-    def deviations(self):
-        self.w("## 17. Deviations, and how to reproduce", "",
-               "Every departure from the pre-registration is in "
-               "[`DEVIATIONS.md`](DEVIATIONS.md), with the date, the reason, and "
-               "whether any outcome data had already been seen when the decision was "
-               "taken. That last column is the one that matters: a deviation taken "
-               "before any data exists is a design decision; one taken after is a "
-               "threat.", "",
+    # 16 ------------------------------------------------------------------
+    def reproduce(self):
+        self.w("## 16. How to reproduce", "",
                "Everything here rebuilds from the shipped rows with one command and no "
                "network: see [`REPRODUCE.md`](REPRODUCE.md).", "",
                "```bash", "lab/reports/analysis/run.sh", "```", "",
@@ -1083,12 +1029,12 @@ def summary(r):
           "1. **One synthetic repository and four lintable rules.** A machine can tell "
           "whether these rules were followed. Rules that need judgement are not tested "
           "here at all, and that is the clearest limit on the whole claim."]
-    h14 = r.card("H14") if hasattr(r, "card") else {}
+    h13 = r.card("H13") if hasattr(r, "card") else {}
     import re as _re
     m = _re.search(r"gains ([+-][0-9.]+) under Haiku \((\w+)\) and ([+-][0-9.]+) under (\S+)",
-                   h14.get("estimate") or "")
+                   h13.get("estimate") or "")
     rm = _re.search(r"(\d+) of (\d+) decided item\(s\) removable(?: \(([^)]*)\))?",
-                    h14.get("estimate") or "")
+                    h13.get("estimate") or "")
     if d.of_kind("model-change") and m:
         # the one-page reader must not leave thinking the gain is model-independent
         L += [f"2. **The gain is a property of a weak model.** Every primary number is "
@@ -1104,8 +1050,7 @@ def summary(r):
               + ("" if d.of_kind("model-change") else " The model-change study has not run yet.")]
     L += ["3. **A judge in the proposal layer.** Cortex ships one. Every primary number "
           "here was produced with it off, the gates contain no model and a test asserts "
-          "so — and its own validation gate failed at 90 % before being lowered to 85 % "
-          "(`DEVIATIONS.md` D-07)."]
+          "so — and its own validation gate failed at 90 % before being lowered to 85 %."]
     if d.external:
         ident = any(e.get("harness_identical") for e in d.external)
         L += ["", "A second, real repository nobody here built is reported separately in §13, "

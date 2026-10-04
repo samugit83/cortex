@@ -1,4 +1,4 @@
-"""tables.py — T1…T20, each from `reports/data/` and nothing else.
+"""tables.py — T1…T19, each from `reports/data/` and nothing else.
 
 Every table writes both Markdown and CSV from one list of rows, so the two can
 never disagree, and every one degrades to a row saying what is missing rather than
@@ -57,7 +57,7 @@ def t1_the_lab(d):
                  ["family", "what it is", "the house rule", "the usual mistake",
                   "what checks it", "the form the design predicts", "train", "holdout"], body,
                  note="The expected form is the design's prediction, written before any run. "
-                      "Whether it is right is H3 and H11, not an assumption.")
+                      "Whether it is right is H3, not an assumption.")
 
 
 def t2_scenarios(d):
@@ -79,8 +79,8 @@ def t2_scenarios(d):
                  ["id", "family", "split", "title", "round", "test",
                   "rule-breaking fix", "excluded from"], body,
                  note="A scenario is excluded from a run when, on that run's final code, its "
-                      "test does not fail or its reference fix does not apply and pass "
-                      "(PREREGISTRATION.md §5.1). Exclusion is identical in every arm.")
+                      "test does not fail or its reference fix does not apply and pass. "
+                      "Exclusion is identical in every arm.")
 
 
 # ---------------------------------------------------------------------- T3 --
@@ -91,11 +91,8 @@ def t3_scorecard(d, verdicts):
     return table(out("T3-scorecard"), "T3 · Hypothesis scorecard",
                  ["#", "hypothesis", "test", "estimate", "95% interval",
                   "margin", "verdict", "evidence"], body,
-                 note="The hypotheses are PREREGISTRATION.md §1's. The margins of H2, H6, H7, H8, "
-                      "H11 and H12 are its §11.1; the others were written into the analysis code "
-                      "before the first evaluation run (commit a23bb26, 2026-09-20), the "
-                      "pre-registration setting no number for them. DEVIATIONS.md records every "
-                      "later change (D-22 for this version of the report).")
+                 note="Each margin is a constant of `analysis/rebuild.py`, which computes "
+                      "every verdict from the shipped rows.")
 
 
 # ---------------------------------------------------------------------- T4 --
@@ -340,7 +337,7 @@ def t8_gates(d):
     pos = by.get("positive", [])
     plac = by.get("placebo-topic", []) + by.get("placebo-moment", [])
     note = ("KEEP, KILL and RERUN are score.sh's verdicts, after the confirm for a candidate "
-            "that reached one. `stopped (procedure)` counts the candidates the pre-registered "
+            "that reached one. `stopped (procedure)` counts the candidates the test's "
             "procedure stopped, which it does at any screen whose gain is not positive or whose "
             "candidate never fired, whatever score.sh said; a RERUN means no task in the screen "
             "could show a gain, so no gate judged the candidate. Clopper-Pearson intervals; the "
@@ -400,8 +397,8 @@ def t10_prune(d):
     return table(out("T10-prune"), "T10 · The prune experiment: planted items and their verdicts",
                  ["run", "item", "planted role", "expected", "verdict", "matches",
                   "fired in its sweep", "chosen by", "rollouts", "what the planted role expected"], body,
-                 note=f"{matched} of {len(d.prune)} matched the expectation fixed in "
-                      "PREREGISTRATION.md §8 before the testbed was built. `fired in its "
+                 note=f"{matched} of {len(d.prune)} matched the expected verdict, written "
+                      "for each item before the testbed was built. `fired in its "
                       "sweep` is measured: the base rollouts of the item's own removal sweep "
                       "in which it fired (data/prune-sweeps.jsonl).")
 
@@ -548,26 +545,9 @@ def t15_model_change(d):
 
 
 # -------------------------------------------------------------------- T16 --
-def t16_defects(d):
-    p = DATA / "defects.json"
-    if not p.exists():
-        return missing("T16-defects", "T16 · Defect catalogue", "defects.json has not been written")
-    rows = json.loads(p.read_text())
-    body = [[i + 1, r.get("class"), r.get("symptom"), r.get("detected"), r.get("why_serious"),
-             r.get("fix"), r.get("test"), ", ".join(r.get("runs_affected") or []) or "—"]
-            for i, r in enumerate(rows)]
-    return table(out("T16-defects"), "T16 · Every defect the lab found in Cortex",
-                 ["#", "class", "symptom", "how it was detected", "why it would corrupt a "
-                  "measurement", "the fix", "the regression test", "runs affected"], body,
-                 note="Written for a reader who has never seen Cortex. A measurement instrument "
-                      "that has never been wrong has never been checked; this is the list of "
-                      "times it was, and what stops each one coming back.")
-
-
-# -------------------------------------------------------------------- T17 --
-def t17_external(d):
+def t16_external(d):
     if not d.external:
-        return missing("T17-external", "T17 · A repository we did not build",
+        return missing("T16-external", "T16 · A repository we did not build",
                        "the second repository has not been run")
     body = [[e.get("repo"), e.get("task"), e.get("split"), e.get("arm"),
              e.get("passed"), e.get("n"), pct(e.get("rate", float("nan")))]
@@ -581,25 +561,25 @@ def t17_external(d):
         paired = (f" Paired over its {len(cs)} holdout tasks: `evolved` − `none` = "
                   f"{signed(S.paired_mean(cs))} points, 95 % bootstrap interval {ci(lo, hi)} — "
                   "wide, as four tasks must be: corroboration, not a second primary.")
-    return table(out("T17-external"), "T17 · The second repository",
+    return table(out("T16-external"), "T16 · The second repository",
                  ["repository", "task", "split", "arm", "passed", "n", "rate"], body,
                  note="Reported on its own and never pooled with the lab." + paired)
 
 
-# -------------------------------------------------------------------- T18 --
-def t18_claims(d, claims):
+# -------------------------------------------------------------------- T17 --
+def t17_claims(d, claims):
     body = [[i + 1, c["claim"], c["evidence"], c.get("number", "—")]
             for i, c in enumerate(claims)]
-    return table(out("T18-claims"), "T18 · Every claim, and what supports it",
+    return table(out("T17-claims"), "T17 · Every claim, and what supports it",
                  ["#", "the sentence the report asserts", "figure or table", "the number"], body,
                  note="A sentence with no evidence is deleted, not softened. This table is the "
                       "check that it was.")
 
 
-# -------------------------------------------------------------------- T19 --
-def t19_scope(d):
+# -------------------------------------------------------------------- T18 --
+def t18_scope(d):
     if not d.scope:
-        return missing("T19-scope", "T19 · Scope replay", "scope-replay has not been run")
+        return missing("T18-scope", "T18 · Scope replay", "scope-replay has not been run")
     fate = lambda s: (d.rule_fate(s["run"], s["candidate"])
                       or (f"{d.journal_fate(s['run'], s['candidate'])} (journal)"
                           if d.journal_fate(s["run"], s["candidate"]) else "unresolved"))
@@ -616,7 +596,7 @@ def t19_scope(d):
                      f"**${saved:.2f}** saved"])
         body.append([f"**false alarms, {label}**", "KEPT candidates it would also have flagged",
                      len(kept), "", "", "", "", "", "", ""])
-    return table(out("T19-scope"), "T19 · Predicting the verdict before paying for it",
+    return table(out("T18-scope"), "T18 · Predicting the verdict before paying for it",
                  ["run", "candidate", "kind", "injected", "suite", "relevance", "breadth",
                   "fate", "rollouts", "cost"], body,
                  note="Predictions are computed from each candidate's own text and its run's task "
@@ -627,8 +607,8 @@ def t19_scope(d):
                       "run. The saving is never reported without the false-alarm count beside it.")
 
 
-# -------------------------------------------------------------------- T20 --
-def t20_judge(d):
+# -------------------------------------------------------------------- T19 --
+def t19_judge(d):
     body = []
     for r in d.runs:
         j = r.get("jev") or {}
@@ -637,9 +617,9 @@ def t20_judge(d):
                      j.get("requests", "—"), j.get("answered", "—"),
                      "yes" if r["run"] in (d.evaluation + d.control) else "no"])
     if not body:
-        return missing("T20-judge", "T20 · Judge provenance", "no runs exported yet")
-    return table(out("T20-judge"), "T20 · Judge provenance: which runs saw one",
+        return missing("T19-judge", "T19 · Judge provenance", "no runs exported yet")
+    return table(out("T19-judge"), "T19 · Judge provenance: which runs saw one",
                  ["run", "kind", "jev", "exact model id", "endpoint", "requests", "answered",
                   "may feed a primary"], body,
                  note="Every run appears, including the ones that were off: \"off\" is the claim "
-                      "that has to be checkable. A run with a judge may never feed H1, H2 or H13.")
+                      "that has to be checkable. A run with a judge may never feed H1, H2 or H12.")

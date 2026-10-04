@@ -110,7 +110,7 @@ def assert_cortex(env, cortex_home):
             f"  want: {want}\n{lines}\n"
             "  Point ~/.local/bin/cortex at the frozen worktree for the programme:\n"
             f"    ln -sfn {cortex_home / 'bin' / 'cortex'} ~/.local/bin/cortex\n"
-            "  and record it in DEVIATIONS.md.")
+            "  and record it in the report.")
     return seen["run PATH"]
 
 
@@ -232,7 +232,7 @@ def cmd_bench(a):
     bench = str(CORTEX / "lab" / "bench" / "bench.py")
 
     if not a.skip_validate:
-        # §5.1: every holdout scenario is validated on THIS run's final code before it
+        # Every holdout scenario is validated on THIS run's final code before it
         # is benchmarked. One that fails is excluded from this run, in every arm, and
         # listed — deciding that after seeing a result would not be an exclusion rule.
         import types

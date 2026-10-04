@@ -1,6 +1,6 @@
 # T1 · The lab: families, rules and task counts
 
-The expected form is the design's prediction, written before any run. Whether it is right is H3 and H11, not an assumption.
+The expected form is the design's prediction, written before any run. Whether it is right is H3, not an assumption.
 
 | family | what it is | the house rule | the usual mistake | what checks it | the form the design predicts | train | holdout |
 |---|---|---|---|---|---|---|---|

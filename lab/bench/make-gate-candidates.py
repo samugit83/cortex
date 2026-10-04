@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """make-gate-candidates.py — write the gate-calibration candidates and the prune plants.
 
-The gates have never been tested against known answers. §4.5 of the brief fixes
+The gates have never been tested against known answers. The gate test fixes
 that by pushing candidates whose right verdict is known through the real pipeline:
 
   placebo, topic   plausible advice about something this repository does not care
@@ -13,7 +13,7 @@ that by pushing candidates whose right verdict is known through the real pipelin
   harmful          advice that contradicts a house rule
   positive         the four hand-written `ideal` items, one at a time
 
-Every placebo obeys a rule stated in the pre-registration and checked here: 300-1500
+Every placebo obeys a rule checked here: 300-1500
 characters, and it must not mention tests, lint, CONTRIBUTING, changelog, docs,
 money, time or exporters. A placebo that named one of those would not be a placebo.
 
@@ -462,7 +462,7 @@ no benefit, and a reader has to open another module to find out that
 def build(out):
     out = Path(out)
     shutil.rmtree(out, ignore_errors=True)
-    manifest = {"what": "gate-calibration candidates (brief §4.5)", "types": {}}
+    manifest = {"what": "gate-calibration candidates", "types": {}}
     problems = []
 
     def place(kind, name, filename, text, meta):

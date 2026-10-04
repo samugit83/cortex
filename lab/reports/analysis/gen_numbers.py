@@ -99,7 +99,7 @@ def main():
         raise SystemExit("gen_numbers.py: H6 and H7 no longer share a margin; the text says they do")
     M["MarginNotBetter"] = tex(not_better)
     M["MarginClose"] = need(r"within (\d+) points", cards["H8"]["margin"], "H8 margin").group(1)
-    M["MarginDescShare"] = need(r"at least (\d+)%", cards["H12"]["margin"], "H12 margin").group(1) + r"\%"
+    M["MarginDescShare"] = need(r"at least (\d+)%", cards["H11"]["margin"], "H11 margin").group(1) + r"\%"
     # and the one the hypothesis table states besides: H5's bar on kept placebos
     M["MarginPlaceboUpper"] = need(r"upper bound below (\d+)%", h5["margin"], "H5 margin").group(1) + r"\%"
     mp = need(r"at least (\d+) of (\d+) positives kept", h5["margin"], "H5 margin, known-good")
@@ -203,12 +203,12 @@ def main():
         raise SystemExit("gen_numbers.py: the scorecard's H5 and the gate test's rows disagree on harm")
 
     # a stronger model
-    h14 = cards["H14"]
+    h13 = cards["H13"]
     m = need(r"(\d+) of (\d+) decided item\(s\) removable.*gains ([+-][0-9.]+) under Haiku "
-             r"\((\w+)\) and ([+-][0-9.]+) under (\S+)", h14["estimate"], "H14")
+             r"\((\w+)\) and ([+-][0-9.]+) under (\S+)", h13["estimate"], "H13")
     (M["RemovableItems"], M["DecidedItems"], haiku, M["ModelChangeSource"], sonnet, model) = m.groups()
     M["HaikuGain"], M["SonnetGain"] = tex(haiku), tex(sonnet)
-    M["SonnetLo"], M["SonnetHi"] = map(tex, interval(h14["interval"]))
+    M["SonnetLo"], M["SonnetHi"] = map(tex, interval(h13["interval"]))
     M["StrongModel"] = model.replace("_", r"\_")
 
     # the study's design, as run (§4): read from the rows, and checked against each other
@@ -388,8 +388,8 @@ def results(d, M, cards, ev, gates_all, sessions, at_tag):
     h0 = need(r"A(\d+)% B(\d+)% C(\d+)% D(\d+)% E(\d+)%", cards["H0"]["estimate"], "H0").groups()
     for f, v in zip("ABCDE", h0):
         M[f"NoneRate{f}"] = v + r"\%"
-    # H0's printed margin asks every rule family below a bar; the lab's code passes three of
-    # four (rebuild.py), and the pre-registration sets no number. The text says E misses it.
+    # H0's margin asks at least three of the four rule families below a bar (rebuild.py).
+    # The text says E misses it.
     bar = int(need(r"at least three of A/B/C/E below (\d+)%", cards["H0"]["margin"], "H0 margin").group(1))
     if "the stricter reading, all four below 50%, is not met" not in cards["H0"]["evidence"]:
         stop("the scorecard no longer says the stricter reading of H0 is not met")
@@ -512,19 +512,19 @@ def results(d, M, cards, ev, gates_all, sessions, at_tag):
         stop("the text speaks of a single control run")
     # the smallest one-sided p a permutation of the run labels can reach with these runs
     M["HfourMinP"] = f"{1 / math.comb(len(ev) + len(d.control), len(d.control)):.1f}"
-    # the development run, re-measured (H13)
+    # the development run, re-measured (H12)
     m = need(r"D0 ([+-][0-9.]+) \(on its own (\d+)-task holdout: ([+-][0-9.]+)\), replicates ([+-][0-9.]+)",
-             cards["H13"]["estimate"], "H13")
+             cards["H12"]["estimate"], "H12")
     M["DzeroGain"], M["DzeroOwnTasks"], M["DzeroOwn"] = tex(m.group(1)), m.group(2), tex(m.group(3))
     # D0's own figure is over the rule-family scenarios of its own held-out set
     d0own = RB.arm_pair(d, d.development, "none", "evolved", families=fams, complete_case=False)
     if pts(d0own["mean"]) != M["DzeroOwn"]:
         stop("D0's own gain is not over its rule-family scenarios")
     M["DzeroOwnRuleTasks"] = str(len({t for _r, t in d0own["cells"]}))
-    if tex(m.group(4)) != M["HoneAllEst"] or tuple(map(tex, interval(cards["H13"]["interval"]))) != (
+    if tex(m.group(4)) != M["HoneAllEst"] or tuple(map(tex, interval(cards["H12"]["interval"]))) != (
             M["HoneAllLo"], M["HoneAllHi"]):
-        stop("H13 is not compared with the all-valid interval")
-    # H13's margin sets one run's gain against the interval of the mean of R1 to R4; a single
+        stop("H12 is not compared with the all-valid interval")
+    # H12's margin sets one run's gain against the interval of the mean of R1 to R4; a single
     # run varies more, so the text also gives the range of the runs' own gains on that set
     own_gain = {run: S.paired_mean(S.cells(d.bench(runs=[run], arms=("none", "evolved"), split="holdout"),
                                            "none", "evolved", families=list(fams), split="holdout"))
@@ -670,7 +670,7 @@ def results(d, M, cards, ev, gates_all, sessions, at_tag):
     M["ShopWideLo"] = f"{100 * min(min(x['own_rate'], x['other_rate']) for x in wide):.0f}" + r"\%"
     M["ShopWideHi"] = f"{100 * max(max(x['own_rate'], x['other_rate']) for x in wide):.0f}" + r"\%"
     M["ShopWideMargin"] = f"{100 * max(x['own_rate'] - x['other_rate'] for x in wide if x['area']):.2f}"
-    # read as written (§11.2), a rule on shop/** reaches every family (scope), and an exporter
+    # under the stricter reading, a rule on shop/** reaches every family (scope), and an exporter
     # duty, which the task names, belongs in a skill (form): an upper bound on what passes
     kind_of = {(i["run"], i["name"]): i.get("kind") for i in d.items}
     c_rules = [x for x in rub if fam_of[(x["run"], x["name"])] == "C" and kind_of[(x["run"], x["name"])] == "rule"]
@@ -807,7 +807,7 @@ def results(d, M, cards, ev, gates_all, sessions, at_tag):
     if len(sk) != 1 or any(sk[0] in (r.get("fired") or []) for r in fc) or not all(sk[0] in (r.get("visible") or []) for r in fc):
         stop("flat's exporter skill was not listed in every C rollout and opened in none")
     M["DescRateC"] = rate(fam_rate("desc-only", "C"), 0)
-    # H12 is stated per family; C is the one family whose skill desc-only could rewrite
+    # H11 is stated per family; C is the one family whose skill desc-only could rewrite
     M["NoneRunOneC"] = rate(fam_rate("none", "C"), 0)
     rd = RB.arm_pair(d, [run1], "none", "desc-only", families=("C",), complete_case=False)
     rf = RB.arm_pair(d, [run1], "none", "evolved", families=("C",), complete_case=False)
@@ -827,10 +827,10 @@ def results(d, M, cards, ev, gates_all, sessions, at_tag):
     M["IdealRollouts"] = str(len(ideal))
     if any(set(always) & set(r.get("fired") or []) for r in ideal):
         stop("an always-on skill of the ideal arm was opened")
-    h12 = need(r"(\d+)% of the gain recovered · items actually rewritten — \w+: (\d+) of (\d+)",
-               cards["H12"]["estimate"], "H12")
-    M["DescRecovered"], M["DescRewritten"], M["DescItems"] = h12.group(1) + r"\%", h12.group(2), h12.group(3)
-    M["DescRecoveredLo"], M["DescRecoveredHi"] = (x + r"\%" for x in interval(cards["H12"]["interval"]))
+    h11 = need(r"(\d+)% of the gain recovered · items actually rewritten — \w+: (\d+) of (\d+)",
+               cards["H11"]["estimate"], "H11")
+    M["DescRecovered"], M["DescRewritten"], M["DescItems"] = h11.group(1) + r"\%", h11.group(2), h11.group(3)
+    M["DescRecoveredLo"], M["DescRecoveredHi"] = (x + r"\%" for x in interval(cards["H11"]["interval"]))
 
     # ---- a stronger model --------------------------------------------------------------
     mc = [r["run"] for r in d.of_kind("model-change")]
@@ -838,7 +838,7 @@ def results(d, M, cards, ev, gates_all, sessions, at_tag):
     weak = RB.arm_pair(d, src, "none", "evolved", families=fams, complete_case=False)
     strong = RB.arm_pair(d, mc, "none", "evolved", families=fams, complete_case=False)
     if (pts(weak["mean"]), pts(strong["mean"])) != (M["HaikuGain"], M["SonnetGain"]):
-        stop("the model change's gains are not the scorecard's H14")
+        stop("the model change's gains are not the scorecard's H13")
     M["HaikuLo"], M["HaikuHi"] = pts(weak["lo"]), pts(weak["hi"])
     for key, r in (("Haiku", weak), ("Sonnet", strong)):
         M[f"{key}None"] = rate(sum(v[1] for v in r["cells"].values()) / len(r["cells"]))
@@ -925,9 +925,9 @@ def results(d, M, cards, ev, gates_all, sessions, at_tag):
     M["SonnetChangelogLoss"], M["SonnetClockLoss"] = str(-sch["kn"]), str(-scl["kn"])
 
     # ---- the second repository ----------------------------------------------------------
-    h15 = cards["H15"]
-    M["ExtAAEst"] = tex(need(r"([+-][0-9.]+) points", h15["estimate"], "H15").group(1))
-    M["ExtAALo"], M["ExtAAHi"] = map(tex, interval(h15["interval"]))
+    h14 = cards["H14"]
+    M["ExtAAEst"] = tex(need(r"([+-][0-9.]+) points", h14["estimate"], "H14").group(1))
+    M["ExtAALo"], M["ExtAAHi"] = map(tex, interval(h14["interval"]))
     # its training, from the run's own records (data/external-training.json, written by
     # extract_external.py): the sessions, the tasks and lessons they left, and the cycles
     xtr = json.loads((DATA / "external-training.json").read_text())
@@ -944,13 +944,13 @@ def results(d, M, cards, ev, gates_all, sessions, at_tag):
         stop("a cycle on the second repository was not barren, or the loop kept an item there")
 
     # ---- predicting a verdict -----------------------------------------------------------
-    h16 = need(r"relevance: lowest KEPT (\d+)% vs highest BURIED (\d+)% · breadth: (\d+)% vs (\d+)%",
-               cards["H16"]["estimate"], "H16").groups()
+    h15 = need(r"relevance: lowest KEPT (\d+)% vs highest BURIED (\d+)% · breadth: (\d+)% vs (\d+)%",
+               cards["H15"]["estimate"], "H15").groups()
     floor = float(need(r'"relevance_floor":\s*([0-9.]+)', at_tag("bin/jev.py"), "the relevance floor").group(1))
     M["RelevanceFloor"] = f"{floor:.2f}"
     M["RelevanceFloorPct"] = f"{100 * floor:.0f}" + r"\%"     # relevance is quoted in percent
     flagged = [s for s in d.scope if isinstance(s.get("relevance"), (int, float)) and s["relevance"] < floor]
-    t19 = {r["run"]: r for r in csv.DictReader(open(CORTEX / "lab" / "reports" / "tables" / "T19-scope.csv"))}
+    t18 = {r["run"]: r for r in csv.DictReader(open(CORTEX / "lab" / "reports" / "tables" / "T18-scope.csv"))}
     # the development run, reported apart: its candidates (the journal's fates) do not
     # separate on either predictor, which the text says
     d0s = [s_ for s_ in d.scope if s_.get("run") in d.development]
@@ -977,27 +977,27 @@ def results(d, M, cards, ev, gates_all, sessions, at_tag):
     M["FloorFlaggedBuriedEval"] = str(sum(1 for s_ in fe if s_.get("fate") != "kept"))
     M["FloorFlaggedKeptEval"] = str(sum(1 for s_ in fe if s_.get("fate") == "kept"))
     M["FloorSavedEval"] = f"{sum(s_.get('cost_usd') or 0 for s_ in fe if s_.get('fate') != 'kept'):.2f}"
-    # the lab's scorecard and T19 state the same comparison on the same runs
-    if (tuple(x + r"\%" for x in h16) != (M["RelKeptLowEval"], M["RelKilledHighEval"],
+    # the lab's scorecard and T18 state the same comparison on the same runs
+    if (tuple(x + r"\%" for x in h15) != (M["RelKeptLowEval"], M["RelKilledHighEval"],
                                           M["BreadthKeptLowEval"], M["BreadthKilledHighEval"])
-            or t19["**false alarms, evaluation runs**"]["kind"] != M["FloorFlaggedKeptEval"]
-            or t19["**counterfactual, evaluation runs**"]["kind"] != M["FloorFlaggedBuriedEval"]
-            or f"**${M['FloorSavedEval']}** saved" != t19["**counterfactual, evaluation runs**"]["cost"]):
-        stop("H16 or the relevance floor's counterfactual disagrees with the lab's report")
-    h17 = re.findall(r"predicted (\d+)% vs measured (\d+)%", cards["H17"]["estimate"])
-    M["JudgeItems"] = str(len(h17))
+            or t18["**false alarms, evaluation runs**"]["kind"] != M["FloorFlaggedKeptEval"]
+            or t18["**counterfactual, evaluation runs**"]["kind"] != M["FloorFlaggedBuriedEval"]
+            or f"**${M['FloorSavedEval']}** saved" != t18["**counterfactual, evaluation runs**"]["cost"]):
+        stop("H15 or the relevance floor's counterfactual disagrees with the lab's report")
+    h16 = re.findall(r"predicted (\d+)% vs measured (\d+)%", cards["H16"]["estimate"])
+    M["JudgeItems"] = str(len(h16))
     M["JudgeItemsDev"] = "2"                   # checked below: the development run's kept gated skills
-    M["JudgeOver"] = str(sum(1 for p, m_ in h17 if int(p) > int(m_)))
-    M["JudgeTied"] = str(max(sum(1 for p, _ in h17 if p == q) for q, _ in h17))
-    M["JudgeMissMax"] = str(max(int(p) - int(m_) for p, m_ in h17))
-    if f"n = {len(h17)} items" not in cards["H17"]["interval"]:
-        stop("H17 is not over the items the scorecard lists")
+    M["JudgeOver"] = str(sum(1 for p, m_ in h16 if int(p) > int(m_)))
+    M["JudgeTied"] = str(max(sum(1 for p, _ in h16 if p == q) for q, _ in h16))
+    M["JudgeMissMax"] = str(max(int(p) - int(m_) for p, m_ in h16))
+    if f"n = {len(h16)} items" not in cards["H16"]["interval"]:
+        stop("H16 is not over the items the scorecard lists")
     # they are the path-gated skills the runs kept, two of them in the development run
     gated = [i for i in d.items if i.get("fate") == "kept" and i.get("kind") == "skill" and i.get("paths")
              and i["run"] in list(ev) + list(d.development)]
-    if len(gated) != len(h17) or str(sum(1 for i in gated if i["run"] in d.development)) != M["JudgeItemsDev"]:
-        stop("H17's items are not the kept gated skills, two of them the development run's")
-    low = re.findall(r"([\w-]+) predicted (\d+)% vs", cards["H17"]["estimate"])
+    if len(gated) != len(h16) or str(sum(1 for i in gated if i["run"] in d.development)) != M["JudgeItemsDev"]:
+        stop("H16's items are not the kept gated skills, two of them the development run's")
+    low = re.findall(r"([\w-]+) predicted (\d+)% vs", cards["H16"]["estimate"])
     low = [n for n, p_ in low if int(p_) < 100]
     d0names = {i["name"] for i in gated if i["run"] in d.development}
     evnames = {i["name"] for i in gated if i["run"] in ev}

@@ -674,7 +674,7 @@ def f18_scope(d):
     ax1.set_ylabel("candidates", fontsize=9)
     return save(fig, "F18-scope",
                 f"n = {len(sc)} candidates of the evaluation runs, each with score.sh's verdict "
-                "(the development run's are in T19). A prediction is computed from the "
+                "(the development run's are in T18). A prediction is computed from the "
                 "candidate's own text and its run's task suite, never from the verdict. Breadth is "
                 "on the right as the control: if it separates the fates too, the judge is "
                 "unnecessary and that is the finding.")

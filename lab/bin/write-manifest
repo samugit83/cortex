@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """write-manifest — lab/reports/data/manifest.json, the facts a reader needs to trust
-the rows (brief §7.4): tags and commits, model ids, CLI versions, dates, the machine,
+the rows: tags and commits, model ids, CLI versions, dates, the machine,
 the permission modes, and the measured cost. Built from the rows, git and the host,
 never typed; run it after the last export, before scrub-data.
 """

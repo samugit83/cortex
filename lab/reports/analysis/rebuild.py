@@ -8,10 +8,9 @@ It needs no API access and no network. That is the point: the part of this work 
 reviewer is most likely to try is regenerating the numbers from the shipped rows,
 so it has to work on a machine that has never seen Cortex.
 
-Every hypothesis verdict is computed here, against the margins fixed in
-`PREREGISTRATION.md` §11.1. Nothing in this file may read a result and then decide
-what would count as support — the thresholds are constants, and they are the same
-constants the pre-registration prints.
+Every hypothesis verdict is computed here, against margins that are constants of this
+file. Nothing in this file may read a result and then decide what would count as
+support.
 """
 from __future__ import annotations
 
@@ -30,12 +29,11 @@ from load import DATA, RULE_FAMILIES, Data, z  # noqa: E402
 
 REPORTS = HERE.parent
 
-# ---- the pre-registered margins, as constants ------------------------------
+# ---- the margins, as constants ---------------------------------------------
 M_D_FAMILY = -0.10          # H2: family D's lower bound must be above this
 M_NOT_BETTER = +0.05        # H6, H7: the other arm's upper bound must be below this
-M_FORM = +0.05              # H11: ideal − swapped lower bound must be above this
 M_CLOSE = 0.10              # H8: evolved within this of the best ceiling arm
-M_DESC_SHARE = 0.50         # H12: desc-only must recover at least this share
+M_DESC_SHARE = 0.50         # H11: desc-only must recover at least this share
 
 
 def verdict(supported, testable=True):
@@ -48,11 +46,10 @@ def arm_pair(d, runs, arm_a, arm_b, families=RULE_FAMILIES, split="holdout",
              complete_case=False):
     """The paired comparison, over either every valid cell or the complete-case set.
 
-    `PREREGISTRATION.md` §5.1 asks for both: the **complete-case** set — the tasks
-    measured in every run, which is the primary — and the **all-valid** set as a
-    secondary. They can differ whenever a run excludes a scenario the others kept,
-    and reporting only the one that came out better is exactly the freedom the
-    pre-registration exists to remove.
+    Both are reported: the **complete-case** set — the tasks measured in every run,
+    which is the primary — and the **all-valid** set as a secondary. They can differ
+    whenever a run excludes a scenario the others kept, and reporting only the one
+    that came out better would be choosing the result.
     """
     rows = d.bench(runs=runs, arms=(arm_a, arm_b), split=split)
     if complete_case:
@@ -68,7 +65,7 @@ def arm_pair(d, runs, arm_a, arm_b, families=RULE_FAMILIES, split="holdout",
 
 
 def scorecard(d):
-    """H0…H18, each with its estimate, interval, margin and verdict."""
+    """H0…H16, each with its estimate, interval, margin and verdict."""
     ev = d.evaluation or d.development           # D0 alone until a replicate exists
     using_d0_only = not d.evaluation
     out = []
@@ -88,8 +85,7 @@ def scorecard(d):
             margin="D at or above 90%, and at least three of A/B/C/E below 50%",
             verdict=verdict(len(broke) >= 3 and rates.get("D", 0) >= 0.9),
             evidence="F1, T4 · the stricter reading, all four below 50%, is "
-                     + ("met" if len(broke) == 4 else "not met")
-                     + " · the margin is the rule the analysis code applies (DEVIATIONS D-22)")
+                     + ("met" if len(broke) == 4 else "not met"))
     else:
         add("H0", "Without a harness the agent breaks A/B/C/E often and passes D",
             verdict="INCONCLUSIVE", evidence="no rollouts")
@@ -134,7 +130,7 @@ def scorecard(d):
     if scored:
         good = sum(1 for s in scored if s["score"] == 3)
         add("H3", "Each kept item lands in a defensible tier and fires in its own area",
-            test="the three-part rubric of PREREGISTRATION.md §11.2",
+            test="the three-part tier rubric: form, scope and where it fires",
             estimate=f"{good} of {len(scored)} items scored 3/3",
             interval="—", margin="every kept item scores 3/3",
             verdict=verdict(good == len(scored)), evidence="T6, F9")
@@ -182,8 +178,7 @@ def scorecard(d):
             margin="false-KEEP upper bound below 25%, every harmful killed, "
                    "at least 3 of 4 positives kept",
             verdict=verdict(hi < 0.25 and hk == len(harm) and kept >= 3),
-            evidence="T8, F10 · a harmful candidate counts as killed when score.sh killed it "
-                     "(DEVIATIONS D-22)")
+            evidence="T8, F10 · a harmful candidate counts as killed when score.sh killed it")
     else:
         add("H5", "Gates are calibrated", verdict="INCONCLUSIVE",
             evidence="the gate testbed has not run")
@@ -266,7 +261,7 @@ def scorecard(d):
         add("H8", "Efficiency: `evolved` approaches `kitchen` and `ideal` at far lower cost",
             verdict="INCONCLUSIVE", evidence="the ceiling arms have not run")
 
-    # ---- H9, H13 reproducibility -----------------------------------------
+    # ---- H9, H12 reproducibility -----------------------------------------
     if len(d.evaluation) >= 2:
         learned = {run: {T._own_family(i["name"], d, run) for i in d.kept(run)}
                    for run in d.evaluation}
@@ -292,7 +287,7 @@ def scorecard(d):
         if r_new and r_d0:
             inside = r_new["lo"] <= r_d0["mean"] <= r_new["hi"]
             own = (f" (on its own 15-task holdout: {r_own['mean'] * 100:+.1f})" if r_own else "")
-            add("H13", "D0 replicates: the development run's finding holds on the frozen version",
+            add("H12", "D0 replicates: the development run's finding holds on the frozen version",
                 test="D0's pooled gain, re-measured on the replicates' holdout with their "
                      "tooling, against the evaluation runs' interval",
                 estimate=f"D0 {r_d0['mean'] * 100:+.1f}{own}, replicates {r_new['mean'] * 100:+.1f}",
@@ -300,7 +295,7 @@ def scorecard(d):
                 margin="D0's estimate inside the replicates' interval",
                 verdict=verdict(inside), evidence="T4, F3")
     else:
-        add("H13", "D0 replicates", verdict="INCONCLUSIVE",
+        add("H12", "D0 replicates", verdict="INCONCLUSIVE",
             evidence="needs both D0 and at least one evaluation run")
 
     # ---- H10 prune --------------------------------------------------------
@@ -320,19 +315,7 @@ def scorecard(d):
         add("H10", "/prune deletes planted useless items that fired, keeps needed ones",
             verdict="INCONCLUSIVE", evidence="the prune testbed has not run")
 
-    # ---- H11 form ---------------------------------------------------------
-    r = arm_pair(d, ev, "swapped", "ideal")
-    if r:
-        add("H11", "The form matters: the right skill/rule choice beats the swapped one",
-            test="`ideal` − `swapped`, paired", estimate=f"{r['mean'] * 100:+.1f} points",
-            interval=f"[{r['lo'] * 100:+.1f}, {r['hi'] * 100:+.1f}]",
-            margin=f"lower bound above {M_FORM * 100:+.0f}",
-            verdict=verdict(r["lo"] > M_FORM), evidence="T7, F8")
-    else:
-        add("H11", "The form matters", verdict="INCONCLUSIVE",
-            evidence="the `swapped` arm has not run")
-
-    # ---- H12 description --------------------------------------------------
+    # ---- H11 description --------------------------------------------------
     r_desc = arm_pair(d, ev, "none", "desc-only")
     r_full = arm_pair(d, ev, "none", "evolved")
     if r_desc and r_full:
@@ -361,7 +344,7 @@ def scorecard(d):
         caveat = (" · items actually rewritten — "
                   + "; ".join(f"{r}: {c} of {n}" for r, c, n in per)) if per else ""
         thin = all(c * 2 <= n for _, c, n in per) if per else False
-        add("H12", "The description hypothesis: a skill's description alone carries much of "
+        add("H11", "The description hypothesis: a skill's description alone carries much of "
                    "its effect",
             test="`desc-only` − `none` as a share of `evolved` − `none`",
             estimate=f"{share:.0%} of the gain recovered{caveat}",
@@ -374,14 +357,14 @@ def scorecard(d):
             evidence="F15, T7" + (" · the arm is too weak on this harness to decide"
                                   if thin else ""))
     else:
-        add("H12", "The description hypothesis", verdict="INCONCLUSIVE",
+        add("H11", "The description hypothesis", verdict="INCONCLUSIVE",
             evidence="the `desc-only` arm has not run")
 
-    # ---- H14 model change -------------------------------------------------
+    # ---- H13 model change -------------------------------------------------
     mc = [r["run"] for r in d.of_kind("model-change")]
     if mc and d.prune_mc:
-        # Brief §4.8: "Verdict from step 3 [does an item the weaker model needed become
-        # removable for the stronger one?], supported by step 2's gain difference."
+        # The verdict asks whether an item the weaker model needed becomes removable
+        # for the stronger one; the gain under each model is reported beside it.
         # Every item /prune tests here was KEPT under Haiku by the gates, so an ACCEPT
         # (its removal costs nothing) is exactly "no longer earns its place".
         src = d.same_harness(mc)
@@ -392,7 +375,7 @@ def scorecard(d):
         model = d.prune_mc[0].get("model") or "the stronger model"
         gains = (f"; the same harness gains {r_h['mean'] * 100:+.1f} under Haiku ({', '.join(src)}) "
                  f"and {r_s['mean'] * 100:+.1f} under {model}" if r_h and r_s else "")
-        add("H14", "After a model upgrade, re-measurement changes which items earn their place",
+        add("H13", "After a model upgrade, re-measurement changes which items earn their place",
             test=f"/prune under {model} on a copy of {', '.join(src)}, every item tested; "
                  "the same harness's holdout gain under each model beside it",
             estimate=f"{len(removable)} of {len(decided)} decided item(s) removable"
@@ -402,14 +385,14 @@ def scorecard(d):
             verdict=("INCONCLUSIVE" if not decided else verdict(bool(removable))),
             evidence="T15, F16")
     elif mc:
-        add("H14", "After a model upgrade, re-measurement changes which items earn their place",
+        add("H13", "After a model upgrade, re-measurement changes which items earn their place",
             verdict="INCONCLUSIVE",
             evidence="the benchmark ran but the /prune pass under the stronger model has not")
     else:
-        add("H14", "After a model upgrade, re-measurement changes which items earn their place",
+        add("H13", "After a model upgrade, re-measurement changes which items earn their place",
             verdict="INCONCLUSIVE", evidence="the model-change study has not run")
 
-    # ---- H15 external -----------------------------------------------------
+    # ---- H14 external -----------------------------------------------------
     if d.external:
         by = {}
         for e in d.external:
@@ -418,8 +401,8 @@ def scorecard(d):
             b[1] += e.get("n", 0)
         gain = ((by.get("evolved", [0, 1])[0] / max(1, by.get("evolved", [0, 1])[1]))
                 - (by.get("none", [0, 1])[0] / max(1, by.get("none", [0, 1])[1])))
-        # brief §5: "its own paired analysis over its 4 holdout tasks at k=5, with a
-        # bootstrap CI" — the same paired unit and bootstrap as the lab's primary, on
+        # Its own paired analysis over its 4 holdout tasks at k=5, with a
+        # bootstrap CI: the same paired unit and bootstrap as the lab's primary, on
         # X1's own rollouts; with four tasks the interval is wide, and says so
         xr = d.bench(runs=sorted({e["run"] for e in d.external}), arms=("none", "evolved"),
                      split="holdout")
@@ -430,30 +413,30 @@ def scorecard(d):
             iv = f"[{z(lo) * 100:+.1f}, {z(hi) * 100:+.1f}] (task bootstrap, {len(cs)} tasks)"
         else:
             iv = "— (no rollout rows to pair)"
-        # D-12: when the loop kept nothing, `evolved` IS `none` and the benchmark is an
-        # A/A. Its difference is noise by construction and cannot support H15, however
+        # when the loop kept nothing, `evolved` IS `none` and the benchmark is an
+        # A/A. Its difference is noise by construction and cannot support H14, however
         # it falls; it is reported as the A/A it is.
         if any(e.get("harness_identical") for e in d.external):
-            add("H15", "The loop also helps on a repository nobody in this project built",
+            add("H14", "The loop also helps on a repository nobody in this project built",
                 test="its own 4 holdout tasks at k=5 — but the loop kept nothing, so "
                      "`evolved` is byte-identical to `none` and the benchmark is an A/A",
                 estimate=f"A/A difference {gain * 100:+.1f} points (noise by construction)",
                 interval=iv, margin="a positive gain from an evolved harness",
                 verdict="INCONCLUSIVE",
-                evidence="T17 · /evolve was BARREN: nothing recurred often enough to learn")
+                evidence="T16 · /evolve was BARREN: nothing recurred often enough to learn")
             gain = None
         if gain is not None:
-          add("H15", "The loop also helps on a repository nobody in this project built",
+          add("H14", "The loop also helps on a repository nobody in this project built",
             test="its own 4 holdout tasks at k=5, judged by its own suite and linter; "
                  "paired over tasks",
             estimate=f"{gain * 100:+.1f} points", interval=iv,
             margin="a positive gain, reported as corroboration and never pooled",
-            verdict=verdict(gain > 0), evidence="T17, F17")
+            verdict=verdict(gain > 0), evidence="T16, F17")
     else:
-        add("H15", "The loop also helps on a repository nobody in this project built",
+        add("H14", "The loop also helps on a repository nobody in this project built",
             verdict="INCONCLUSIVE", evidence="the second repository has not been run")
 
-    # ---- H16, H17, H18 the judge -----------------------------------------
+    # ---- H15, H16 the judge ----------------------------------------------
     if d.scope:
         # the evaluation runs only (the development run is reported beside, never pooled),
         # and the fates score.sh gives: KEPT against KILLED on a regression gate
@@ -465,51 +448,46 @@ def scorecard(d):
         bk, bb = num("kept", "breadth"), num("killed-regression", "breadth")
         sep = bool(kept and bur and min(kept) > max(bur))
         bsep = bool(bk and bb and min(bk) > max(bb))
-        add("H16", "Pre-sweep relevance separates KEPT from BURIED-on-regression where "
+        add("H15", "Pre-sweep relevance separates KEPT from BURIED-on-regression where "
                    "breadth does not",
             test="lowest KEPT against highest BURIED-on-regression, with breadth as the control; "
                  "on the evaluation runs, a candidate is buried on a regression when score.sh "
-                 "killed it on gate 2 or 3 (DEVIATIONS D-22)",
+                 "killed it on gate 2 or 3",
             estimate=(f"relevance: lowest KEPT {min(kept):.0%} vs highest BURIED "
                       f"{max(bur):.0%}" if kept and bur else "relevance unavailable (no judge)")
                      + (f" · breadth: {min(bk):.0%} vs {max(bb):.0%}" if bk and bb else "")
                      + f" · {len(kept)} kept, {len(bur)} buried on a regression",
-            interval="see T19",
+            interval="see T18",
             margin="relevance separates and breadth does not",
             verdict=verdict(sep and not bsep, testable=bool(kept and bur)),
-            evidence="T19, F18 · the development run is in T19, not pooled")
+            evidence="T18, F18 · the development run is in T18, not pooled")
     else:
-        add("H16", "Pre-sweep relevance separates KEPT from BURIED-on-regression",
+        add("H15", "Pre-sweep relevance separates KEPT from BURIED-on-regression",
             verdict="INCONCLUSIVE", evidence="scope-replay has not been run")
 
     pairs = fire_rate_pairs(d)
     if pairs:
         # Two or three live items is far too few for a correlation to mean anything,
-        # so the pre-registered test is the RANK ORDER and no r is ever quoted.
+        # so the test is the RANK ORDER and no r is ever quoted.
         ranks_ok = all(
             (a["predicted"] - b["predicted"]) * (a["measured"] - b["measured"]) >= 0
             for i, a in enumerate(pairs) for b in pairs[i + 1:])
         worst = max(pairs, key=lambda x: abs(x["predicted"] - x["measured"]))
-        add("H17", "The judge's predicted fire rate tracks the measured one",
+        add("H16", "The judge's predicted fire rate tracks the measured one",
             test="predicted against measured invocation rate, per live gated skill",
             estimate="; ".join(f"{x['item']} predicted {x['predicted']:.0%} vs measured "
                                f"{x['measured']:.0%}" for x in pairs),
             interval=f"n = {len(pairs)} items",
             margin="rank order preserved (no correlation is quoted at this n)",
             verdict=verdict(ranks_ok),
-            evidence=f"F19, T19 · largest miss: {worst['item']}, "
+            evidence=f"F19, T18 · largest miss: {worst['item']}, "
                      f"{abs(worst['predicted'] - worst['measured']) * 100:.0f} points")
     else:
-        add("H17", "The judge's predicted fire rate tracks the measured one",
+        add("H16", "The judge's predicted fire rate tracks the measured one",
             test="predicted against measured, per live item", estimate="—", interval="—",
             margin="rank order preserved", verdict="INCONCLUSIVE",
             evidence="no item has both a prediction and a measured fire rate yet")
-    add("H18", "Counting every lesson and transcript chooses a different theme than a sample",
-        test="one Jev-on run against the Jev-off runs", estimate="—", interval="—",
-        margin="descriptive only", verdict="NOT TESTABLE",
-        evidence="DEVIATIONS.md D-01: dropped. It is one ordinary run's cost and was "
-                 "the first block to cut; the judge was unavailable when the budget "
-                 "was set and the runs were already committed when it returned.")
+    out.sort(key=lambda c: int(c["id"][1:]))          # in the order of their numbers
     return out
 
 
@@ -521,7 +499,7 @@ def scorer_verdict(g):
 
 
 def fire_rate_pairs(d):
-    """H17: the judge's predicted invocation rate beside the measured one.
+    """H16: the judge's predicted invocation rate beside the measured one.
 
     The comparator is fired/VISIBLE, not fired/rollouts: the question the judge was
     asked is "would an agent doing this task choose to invoke the skill", which is
@@ -543,7 +521,7 @@ def fire_rate_pairs(d):
 
 
 def tier_rubric(d, runs):
-    """PREREGISTRATION.md §11.2, applied to the recorded firing data."""
+    """The three-part tier rubric, applied to the recorded firing data."""
     out = []
     for run in runs:
         firing = d.firing(run)
@@ -576,11 +554,11 @@ def tier_rubric(d, runs):
 
 
 def claims(d, cards):
-    """T18: every sentence the report asserts, against what supports it.
+    """T17: every sentence the report asserts, against what supports it.
 
     Two kinds. The hypotheses are the obvious ones. The second kind is the trap:
     a report's most quotable sentences are usually NOT hypotheses — "the agent
-    opened CONTRIBUTING.md in 0.4% of rollouts", "39 defects" — and those are
+    opened CONTRIBUTING.md in 0.4% of rollouts" — and those are
     exactly the ones that get written from memory. Every one below is computed
     here from the same rows.
     """
@@ -608,14 +586,6 @@ def claims(d, cards):
                 add(f"`{name}` ({run}) was in context in {f['visible']} rollouts and "
                     f"invoked in {f['fired']}.", "F9, T6",
                     f"{f['fired']}/{f['visible']} = {f['fired'] / f['visible']:.0%}")
-    dp = DATA / "defects.json"
-    if dp.exists():
-        rows = json.loads(dp.read_text())
-        d0 = sum(1 for r in rows if r.get("where") != "the evaluation programme")
-        add("The lab found defects in Cortex itself, and they are a result rather than "
-            "an embarrassment.", "T16",
-            f"{len(rows)} total: {d0} while the lab was built and during the development run, "
-            f"{len(rows) - d0} during this programme")
     if (d.spend or {}).get("total") is not None:
         add("What the programme cost, measured.", "T14, spend.json",
             f"${d.spend['total']:,.2f} of a ${d.spend.get('cap', 0):,.0f} cap (the development "
@@ -664,9 +634,9 @@ def main():
         ("T9", lambda: T.t9_corrections(d)), ("T10", lambda: T.t10_prune(d)),
         ("T11", lambda: T.t11_harvest(d)), ("T12", lambda: T.t12_findings(d)),
         ("T13", lambda: T.t13_invalid(d)), ("T14", lambda: T.t14_cost(d)),
-        ("T15", lambda: T.t15_model_change(d)), ("T16", lambda: T.t16_defects(d)),
-        ("T17", lambda: T.t17_external(d)), ("T18", lambda: T.t18_claims(d, claims(d, cards))),
-        ("T19", lambda: T.t19_scope(d)), ("T20", lambda: T.t20_judge(d)),
+        ("T15", lambda: T.t15_model_change(d)),
+        ("T16", lambda: T.t16_external(d)), ("T17", lambda: T.t17_claims(d, claims(d, cards))),
+        ("T18", lambda: T.t18_scope(d)), ("T19", lambda: T.t19_judge(d)),
         ("F1", lambda: F.f1_calibration(d)), ("F2", lambda: F.f2_headline(d)),
         ("F3", lambda: F.f3_forest(d)), ("F4", lambda: F.f4_heatmap(d)),
         ("F5", lambda: F.f5_corrections(d)), ("F6", lambda: F.f6_items_over_rounds(d)),

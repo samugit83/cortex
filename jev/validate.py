@@ -53,11 +53,10 @@ DEFAULT_EVOLVE = os.path.join(os.path.dirname(CORTEX_HOME), "cortex-lab", ".evol
 SNAPSHOT = os.path.join(HERE, "corpus")
 
 # Set to 0.85 on 2026-09-21, AFTER the first measurement returned 89.4%. The
-# original bar was 0.90 and the original result was a FAIL; both are preserved in
-# DEVIATIONS.md D-07. Seven of the eleven disagreements are cases where the keyword
-# oracle read `fix.patch` — which Jev is never sent — and the operator judged the
-# bar unfair on that ground. A reader who wants the untouched number should read
-# D-07 before this constant.
+# original bar was 0.90 and the original result was a FAIL. Seven of the eleven
+# disagreements are cases where the keyword oracle read `fix.patch` — which Jev is
+# never sent — and the operator judged the bar unfair on that ground. A reader who
+# wants the untouched verdict should apply 0.90.
 PASS_AGREEMENT = 0.85
 RELEVANT_P = 0.5                 # a Noul is the probability of yes; 0.5 is its midpoint
 

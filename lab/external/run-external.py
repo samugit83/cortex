@@ -6,7 +6,7 @@
   run-external.py bench [--k 5] [--arms none,evolved]
   run-external.py export     -> reports/data/external.jsonl
 
-This is §4.9, the block the brief calls the single most valuable one, because it
+This is the block the programme counts as its single most valuable one, because it
 answers the hardest attack on the whole paper: *"you built the repository, the
 house rules and the tasks, so of course it works."*
 
@@ -53,7 +53,7 @@ MODEL = "claude-haiku-4-5-20251001"
 # and runs its check as `cd <clone> && env <rollout_env> bash check.sh`; /harvest
 # teaches `python3 -m pytest …`, and this machine's python3 has no pytest at all.
 # Without this every structlog task would fail preflight on its FIXED state, be
-# quarantined, and /evolve would refuse to run (min_valid_tasks) — H15 would have
+# quarantined, and /evolve would refuse to run (min_valid_tasks) — H14 would have
 # measured "no gain" for an infrastructure reason. structlog is left out on purpose:
 # if PYTHONPATH were ever lost, `import structlog` fails loudly instead of quietly
 # importing some other copy's code.
@@ -330,7 +330,7 @@ def cmd_setup(a):
 
     # Sessions run in the order a developer lived them, oldest commit first, so the
     # harness is carried forward in time and then tested on the four newest commits.
-    # (The mined order was newest first; §10 fixes the split, not the order, and no
+    # (The mined order was newest first; the selection rule fixes the split, not the order, and no
     # session had run when this was set.)
     def when(t):
         return sh(["git", "log", "-1", "--format=%ct", t["sha"]], cwd=REPO, env=env).stdout.strip()
@@ -564,7 +564,7 @@ def cmd_export(a):
         d["passed"] += r["pass"]
         d["n"] += 1
     # Did the loop change the harness at all? If `evolved` is byte-identical to `none`
-    # the benchmark is an A/A, and no difference it shows can be the loop's (D-12).
+    # the benchmark is an A/A, and no difference it shows can be the loop's.
     import filecmp
     root = RUN / "sandbox" / "harness"
     def same(a, b):

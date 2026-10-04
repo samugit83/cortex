@@ -1,6 +1,5 @@
-"""stats.py — the statistics the pre-registration fixed, and nothing else.
+"""stats.py — the statistics the report uses, and nothing else.
 
-Everything here was chosen in `PREREGISTRATION.md` §11 before any replicate ran.
 Two ideas run through all of it:
 
 **Rollouts of one task are not independent.** Five rollouts of `HB4` under one arm
@@ -241,7 +240,7 @@ def rate(rows, **where):
 
 
 def share_recovered(cs_treat, cs_full):
-    """H12: what share of `evolved`'s gain over `none` a third arm recovers.
+    """H11: what share of `evolved`'s gain over `none` a third arm recovers.
 
     Returns (share, lo, hi) with the interval from the same two-way bootstrap,
     computed on the ratio of the two paired means so that the numerator and the

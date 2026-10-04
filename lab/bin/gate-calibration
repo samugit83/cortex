@@ -25,8 +25,7 @@ nowhere in them — so the false-KEEP rate measured here is a property of the ga
 alone, before and after the judge existed. That is worth one sentence in the
 report rather than leaving it implicit.
 
-**The procedure is `/evolve`'s own, applied through the CLI so it is deterministic**
-(PREREGISTRATION.md §7):
+**The procedure is `/evolve`'s own, applied through the CLI so it is deterministic**:
 
   1. screen at k=2 on that candidate's screen tasks;
   2. stop if gain <= 0 or it never fired -> KILL (screen);
@@ -119,12 +118,12 @@ def score(testbed, env):
         return {"verdict": None, "error": (p.stderr or p.stdout)[-400:]}
 
 
-# The candidate whose sweep measures the testbed's baseline (PREREGISTRATION.md §7:
+# The candidate whose sweep measures the testbed's baseline (the placebos' screen is
 # "the four lowest-numbered tasks that fail at the testbed's baseline, measured once
 # before any candidate is screened"). C1 never ran /evolve, so its repository has no
 # sweep to read a baseline from — and without one, every task would be "fair game"
 # and the placebos would be screened on tasks that already pass, where they cannot
-# show a spurious gain: the exact thing §7 says they must be able to do.
+# show a spurious gain: the exact thing the gate test needs them to be able to do.
 #
 # `sweep.sh` has no base-only mode, so the baseline is the BASE arm of one confirm
 # sweep, and the base arm is always the live harness — here, empty — whatever the
@@ -275,7 +274,7 @@ def baseline_failing(testbed, env, out, commit=None, dry_run=False):
     The baseline is the empty harness, so it is read from the BASE arm of the probe's
     own confirm sweep and nothing else. An inherited sweep will not do: its base arm
     measured the source run's live items as they were then, never the empty harness,
-    and C1 — the pre-registered source — has no sweeps at all. A task counts as
+    and C1 — the testbed's source — has no sweeps at all. A task counts as
     failing when the base arm did not pass every time, as in Cortex's own
     `baseline.json`.
 
@@ -326,7 +325,7 @@ def baseline_failing(testbed, env, out, commit=None, dry_run=False):
 
 
 def screen_tasks(kind, name, testbed, env, base):
-    """PREREGISTRATION.md §7, applied without ever reading the candidate's text."""
+    """The screen-task rule, applied without ever reading the candidate's text."""
     tasks = valid_tasks(testbed)
     failing = [t for t in base["failing"] if t in tasks] or tasks
     if kind.startswith("placebo"):

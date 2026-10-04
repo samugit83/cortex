@@ -53,7 +53,7 @@ class Data:
         self.items = rows("items.jsonl")
         self.gates = rows("gates.jsonl")
         self.prune = rows("prune.jsonl")                        # the Haiku experiment (H10)
-        self.prune_mc = rows("prune-model-change.jsonl")        # /prune under Sonnet (H14)
+        self.prune_mc = rows("prune-model-change.jsonl")        # /prune under Sonnet (H13)
         self.scope = rows("scope.jsonl")
         self.external = rows("external.jsonl")
         # the prune passes' own rollouts (the export above records only their verdicts), and
@@ -100,8 +100,8 @@ class Data:
         """The re-measurements of these runs (D0R for D0), or the runs themselves.
 
         A re-measurement is the SAME harness benchmarked again with the replicates'
-        tooling on the replicates' holdout (brief §4.4: "D0 re-measured on the
-        expanded holdout"), so it is the like-for-like number wherever D0 is set
+        tooling on the replicates' holdout (D0 re-measured on the
+        expanded holdout), so it is the like-for-like number wherever D0 is set
         against R1…Rn. D0's own benchmark — fifteen holdout tasks, the development
         tooling — stays D0's report. A re-measurement carries only benchmark rows;
         D0's sessions, cycles and items are D0's alone.
@@ -110,8 +110,8 @@ class Data:
         return re_ or list(runs)
 
     def same_harness(self, mc_runs):
-        """The run whose harness a model-change run re-measures (R1), so that "the
-        same harness's gain under each model" (brief §4.8) compares R1 with M1 — not
+        """The run whose harness a model-change run re-measures (R1), so that the
+        same harness's gain under each model compares R1 with M1 — not
         M1 with the pooled replicates, which are four different harnesses."""
         of = [r.get("of") for r in self.runs if r["run"] in mc_runs and r.get("of")]
         return sorted(set(of)) or self.evaluation
@@ -141,9 +141,8 @@ class Data:
     def complete_case_tasks(self, runs, arms=("none", "evolved"), split="holdout"):
         """The tasks measured in EVERY one of `runs`, under every arm in `arms`.
 
-        `PREREGISTRATION.md` §5.1 makes this the primary set and the all-valid set
-        the secondary one, decided before any run existed — so that a task dropping
-        out of one run cannot quietly change what "the holdout" means.
+        This is the primary set and the all-valid set is the secondary one, so that
+        a task dropping out of one run cannot quietly change what "the holdout" means.
         """
         seen = defaultdict(set)
         for r in self.bench(runs=runs, arms=arms, split=split):

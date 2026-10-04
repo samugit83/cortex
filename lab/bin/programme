@@ -34,15 +34,15 @@ mark()        { date -Is > "$STATE/$1.done"; }
 # Every rollout runs on the operator's Claude login, and the operator's standing
 # instruction is: if usage runs out, STOP and ask for a recharge. Without this, a
 # usage limit makes every `claude -p` fail in seconds, each step "finishes" with
-# INVALID rows, earns its marker, and the chain races on. The brief says the same
-# of money: "spend is within BUDGET_CAP_USD, or the user approved going over".
+# INVALID rows, earns its marker, and the chain races on. The same holds
+# of money: spend stays within BUDGET_CAP_USD, or the user approves going over.
 GUARD="$BIN/usage-guard"
 
 # What each paid step may cost, reserved against the cap BEFORE it starts:
-# PREREGISTRATION.md §12's figures. D0-bench is what was left of its 456 rollouts.
+# the planned figures. D0-bench is what was left of its 456 rollouts.
 # The Sonnet benchmark is priced by its own pilot, and reserves the whole rest of
-# the study (bench + prune), so it cannot run out of budget half-way (§9: the pilot
-# is "recorded before committing to the rest").
+# the study (bench + prune), so it cannot run out of budget half-way (the pilot
+# is recorded before committing to the rest).
 reserve_for() {
   case "$1" in
     D0-bench)  echo 50 ;;
@@ -67,7 +67,7 @@ preflight() {                  # preflight <step>: 0 go · 3 usage · 4 budget
   if [ "$name" = scope-replay ]; then
     if ! out=$("$GUARD" jev 2>&1); then
       say "JEV   $name — the judge does not answer: $out"
-      say "      recharge Jev, then restart the programme (H16/H17 need the judge, not its fallback)."
+      say "      recharge Jev, then restart the programme (H15/H16 need the judge, not its fallback)."
       return 3
     fi
     say "      $out"
@@ -232,7 +232,7 @@ step "C1-new"    "isolated copy for the control"    "$BIN/run-eval" new C1 --con
 step "C1-rounds" "C1: the same sessions, no /evolve" "$BIN/run-eval" rounds C1 --from 1 --to 10 || exit 1
 
 # ---------------------------------------------------------- the benchmarks --
-# k is per split, as the pre-registration sets it: the holdout is the inference
+# k is per split: the holdout is the inference
 # and gets k=5, the training set is description and gets k=3. The ablation arms
 # are holdout-only at k=3 — they answer "which part did the work", and the
 # training set has nothing to say about that.
@@ -292,9 +292,9 @@ step "ext-bench" "structlog: none vs evolved on its four holdout commits, k=5" \
 step "ext-export" "structlog: rows" \
   python3 "$CORTEX/lab/external/run-external.py" export || exit 1
 
-# ------------------------------------------------- a stronger model (H14) --
-# Pre-registered as "the stronger model (Sonnet)". The cost pilot runs first and
-# its measurement is recorded BEFORE committing to the rest, exactly as §9 asks —
+# ------------------------------------------------- a stronger model (H13) --
+# The stronger model is Sonnet. The cost pilot runs first and
+# its measurement is recorded BEFORE committing to the rest —
 # a model that turns out to cost six times as much changes what the rest is worth.
 export STRONG_MODEL="${STRONG_MODEL:-claude-sonnet-5}"
 step "M1-pilot" "Sonnet: a 10-rollout cost pilot, measured before committing" \
@@ -309,7 +309,7 @@ for R in R1 R2 R3 R4 C1; do
   step "$R-export" "$R: rows" "$BIN/run-eval" export "$R" || exit 1
 done
 
-step "scope-replay" "H16/H17: score the judge against verdicts that already exist" \
+step "scope-replay" "H15/H16: score the judge against verdicts that already exist" \
   bash -c "for r in D0 R1 R2 R3 R4; do
              d=\"$EVAL/runs/\$r/cortex-lab-\$r/.evolve\"
              [ \"\$r\" = D0 ] && d=\"$(cd "$CORTEX/.." && pwd)/cortex-lab/.evolve\"
@@ -324,4 +324,4 @@ step "scope-replay" "H16/H17: score the judge against verdicts that already exis
            \"$BIN/usage-guard\" jev-rows \"$CORTEX\"/lab/reports/data/scope-replay-*.jsonl" || exit 1
 
 say "===================== programme finished ====================="
-say "next: Checkpoint B, the final analysis and the artifact package"
+say "next: the final analysis and the artifact package"

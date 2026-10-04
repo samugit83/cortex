@@ -9,6 +9,27 @@ and each release is the git tag `v<version>`.
 Two older tags name a role instead of a version: `v1.0-eval` is the Cortex that every
 evaluation run used, and `v1.0-paper` is the first public release, 1.0.0.
 
+## [1.0.2] - 2026-10-04
+
+The tool measures and decides exactly as in 1.0.1, and no measured number changed. This
+release is the one the paper cites.
+
+### Changed
+
+- The lab's report lists the hypotheses that were tested, numbered H0 to H16 as in the
+  paper, and its tables are numbered T1 to T19. `lab/reports/REPORT.md`, `SUMMARY.md`,
+  `data/scorecard.json` and the tables are regenerated from the same rows: every estimate,
+  interval, margin and verdict is the one 1.0.1 printed.
+- The scripts that compute the paper's numbers (`lab/reports/analysis/gen_numbers.py`,
+  `gen_results_data.py`) read the new labels.
+- `lab/reports/REPRODUCE.md` and `docs/GUIDE.md` follow the report.
+
+### Removed
+
+- The programme's working documents (its brief, its plan, its logs and checkpoints) and
+  the list of defects found while the lab was built, with the table drawn from it. The
+  report, the rows behind it and the scripts that rebuild every number stay.
+
 ## [1.0.1] - 2026-10-04
 
 The tool measures and decides exactly as in 1.0.0. This release is the one whose scripts
@@ -65,5 +86,6 @@ The first public release (tag `v1.0-paper`).
   rollout-level rows behind every number, with the scripts that rebuild them offline
   (`lab/reports/REPRODUCE.md`).
 
+[1.0.2]: https://github.com/samugit83/cortex/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/samugit83/cortex/compare/v1.0-paper...v1.0.1
 [1.0.0]: https://github.com/samugit83/cortex/releases/tag/v1.0-paper

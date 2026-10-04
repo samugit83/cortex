@@ -18,8 +18,8 @@ rollout that could not run is INVALID and never scored — but nothing stopped t
 CHAIN: each step would "finish", earn its marker, and the programme would race
 through the gate testbed, the prune experiment, structlog and the Sonnet study
 writing INVALID rows and RERUN verdicts. The operator's standing instruction is the
-opposite: stop, and ask for a recharge. The brief's is the same for money: "spend
-is within BUDGET_CAP_USD, or the user approved going over".
+opposite: stop, and ask for a recharge. The same holds for money: spend
+stays within BUDGET_CAP_USD, or the user approves going over.
 
 The spend is measured, never estimated: every session, sweep rollout and benchmark
 row the programme wrote under cortex-eval/, each counted once. A repository copied
@@ -47,12 +47,12 @@ HERE = Path(__file__).resolve().parent
 CORTEX = HERE.parent.parent
 EVAL = CORTEX.parent / "cortex-eval"
 D0_REPO = CORTEX.parent / "cortex-lab"
-BRIEF = CORTEX / "lab" / "BRIEF.md"
+BUDGET_CAP_USD = 1500.0
 PROBES = EVAL / "logs" / "usage-probes.jsonl"
 HAIKU = "claude-haiku-4-5-20251001"
-# PREREGISTRATION.md §12's figure for the whole model-change block: the reserve used
+# the planned figure for the whole model-change block: the reserve used
 # only if the pilot has not measured anything to project from
-M1_PREREGISTERED = 120.0
+M1_PLANNED = 120.0
 
 
 def jsonl(p):
@@ -82,14 +82,8 @@ def num(x):
 
 
 def cap():
-    """BUDGET_CAP_USD from the brief ("the user may change this line")."""
-    try:
-        m = re.search(r"BUDGET_CAP_USD\s*=\s*([0-9][0-9_,.]*)", BRIEF.read_text())
-        if m:
-            return float(m.group(1).replace("_", "").replace(",", ""))
-    except OSError:
-        pass
-    return 1500.0
+    """The programme's spending cap, in dollars."""
+    return BUDGET_CAP_USD
 
 
 def sweep_key(p):
@@ -177,7 +171,7 @@ def cmd_budget(a):
     if total + a.reserve > c:
         print(f"BUDGET: {a.step or 'this step'} reserves ${a.reserve:,.2f} on top of "
               f"${total:,.2f} measured — ${total + a.reserve:,.2f}, over the ${c:,.0f} cap. "
-              f"The brief: stop and ask the user.")
+              f"Stop and ask the user.")
         return 4
     print(f"budget: ${total:,.2f} spent + ${a.reserve:,.2f} reserved for "
           f"{a.step or 'this step'} = ${total + a.reserve:,.2f} of ${c:,.0f}")
@@ -292,7 +286,7 @@ def cmd_infra(a):
 # ------------------------------------------------------------------ jev --
 def cmd_jev(_a):
     """`cortex jev doctor` exits 0 when Jev is merely OFF, and scope-replay then
-    quietly reports only its deterministic half — H16 and H17 would lose the judge
+    quietly reports only its deterministic half — H15 and H16 would lose the judge
     without anyone noticing. Healthy is exit 0 AND a gateway that answered."""
     # asked the way scope-replay will use it: Jev enabled explicitly, from a directory
     # with no .env of its own, the key file pointed to — run from the Cortex repo the
@@ -340,7 +334,7 @@ def cmd_jev_rows(a):
 def cmd_m1_reserve(a):
     """The rest of the Sonnet study, priced at what the pilot measured.
 
-    PREREGISTRATION.md §9: the pilot is "recorded before committing to the rest".
+    The pilot is recorded before committing to the rest.
     This is that commitment made mechanical: M1-bench reserves the WHOLE remainder
     — its own rollouts and the prune pass after it — so the programme cannot find
     out halfway through the study that the second half does not fit.
@@ -348,8 +342,8 @@ def cmd_m1_reserve(a):
     rows = [r for r in jsonl(EVAL / "runs" / "M1" / "bench" / "results.jsonl") if r.get("valid")]
     costs = [num(r.get("cost_usd")) for r in rows if num(r.get("cost_usd"))]
     if not costs:
-        print(f"{M1_PREREGISTERED:.2f}")
-        print("m1-reserve: the pilot measured nothing; using the pre-registered figure",
+        print(f"{M1_PLANNED:.2f}")
+        print("m1-reserve: the pilot measured nothing; using the planned figure",
               file=sys.stderr)
         return 0
     rate = sum(costs) / len(costs)

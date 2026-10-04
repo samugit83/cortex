@@ -39,7 +39,7 @@ hand, under lab/bench/harnesses/:
               path-scoped rules become path-less rules. Same words, no tiers
   desc-only   `evolved`'s skills keep name, description and paths; the body is
               replaced by neutral filler of similar length. Tests whether the
-              description alone carries the effect (H12)
+              description alone carries the effect (H11)
   ideal       hand-written, the forms the lab's design predicted
   swapped     `ideal`'s items in the other form, to test that the form matters
 
@@ -84,7 +84,7 @@ RESULTS = OUT / "results.jsonl"
 SANDBOX = Path(os.environ.get("BENCH_SANDBOX", "/tmp/cortex-lab-bench"))
 HARNESSES = HERE / "harnesses"                            # the hand-written arms
 ARMS_JSON = OUT / "arms.json"
-# The rollout model. BENCH_MODEL overrides it for the model-change study (§4.8),
+# The rollout model. BENCH_MODEL overrides it for the model-change study,
 # which is the only place in the programme another model is allowed; every row
 # records what it ran on, so two models can never be pooled by accident.
 MODEL = os.environ.get("BENCH_MODEL") or "claude-haiku-4-5-20251001"
@@ -288,7 +288,7 @@ def build_flat(h, meta):
 
 
 def build_desc_only(h, meta):
-    """Skills keep their description and paths; their body says nothing (H12)."""
+    """Skills keep their description and paths; their body says nothing (H11)."""
     build_evolved(h, meta)
     for f in (h / "skills").glob("*/SKILL.md"):
         text = f.read_text(encoding="utf-8")
@@ -376,7 +376,7 @@ def snapshot_arms(meta, want=("none", "evolved"), root=None):
     # not one. Say so here, so the analysis can refuse to report it.
     # How much each derived arm actually perturbs `evolved`, file by file. It
     # matters because `desc-only` only rewrites SKILL bodies: on a harness that is
-    # mostly rules it changes almost nothing, and H12 would then be answered by an
+    # mostly rules it changes almost nothing, and H11 would then be answered by an
     # arm that barely differs from the one it is compared against.
     base = record.get("evolved", {}).get("dir")
     for arm, rec in record.items():
@@ -484,7 +484,7 @@ def cmd_run(args):
                 done.add((row["task"], row["arm"], row["r"]))
     # Every rollout still to run, in the order they start: arms interleaved.
     #
-    # k is per SPLIT, because the pre-registration sets them apart: the holdout is
+    # k is per SPLIT, because the two are read differently: the holdout is
     # the inference and gets k=5, the training set is description and gets k=3.
     # One k for both quietly turns a 456-rollout benchmark into a 560-rollout one,
     # and for the eight-arm run it was the difference between $66 and $225.
@@ -494,7 +494,7 @@ def cmd_run(args):
     tasks = [t for t in meta["tasks"] if not only or t["id"] in only]
     if args.split:
         tasks = [t for t in tasks if t["split"] == args.split]
-    # PREREGISTRATION.md §5.1: a scenario that fails validation on THIS run's final
+    # A scenario that fails validation on THIS run's final
     # code is excluded from this run's benchmark, identically in every arm. It was
     # being recorded and not applied, which is the worst of both — a file that says
     # a task was excluded, and a results set in which it was not.
@@ -796,7 +796,7 @@ def main():
     ap.add_argument("--arms", default="none,evolved")
     ap.add_argument("--only", default="")
     ap.add_argument("--exclude", default="",
-                    help="task ids to leave out, identically in every arm (§5.1)")
+                    help="task ids to leave out, identically in every arm")
     ap.add_argument("--jobs", default="auto", help="rollouts at once: auto (default) or a number")
     args = ap.parse_args()
     if args.cmd in ("prepare", "run"):

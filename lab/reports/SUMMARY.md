@@ -6,9 +6,8 @@
 
 | | |
 |---|---|
-| INCONCLUSIVE | 3 |
+| INCONCLUSIVE | 2 |
 | NOT SUPPORTED | 4 |
-| NOT TESTABLE | 1 |
 | SUPPORTED | 11 |
 
 **What it cost.** $1,196 measured for the programme, within a $1,500 cap (the development run before it: $155).
@@ -17,7 +16,7 @@
 
 1. **One synthetic repository and four lintable rules.** A machine can tell whether these rules were followed. Rules that need judgement are not tested here at all, and that is the clearest limit on the whole claim.
 2. **The gain is a property of a weak model.** Every primary number is `claude-haiku-4-5`. Under `claude-sonnet-5` the same harness gains **+5.6** points where it gained **+66.7** under Haiku (R1's harness), because the stronger model already follows most house rules without a harness; one `/prune` pass after the upgrade, at k=3, found 2 of its 4 items removable (exporter-checklist, billing-helpers). The loop is worth most where the model is weakest.
-3. **A judge in the proposal layer.** Cortex ships one. Every primary number here was produced with it off, the gates contain no model and a test asserts so — and its own validation gate failed at 90 % before being lowered to 85 % (`DEVIATIONS.md` D-07).
+3. **A judge in the proposal layer.** Cortex ships one. Every primary number here was produced with it off, the gates contain no model and a test asserts so — and its own validation gate failed at 90 % before being lowered to 85 %.
 
 A second, real repository nobody here built is reported separately in §13, never pooled. **On it the loop learned nothing**: the agent was rarely corrected, so no problem recurred and Cortex declined to invent a rule. It shows when the loop has work to do, and does not test whether what it learns transfers.
 
