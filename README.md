@@ -4,7 +4,7 @@
 
 <h3>Measure your Claude Code skills and rules.<br>Keep only the ones that help.</h3>
 
-<a href="https://samugit83.github.io/cortex/diagram/"><img src="https://img.shields.io/badge/%E2%96%B6%20%20Visual%20guide-See%20how%20Cortex%20works-f08a3c?style=for-the-badge&labelColor=0f1420" alt="Visual guide: see how Cortex works" height="42"></a>
+<a href="https://samugit83.github.io/cortex/diagram/"><img src="https://img.shields.io/badge/%E2%96%B6%20%20Visual%20guide-See%20how%20Cortex%20works-f08a3c?style=for-the-badge&labelColor=0f1420" alt="Visual guide: see how Cortex works" width="460"></a>
 
 <b><a href="https://samugit83.github.io/cortex/diagram/">How it works</a></b> &nbsp;·&nbsp;
 <b><a href="https://samugit83.github.io/cortex/diagram/timeline.html">Why tasks rewind</a></b> &nbsp;·&nbsp;
