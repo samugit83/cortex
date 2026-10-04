@@ -222,12 +222,26 @@ def scorecard(d):
                 ok = margin_fn(r) and costs_more
             else:
                 ok = margin_fn(r)
+            v, why = verdict(ok), "T7, F8"
+            if hid == "H6":
+                # `accept-all` tests the gates only if a gate buried what it adds. A
+                # candidate the /evolve agent buried after score.sh returned RERUN was
+                # never judged by a gate, so an arm made only of such candidates tests
+                # that burial and leaves the hypothesis undecided, whatever its margin.
+                added = [(run, i["name"]) for run in (real or ev) for i in d.buried(run)]
+                by_gate = [x for x in added if d.rule_fate(*x) not in (None, "unscored")]
+                if added and not by_gate:
+                    v = "INCONCLUSIVE"
+                    why += (f" · the margin is {'met' if ok else 'not met'}, but no gate buried "
+                            f"what the arm adds ({', '.join(f'`{n}`' for _run, n in added)}): "
+                            f"score.sh returned RERUN and the /evolve agent buried it, so the "
+                            f"arm tests that burial, not the gates")
             add(hid, text, test=f"`{arm}` − `evolved`, paired, two-way bootstrap",
                 estimate=f"{r['mean'] * 100:+.1f} points{extra}",
                 interval=f"[{r['lo'] * 100:+.1f}, {r['hi'] * 100:+.1f}]",
                 margin=f"upper bound below {M_NOT_BETTER * 100:+.0f}"
                        + (" and it costs more always-on characters" if hid == "H7" else ""),
-                verdict=verdict(ok), evidence="T7, F8")
+                verdict=v, evidence=why)
         else:
             add(hid, text, verdict="INCONCLUSIVE", evidence=f"the `{arm}` arm has not run")
 
@@ -473,15 +487,23 @@ def scorecard(d):
             (a["predicted"] - b["predicted"]) * (a["measured"] - b["measured"]) >= 0
             for i, a in enumerate(pairs) for b in pairs[i + 1:])
         worst = max(pairs, key=lambda x: abs(x["predicted"] - x["measured"]))
+        # An order kept only because most predictions are equal has not been tested:
+        # when more than half the items share one predicted value, the order rests on
+        # the few that differ, and the hypothesis is left undecided.
+        tied = max(sum(1 for b in pairs if b["predicted"] == a["predicted"]) for a in pairs)
+        thin = ranks_ok and tied * 2 > len(pairs)
         add("H16", "The judge's predicted fire rate tracks the measured one",
             test="predicted against measured invocation rate, per live gated skill",
             estimate="; ".join(f"{x['item']} predicted {x['predicted']:.0%} vs measured "
                                f"{x['measured']:.0%}" for x in pairs),
             interval=f"n = {len(pairs)} items",
             margin="rank order preserved (no correlation is quoted at this n)",
-            verdict=verdict(ranks_ok),
+            verdict=("INCONCLUSIVE" if thin else verdict(ranks_ok)),
             evidence=f"F19, T18 · largest miss: {worst['item']}, "
-                     f"{abs(worst['predicted'] - worst['measured']) * 100:.0f} points")
+                     f"{abs(worst['predicted'] - worst['measured']) * 100:.0f} points"
+                     + (f" · the order is preserved, but {tied} of the {len(pairs)} "
+                        f"predictions are tied, so it rests on the other "
+                        f"{len(pairs) - tied}" if thin else ""))
     else:
         add("H16", "The judge's predicted fire rate tracks the measured one",
             test="predicted against measured, per live item", estimate="—", interval="—",

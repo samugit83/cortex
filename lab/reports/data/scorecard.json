@@ -66,8 +66,8 @@
   "estimate": "-8.9 points",
   "interval": "[-16.1, -1.7]",
   "margin": "upper bound below +5",
-  "verdict": "SUPPORTED",
-  "evidence": "T7, F8"
+  "verdict": "INCONCLUSIVE",
+  "evidence": "T7, F8 \u00b7 the margin is met, but no gate buried what the arm adds (`shop-clock-explicit-imports`): score.sh returned RERUN and the /evolve agent buried it, so the arm tests that burial, not the gates"
  },
  {
   "id": "H7",
@@ -166,7 +166,7 @@
   "estimate": "check-changelog-on-shop-edits predicted 60% vs measured 6%; complete-exporter-setup predicted 100% vs measured 74%; exporter-checklist predicted 100% vs measured 100%; exporter-checklist predicted 100% vs measured 83%",
   "interval": "n = 4 items",
   "margin": "rank order preserved (no correlation is quoted at this n)",
-  "verdict": "SUPPORTED",
-  "evidence": "F19, T18 \u00b7 largest miss: check-changelog-on-shop-edits, 54 points"
+  "verdict": "INCONCLUSIVE",
+  "evidence": "F19, T18 \u00b7 largest miss: check-changelog-on-shop-edits, 54 points \u00b7 the order is preserved, but 3 of the 4 predictions are tied, so it rests on the other 1"
  }
 ]

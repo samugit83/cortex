@@ -466,7 +466,7 @@ class Report:
                                  "`ideal` is what someone who already knew all four "
                                  "house rules would have written.")):
             self.w(text, "")
-            self.w(self.line(hid) if self.verdict(hid) != "INCONCLUSIVE"
+            self.w(self.line(hid) if self.card(hid).get("estimate")
                    else "> **Not measured** — that arm has not run.", "")
         self.w("![cost vs rate](figures/F8-cost-vs-rate.png)", "",
                "Up and to the left is the whole claim: the same pass rate for fewer "
@@ -793,12 +793,18 @@ class Report:
                "replay is used for H15.", "")
         self.w("### Does the judge know when a skill will be invoked? (H16)", "")
         h16 = self.card("H16")
-        if h16.get("verdict") in ("SUPPORTED", "NOT SUPPORTED"):
+        if h16.get("estimate") and h16["estimate"] != "—":
             self.w(self.line("H16"), "",
-                   "The rank order is preserved, which at this n is all that can be "
-                   "asked, and it rests on the one prediction below 100 %, a skill of the "
-                   "development run: the evaluation runs' two gated skills were both predicted "
-                   "at 100 %, which leaves no order to test. The size of the miss is the "
+                   ("The rank order is preserved, but it rests on the one prediction below "
+                    "100 %, a skill of the development run: the evaluation runs' two gated "
+                    "skills were both predicted at 100 %, which leaves no order to test, so "
+                    "the hypothesis is left undecided. "
+                    if h16.get("verdict") == "INCONCLUSIVE" else
+                    "The rank order is preserved, which at this n is all that can be "
+                    "asked, and it rests on the one prediction below 100 %, a skill of the "
+                    "development run: the evaluation runs' two gated skills were both predicted "
+                    "at 100 %, which leaves no order to test. ")
+                   + "The size of the miss is the "
                    "finding. A judge shown only a skill's description predicts "
                    "it will be reached for far more often than it is. That is the same "
                    "asymmetry §7 measures from the other side: a description that names a "

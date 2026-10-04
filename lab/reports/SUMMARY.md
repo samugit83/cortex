@@ -6,9 +6,9 @@
 
 | | |
 |---|---|
-| INCONCLUSIVE | 2 |
+| INCONCLUSIVE | 4 |
 | NOT SUPPORTED | 4 |
-| SUPPORTED | 11 |
+| SUPPORTED | 9 |
 
 **What it cost.** $1,196 measured for the programme, within a $1,500 cap (the development run before it: $155).
 

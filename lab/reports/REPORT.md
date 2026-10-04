@@ -2,7 +2,7 @@
 
 _The Cortex evaluation programme: what the loop does, what it costs, and where it fails._
 
-_Generated 2026-10-04T16:18 from `reports/data/` by `analysis/report.py`. Every result below is computed from those rows. The few figures that describe the design (the fifteen scenarios written for this programme, the relevance floor) and the judge's own validation (J0, from `jev/RESULTS.md`) are quoted._
+_Generated 2026-10-04T16:43 from `reports/data/` by `analysis/report.py`. Every result below is computed from those rows. The few figures that describe the design (the fifteen scenarios written for this programme, the relevance floor) and the judge's own validation (J0, from `jev/RESULTS.md`) are quoted._
 
 | | |
 |---|---|
@@ -33,7 +33,7 @@ _Generated 2026-10-04T16:18 from `reports/data/` by `analysis/report.py`. Every 
 | H3 | Each kept item lands in a defensible tier and fires in its own area | **NOT SUPPORTED** | 15 of 18 items scored 3/3 | — |
 | H4 | Corrections fall once an item is live, beyond the control runs | **SUPPORTED** | -0.31 corrections per session | see T9 |
 | H5 | Gates are calibrated: placebos rarely kept, harmful killed, positives kept | **NOT SUPPORTED** | false KEEP 0/20; harmful kept 0/5 (score.sh: 2 KILL, 3 RERUN); positives kept 2/4 | false KEEP [0%, 17%] |
-| H6 | Gates add value: `accept-all` is not better than `evolved` | **SUPPORTED** | -8.9 points | [-16.1, -1.7] |
+| H6 | Gates add value: `accept-all` is not better than `evolved` | **INCONCLUSIVE** | -8.9 points | [-16.1, -1.7] |
 | H7 | Tiers add value: `flat` costs more always-on context without gaining pass rate | **SUPPORTED** | -12.5 points; always-on 559 → 1688 chars | [-28.3, +1.7] |
 | H8 | Efficiency: `evolved` approaches `kitchen` and `ideal` at far lower cost | **SUPPORTED** | evolved is 11.1 points AHEAD OF `kitchen` · always-on 559 vs kitchen 2519, ideal 728 | [-22.5, +0.0] (kitchen − evolved) |
 | H9 | Independent runs learn the same families, in similar forms | **SUPPORTED** | 4 of 4 families learned in every run | — |
@@ -43,7 +43,7 @@ _Generated 2026-10-04T16:18 from `reports/data/` by `analysis/report.py`. Every 
 | H13 | After a model upgrade, re-measurement changes which items earn their place | **SUPPORTED** | 2 of 4 decided item(s) removable (exporter-checklist, billing-helpers); the same harness gains +66.7 under Haiku (R1) and +5.6 under claude-sonnet-5 | [-2.8, +13.9] |
 | H14 | The loop also helps on a repository nobody in this project built | **INCONCLUSIVE** | A/A difference +5.0 points (noise by construction) | [+0.0, +15.0] (task bootstrap, 4 tasks) |
 | H15 | Pre-sweep relevance separates KEPT from BURIED-on-regression where breadth does not | **NOT SUPPORTED** | relevance: lowest KEPT 17% vs highest BURIED 75% · breadth: 8% vs 58% · 18 kept, 2 buried on a regression | see T18 |
-| H16 | The judge's predicted fire rate tracks the measured one | **SUPPORTED** | check-changelog-on-shop-edits predicted 60% vs measured 6%; complete-exporter-setup predicted 100% vs measured 74%; exporter-checklist predicted 100% vs measured 100%; exporter-checklist predicted 100% vs measured 83% | n = 4 items |
+| H16 | The judge's predicted fire rate tracks the measured one | **INCONCLUSIVE** | check-changelog-on-shop-edits predicted 60% vs measured 6%; complete-exporter-setup predicted 100% vs measured 74%; exporter-checklist predicted 100% vs measured 100%; exporter-checklist predicted 100% vs measured 83% | n = 4 items |
 
 Full detail, with the margin for each, in [`tables/T3-scorecard.md`](tables/T3-scorecard.md).
 
@@ -222,7 +222,7 @@ The margin is stated per family. Only C's skill was rewritten, and there the arm
 
 **Does the burial matter?** `accept-all` is `evolved` plus every candidate that run buried. It ran on R2, whose only burial (`shop-clock-explicit-imports`) the /evolve agent made after score.sh returned RERUN, not a gate: the arm tests that burial, not the gates.
 
-**H6** SUPPORTED — -8.9 points — [-16.1, -1.7]
+**H6** INCONCLUSIVE — -8.9 points — [-16.1, -1.7]
 
 **Do the tiers earn their cost?** `flat` is `evolved`'s words with the scope removed: gated skills lose their `paths`, path-scoped rules become path-less rules that load on every turn.
 
@@ -346,9 +346,9 @@ So few regression kills make a thin comparison. The development run's candidates
 
 ### Does the judge know when a skill will be invoked? (H16)
 
-**H16** SUPPORTED — check-changelog-on-shop-edits predicted 60% vs measured 6%; complete-exporter-setup predicted 100% vs measured 74%; exporter-checklist predicted 100% vs measured 100%; exporter-checklist predicted 100% vs measured 83% — n = 4 items
+**H16** INCONCLUSIVE — check-changelog-on-shop-edits predicted 60% vs measured 6%; complete-exporter-setup predicted 100% vs measured 74%; exporter-checklist predicted 100% vs measured 100%; exporter-checklist predicted 100% vs measured 83% — n = 4 items
 
-The rank order is preserved, which at this n is all that can be asked, and it rests on the one prediction below 100 %, a skill of the development run: the evaluation runs' two gated skills were both predicted at 100 %, which leaves no order to test. The size of the miss is the finding. A judge shown only a skill's description predicts it will be reached for far more often than it is. That is the same asymmetry §7 measures from the other side: a description that names a **side duty** rather than the task at hand sits in context and is not chosen.
+The rank order is preserved, but it rests on the one prediction below 100 %, a skill of the development run: the evaluation runs' two gated skills were both predicted at 100 %, which leaves no order to test, so the hypothesis is left undecided. The size of the miss is the finding. A judge shown only a skill's description predicts it will be reached for far more often than it is. That is the same asymmetry §7 measures from the other side: a description that names a **side duty** rather than the task at hand sits in context and is not chosen.
 
 ![trigger](figures/F19-trigger.png)
 

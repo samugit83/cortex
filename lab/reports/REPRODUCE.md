@@ -49,7 +49,7 @@ If a claim in the report is not in `T17`, that is a defect in the report.
 
 **The paper's numbers.** Every number, table and chart in the paper is computed from
 the same rows by four scripts beside the analysis. Run them in a clone of the release the
-paper cites, `v1.0.2` or later (`gen_numbers.py` also reads the tag `v1.0-eval`), in this
+paper cites, `v1.0.3` or later (`gen_numbers.py` also reads the tag `v1.0-eval`), in this
 order, with the environment `run.sh` made:
 
 ```bash
@@ -221,7 +221,8 @@ with the finished lab, report and data:
 | `23bd5e4` | tag `v1.0-eval`: the frozen Cortex every run used (`runs.jsonl`, `manifest.json`) |
 | tag `v1.0-paper` | the finished lab, report and data (release 1.0.0) |
 | tag `v1.0.1` | the same, with the scripts and data that regenerate every number in the paper; `CHANGELOG.md` lists what changed |
-| tag `v1.0.2` | the release the paper cites: the report numbers its hypotheses H0 to H16 and its tables T1 to T19 |
+| tag `v1.0.2` | the report numbers its hypotheses H0 to H16 and its tables T1 to T19 |
+| tag `v1.0.3` | the release the paper cites: the scorecard gives H6 and H16 as inconclusive, as the paper does |
 
 The `analysis_commit` in `manifest.json` belongs to the working history between the freeze
 and `v1.0-paper`, which is not published.

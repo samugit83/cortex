@@ -9,10 +9,23 @@ and each release is the git tag `v<version>`.
 Two older tags name a role instead of a version: `v1.0-eval` is the Cortex that every
 evaluation run used, and `v1.0-paper` is the first public release, 1.0.0.
 
+## [1.0.3] - 2026-10-04
+
+The tool measures and decides exactly as in 1.0.2, and no measured number changed. This
+release is the one the paper cites.
+
+### Changed
+
+- The scorecard gives H6 and H16 as inconclusive, as the paper does, and each row says
+  why. For H6, the one candidate that `accept-all` adds was buried by the `/evolve` agent
+  after `score.sh` returned RERUN, not by a gate, so the arm does not test the gates. For
+  H16, three of the four predictions are tied, so the preserved order rests on one skill.
+  Their estimates and intervals are the ones 1.0.2 printed. `lab/reports/REPORT.md`,
+  `SUMMARY.md`, `data/scorecard.json` and tables T3 and T17 are regenerated.
+
 ## [1.0.2] - 2026-10-04
 
-The tool measures and decides exactly as in 1.0.1, and no measured number changed. This
-release is the one the paper cites.
+The tool measures and decides exactly as in 1.0.1, and no measured number changed.
 
 ### Changed
 
@@ -86,6 +99,7 @@ The first public release (tag `v1.0-paper`).
   rollout-level rows behind every number, with the scripts that rebuild them offline
   (`lab/reports/REPRODUCE.md`).
 
+[1.0.3]: https://github.com/samugit83/cortex/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/samugit83/cortex/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/samugit83/cortex/compare/v1.0-paper...v1.0.1
 [1.0.0]: https://github.com/samugit83/cortex/releases/tag/v1.0-paper
