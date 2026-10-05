@@ -1,0 +1,19 @@
+run,family,item,form,scope,chars,fires_own_pct,fires_other_pct,score,held_out_loaded
+R1,A,changelog-requirement,rule,shop/**,518,98,97,3,25/25
+R1,B,billing-helpers,rule,shop/billing/**,317,96,21,3,28/30
+R1,C,exporter-checklist,skill,shop/plugins/**,1135,100,0,3,30/30
+R1,E,shop-clock-rule,rule,shop/**,327,98,97,3,29/30
+R2,A,changelog-user-visible,rule,shop/**,529,98,97,3,25/25
+R2,B,billing-exact-arithmetic,rule,shop/billing/**,564,98,18,3,30/30
+R2,C,exporter-docs-and-golden,rule,shop/plugins/**,427,100,0,3,30/30
+R2,E,shop-clock-not-datetime,rule,shop/**,353,93,98,2,27/30
+R3,A,changelog-shop-reminder,rule,shop/**,261,100,99,3,25/25
+R3,A,changelog-user-facing,rule,"shop/cli.py, shop/formatting.py, shop/report.py",334,100,8,3,25/25
+R3,B,billing-rate-helpers,rule,"shop/billing/shipping.py, shop/billing/refunds.py",510,13,0,3,0/30
+R3,B,rate-helpers-narrow,rule,"shop/billing/tax.py, shop/billing/discount.py, shop/billing/fx.py",380,19,0,3,0/30
+R3,C,exporter-checklist-v2,rule,shop/plugins/*_export.py,621,100,0,3,30/30
+R3,E,shop-clock-narrow,rule,"shop/billing/invoice.py, shop/cart.py, shop/orders.py",335,43,28,3,10/30
+R4,A,shop-changelog-reminder,rule,shop/**,616,98,98,2,25/25
+R4,B,billing-rates-helpers,rule,shop/billing/**,823,100,18,3,30/30
+R4,C,exporter-checklist,skill,shop/plugins/**,940,83,0,3,26/30
+R4,E,shop-clock-queries,rule,shop/**,574,93,99,2,27/30

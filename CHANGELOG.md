@@ -9,10 +9,30 @@ and each release is the git tag `v<version>`.
 Two older tags name a role instead of a version: `v1.0-eval` is the Cortex that every
 evaluation run used, and `v1.0-paper` is the first public release, 1.0.0.
 
+## [1.0.4] - 2026-10-05
+
+The tool measures and decides exactly as in 1.0.3, and no measured number changed. This
+release is the one the paper cites.
+
+### Added
+
+- `lab/reports/paper-data/`: everything the paper prints that is a result, as data.
+  `numbers.csv` has one row per number, as printed and as a bare number; `table-*.csv`
+  hold the rows of the paper's three generated tables; `figures-*.json` hold what its
+  charts and diagrams draw. Its README says which file stands behind which table and
+  figure.
+- `lab/reports/analysis/paper_data.py` writes those files. The four scripts that compute
+  what the paper prints (`gen_numbers.py`, `gen_tables.py`, `gen_diagram_data.py`,
+  `gen_results_data.py`) call it in the run that writes the paper's own inputs, so the
+  two cannot differ.
+
+### Changed
+
+- `lab/reports/REPRODUCE.md` and the README point to the new folder.
+
 ## [1.0.3] - 2026-10-04
 
-The tool measures and decides exactly as in 1.0.2, and no measured number changed. This
-release is the one the paper cites.
+The tool measures and decides exactly as in 1.0.2, and no measured number changed.
 
 ### Changed
 

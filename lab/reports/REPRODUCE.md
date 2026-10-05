@@ -49,20 +49,22 @@ If a claim in the report is not in `T17`, that is a defect in the report.
 
 **The paper's numbers.** Every number, table and chart in the paper is computed from
 the same rows by four scripts beside the analysis. Run them in a clone of the release the
-paper cites, `v1.0.3` or later (`gen_numbers.py` also reads the tag `v1.0-eval`), in this
+paper cites, `v1.0.4` or later (`gen_numbers.py` also reads the tag `v1.0-eval`), in this
 order, with the environment `run.sh` made:
 
 ```bash
 PY=lab/reports/analysis/.venv/bin/python
-$PY lab/reports/analysis/gen_numbers.py          # paper/generated/numbers.tex: one macro per number
-$PY lab/reports/analysis/gen_tables.py           # paper/generated/tab-*.tex
-$PY lab/reports/analysis/gen_diagram_data.py     # paper/diagrams/data.js
-$PY lab/reports/analysis/gen_results_data.py     # paper/diagrams/results.js
+$PY lab/reports/analysis/gen_numbers.py          # paper-data/numbers.csv: one row per number
+$PY lab/reports/analysis/gen_tables.py           # paper-data/table-*.csv
+$PY lab/reports/analysis/gen_diagram_data.py     # paper-data/figures-diagrams.json
+$PY lab/reports/analysis/gen_results_data.py     # paper-data/figures-results.json
 ```
 
-They write into `paper/`, which is not part of this repository: compare what they write
-with the paper's LaTeX source. Each script checks what it computes against the other
-sources that state the same number, and stops if they disagree.
+Each script writes twice. One copy goes to [`paper-data/`](paper-data/), which is part of
+this repository: its README says which file stands behind which table and figure, and
+after a run `git status` shows the folder unchanged. The other goes to `paper/`, the
+paper's LaTeX source, which is not part of this repository. Each script checks what it
+computes against the other sources that state the same number, and stops if they disagree.
 
 ### The data you are reading
 
@@ -222,7 +224,8 @@ with the finished lab, report and data:
 | tag `v1.0-paper` | the finished lab, report and data (release 1.0.0) |
 | tag `v1.0.1` | the same, with the scripts and data that regenerate every number in the paper; `CHANGELOG.md` lists what changed |
 | tag `v1.0.2` | the report numbers its hypotheses H0 to H16 and its tables T1 to T19 |
-| tag `v1.0.3` | the release the paper cites: the scorecard gives H6 and H16 as inconclusive, as the paper does |
+| tag `v1.0.3` | the scorecard gives H6 and H16 as inconclusive, as the paper does |
+| tag `v1.0.4` | the release the paper cites: `paper-data/` holds every number, generated table and figure value the paper prints, as data |
 
 The `analysis_commit` in `manifest.json` belongs to the working history between the freeze
 and `v1.0-paper`, which is not published.

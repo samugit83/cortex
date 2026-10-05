@@ -8,7 +8,8 @@ paired cells, the two-way bootstrap, the permutation test and Holm's correction,
 the same definitions the scorecard uses. The pooled result, the control family, the A/A
 check, the ablations and the model change are recomputed here and must match the
 scorecard to the printed digit, or the script stops: a chart can never disagree with the
-text. Writes only paper/diagrams/results.js.
+text. Writes paper/diagrams/results.js, and the same object to
+lab/reports/paper-data/figures-results.json, which is part of the repository.
 """
 import csv
 import json
@@ -21,6 +22,7 @@ CORTEX = Path(__file__).resolve().parents[3]
 PAPER = CORTEX / "paper"                      # the paper's sources, kept outside the repository
 sys.path.insert(0, str(CORTEX / "lab" / "reports" / "analysis"))
 import load                                   # noqa: E402
+import paper_data                             # noqa: E402  the same numbers, as data in the repository
 import rescore                                # noqa: E402  the loop's verdicts, by score.sh's rules
 import rebuild as RB                          # noqa: E402  arm_pair: the scorecard's comparison
 import stats as S                             # noqa: E402
@@ -211,6 +213,7 @@ def main():
                    "window.DATA = window.DATA || {};\nwindow.DATA.results = "
                    + json.dumps(R, indent=1) + ";\n")
     print(f"-> {OUT}")
+    paper_data.write_figures("results", R)
 
 
 if __name__ == "__main__":

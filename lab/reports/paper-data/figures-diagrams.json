@@ -1,0 +1,1213 @@
+{
+ "params": {
+  "KScreen": "2",
+  "KConfirm": "3",
+  "RegressionTolerance": "0.34",
+  "MinNetRuns": "2",
+  "MaxInvalidPct": "10%",
+  "RolloutTimeoutMin": "10",
+  "MinThemeOccurrences": "3",
+  "RolloutModelName": "Claude Haiku 4.5",
+  "StrongModelName": "Claude Sonnet 5",
+  "PrimaryK": "5",
+  "AblationK": "3",
+  "StopAfterBarren": "2",
+  "MinThemeFailingTasks": "2"
+ },
+ "grid": {
+  "run": "R3",
+  "candidate": "exporter-checklist-v2",
+  "kind": "rule",
+  "paths": [
+   "shop/plugins/*_export.py"
+  ],
+  "verdict": "KEEP",
+  "k": 3,
+  "tasks": [
+   {
+    "task": "01",
+    "base": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "cand": [
+     "fail",
+     "pass",
+     "pass"
+    ],
+    "exposed": false
+   },
+   {
+    "task": "02",
+    "base": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "exposed": false
+   },
+   {
+    "task": "03",
+    "base": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "exposed": false
+   },
+   {
+    "task": "04",
+    "base": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "exposed": false
+   },
+   {
+    "task": "05",
+    "base": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "exposed": false
+   },
+   {
+    "task": "06",
+    "base": [
+     "pass",
+     "pass",
+     "fail"
+    ],
+    "cand": [
+     "pass",
+     "fail",
+     "pass"
+    ],
+    "exposed": false
+   },
+   {
+    "task": "07",
+    "base": [
+     "fail",
+     "fail",
+     "fail"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "exposed": true
+   },
+   {
+    "task": "08",
+    "base": [
+     "fail",
+     "pass",
+     "fail"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "exposed": true
+   },
+   {
+    "task": "09",
+    "base": [
+     "fail",
+     "fail",
+     "fail"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "exposed": true
+   },
+   {
+    "task": "10",
+    "base": [
+     "fail",
+     "pass",
+     "pass"
+    ],
+    "cand": [
+     "pass",
+     "fail",
+     "pass"
+    ],
+    "exposed": false
+   },
+   {
+    "task": "11",
+    "base": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "exposed": false
+   },
+   {
+    "task": "12",
+    "base": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "exposed": false
+   },
+   {
+    "task": "13",
+    "base": [
+     "pass",
+     "fail",
+     "pass"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "fail"
+    ],
+    "exposed": false
+   },
+   {
+    "task": "14",
+    "base": [
+     "fail",
+     "fail",
+     "fail"
+    ],
+    "cand": [
+     "pass",
+     "fail",
+     "fail"
+    ],
+    "exposed": false
+   },
+   {
+    "task": "15",
+    "base": [
+     "pass",
+     "fail",
+     "fail"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "exposed": false
+   },
+   {
+    "task": "16",
+    "base": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "exposed": false
+   },
+   {
+    "task": "17",
+    "base": [
+     "fail",
+     "pass",
+     "pass"
+    ],
+    "cand": [
+     "fail",
+     "pass",
+     "fail"
+    ],
+    "exposed": false
+   },
+   {
+    "task": "18",
+    "base": [
+     "fail",
+     "fail",
+     "fail"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "exposed": true
+   },
+   {
+    "task": "19",
+    "base": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "exposed": false
+   },
+   {
+    "task": "20",
+    "base": [
+     "pass",
+     "fail",
+     "fail"
+    ],
+    "cand": [
+     "fail",
+     "pass",
+     "fail"
+    ],
+    "exposed": false
+   },
+   {
+    "task": "21",
+    "base": [
+     "fail",
+     "fail",
+     "fail"
+    ],
+    "cand": [
+     "fail",
+     "fail",
+     "fail"
+    ],
+    "exposed": false
+   },
+   {
+    "task": "22",
+    "base": [
+     "fail",
+     "fail",
+     "fail"
+    ],
+    "cand": [
+     "fail",
+     "fail",
+     "pass"
+    ],
+    "exposed": true
+   },
+   {
+    "task": "23",
+    "base": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "exposed": false
+   },
+   {
+    "task": "24",
+    "base": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "exposed": false
+   },
+   {
+    "task": "25",
+    "base": [
+     "fail",
+     "pass",
+     "fail"
+    ],
+    "cand": [
+     "fail",
+     "fail",
+     "pass"
+    ],
+    "exposed": false
+   },
+   {
+    "task": "26",
+    "base": [
+     "fail",
+     "fail",
+     "fail"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "exposed": true
+   }
+  ],
+  "exposed": 6,
+  "base_pass": 1,
+  "cand_pass": 16,
+  "runs_exposed": 18,
+  "gain": 5.0,
+  "regression": 0.0,
+  "worst_drop": 0.0,
+  "net_runs": 15,
+  "fired": 18
+ },
+ "kill": {
+  "run": "R3",
+  "candidate": "shop-clock-access",
+  "kind": "rule",
+  "paths": [
+   "shop/**"
+  ],
+  "k": 3,
+  "tasks": [
+   {
+    "task": "01",
+    "base": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "exposed": true,
+    "protected": true,
+    "regressed": false
+   },
+   {
+    "task": "02",
+    "base": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "exposed": true,
+    "protected": true,
+    "regressed": false
+   },
+   {
+    "task": "03",
+    "base": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "exposed": true,
+    "protected": true,
+    "regressed": false
+   },
+   {
+    "task": "04",
+    "base": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "exposed": true,
+    "protected": true,
+    "regressed": false
+   },
+   {
+    "task": "05",
+    "base": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "exposed": true,
+    "protected": true,
+    "regressed": false
+   },
+   {
+    "task": "06",
+    "base": [
+     "pass",
+     "pass",
+     "fail"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "exposed": true,
+    "protected": false,
+    "regressed": false
+   },
+   {
+    "task": "07",
+    "base": [
+     "fail",
+     "fail",
+     "fail"
+    ],
+    "cand": [
+     "fail",
+     "fail",
+     "fail"
+    ],
+    "exposed": true,
+    "protected": false,
+    "regressed": false
+   },
+   {
+    "task": "08",
+    "base": [
+     "fail",
+     "fail",
+     "fail"
+    ],
+    "cand": [
+     "fail",
+     "fail",
+     "fail"
+    ],
+    "exposed": true,
+    "protected": false,
+    "regressed": false
+   },
+   {
+    "task": "09",
+    "base": [
+     "fail",
+     "fail",
+     "fail"
+    ],
+    "cand": [
+     "fail",
+     "fail",
+     "fail"
+    ],
+    "exposed": true,
+    "protected": false,
+    "regressed": false
+   },
+   {
+    "task": "10",
+    "base": [
+     "fail",
+     "fail",
+     "fail"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "exposed": true,
+    "protected": false,
+    "regressed": false
+   },
+   {
+    "task": "11",
+    "base": [
+     "fail",
+     "fail",
+     "fail"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "exposed": true,
+    "protected": false,
+    "regressed": false
+   },
+   {
+    "task": "12",
+    "base": [
+     "fail",
+     "pass",
+     "fail"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "exposed": true,
+    "protected": false,
+    "regressed": false
+   },
+   {
+    "task": "13",
+    "base": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "cand": [
+     "fail",
+     "pass",
+     "pass"
+    ],
+    "exposed": true,
+    "protected": true,
+    "regressed": true
+   },
+   {
+    "task": "14",
+    "base": [
+     "pass",
+     "fail",
+     "pass"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "fail"
+    ],
+    "exposed": true,
+    "protected": false,
+    "regressed": false
+   },
+   {
+    "task": "15",
+    "base": [
+     "fail",
+     "pass",
+     "pass"
+    ],
+    "cand": [
+     "fail",
+     "pass",
+     "pass"
+    ],
+    "exposed": true,
+    "protected": false,
+    "regressed": false
+   }
+  ],
+  "ntasks": 15,
+  "exposed": 15,
+  "protected": 6,
+  "base_pass": 25,
+  "cand_pass": 33,
+  "runs_exposed": 45,
+  "gain": 3.0,
+  "regression": 0.33,
+  "worst_drop": 0.33,
+  "net": 2.67,
+  "net_runs": 8,
+  "fired": 45,
+  "regressed": [
+   "13"
+  ],
+  "confirm_verdict": "RECHECK",
+  "recheck": [
+   {
+    "task": "13",
+    "base": [
+     "pass",
+     "pass",
+     "pass"
+    ],
+    "cand": [
+     "pass",
+     "pass",
+     "fail"
+    ]
+   }
+  ],
+  "verdict": "KILL",
+  "successor": {
+   "name": "shop-clock-narrow",
+   "files": 3
+  }
+ },
+ "funnel": {
+  "cycles": 39,
+  "barren": 14,
+  "active": 25,
+  "swept": 26,
+  "stopped_screen": 4,
+  "killed_screen": 2,
+  "unscored_screen": 2,
+  "confirmed": 22,
+  "rechecked": 3,
+  "recheck_keep": 2,
+  "recheck_kill": 1,
+  "keep": 18,
+  "kill_confirm": 3,
+  "unscored_confirm": 1,
+  "rollouts": {
+   "screen": 300,
+   "confirm": 1494,
+   "recheck": 24
+  },
+  "cost": {
+   "screen": 42.76,
+   "confirm": 195.86,
+   "recheck": 2.46
+  },
+  "runs": 4
+ },
+ "cycles": {
+  "runs": [
+   {
+    "run": "R1",
+    "cycles": [
+     {
+      "barren": false,
+      "items": [
+       {
+        "name": "billing-helpers",
+        "family": "B",
+        "verdict": "KEEP",
+        "rechecked": false
+       }
+      ]
+     },
+     {
+      "barren": false,
+      "items": [
+       {
+        "name": "changelog-requirement",
+        "family": "A",
+        "verdict": "KEEP",
+        "rechecked": false
+       }
+      ]
+     },
+     {
+      "barren": true
+     },
+     {
+      "barren": false,
+      "items": [
+       {
+        "name": "shop-clock-rule",
+        "family": "E",
+        "verdict": "KEEP",
+        "rechecked": true
+       }
+      ]
+     },
+     {
+      "barren": false,
+      "items": [
+       {
+        "name": "exporter-checklist",
+        "family": "C",
+        "verdict": "KEEP",
+        "rechecked": false
+       }
+      ]
+     },
+     {
+      "barren": true
+     },
+     {
+      "barren": true
+     },
+     {
+      "barren": true
+     },
+     {
+      "barren": true
+     }
+    ],
+    "swept": 4,
+    "kept": 4,
+    "barren_after_full": 4
+   },
+   {
+    "run": "R2",
+    "cycles": [
+     {
+      "barren": false,
+      "items": [
+       {
+        "name": "billing-exact-arithmetic",
+        "family": "B",
+        "verdict": "KEEP",
+        "rechecked": false
+       }
+      ]
+     },
+     {
+      "barren": false,
+      "items": [
+       {
+        "name": "changelog-user-visible",
+        "family": "A",
+        "verdict": "KEEP",
+        "rechecked": false
+       }
+      ]
+     },
+     {
+      "barren": false,
+      "items": [
+       {
+        "name": "exporter-docs-and-golden",
+        "family": "C",
+        "verdict": "KEEP",
+        "rechecked": false
+       }
+      ]
+     },
+     {
+      "barren": false,
+      "items": [
+       {
+        "name": "shop-clock-not-datetime",
+        "family": "E",
+        "verdict": "KEEP",
+        "rechecked": false
+       }
+      ]
+     },
+     {
+      "barren": true
+     },
+     {
+      "barren": true
+     },
+     {
+      "barren": true
+     },
+     {
+      "barren": true
+     },
+     {
+      "barren": false,
+      "items": [
+       {
+        "name": "shop-clock-explicit-imports",
+        "family": "E",
+        "verdict": "RERUN",
+        "rechecked": false
+       }
+      ]
+     }
+    ],
+    "swept": 5,
+    "kept": 4,
+    "barren_after_full": 4
+   },
+   {
+    "run": "R3",
+    "cycles": [
+     {
+      "barren": false,
+      "items": [
+       {
+        "name": "use-rate-helpers",
+        "family": "B",
+        "verdict": "RERUN",
+        "rechecked": false
+       }
+      ]
+     },
+     {
+      "barren": false,
+      "items": [
+       {
+        "name": "rate-helpers-narrow",
+        "family": "B",
+        "verdict": "KEEP",
+        "rechecked": false
+       }
+      ]
+     },
+     {
+      "barren": false,
+      "items": [
+       {
+        "name": "changelog-user-facing",
+        "family": "A",
+        "verdict": "KEEP",
+        "rechecked": false
+       }
+      ]
+     },
+     {
+      "barren": false,
+      "items": [
+       {
+        "name": "exporter-checklist",
+        "family": "C",
+        "verdict": "KILL",
+        "rechecked": false
+       }
+      ]
+     },
+     {
+      "barren": false,
+      "items": [
+       {
+        "name": "changelog-shop-reminder",
+        "family": "A",
+        "verdict": "KEEP",
+        "rechecked": false
+       }
+      ]
+     },
+     {
+      "barren": false,
+      "items": [
+       {
+        "name": "shop-clock-access",
+        "family": "E",
+        "verdict": "KILL",
+        "rechecked": true
+       }
+      ]
+     },
+     {
+      "barren": false,
+      "items": [
+       {
+        "name": "shop-clock-narrow",
+        "family": "E",
+        "verdict": "KEEP",
+        "rechecked": false
+       }
+      ]
+     },
+     {
+      "barren": false,
+      "items": [
+       {
+        "name": "billing-rate-helpers",
+        "family": "B",
+        "verdict": "KEEP",
+        "rechecked": false
+       }
+      ]
+     },
+     {
+      "barren": false,
+      "items": [
+       {
+        "name": "text-utilities-correctness",
+        "family": "",
+        "verdict": "KILL",
+        "rechecked": false
+       }
+      ]
+     },
+     {
+      "barren": false,
+      "items": [
+       {
+        "name": "exporter-checklist-v2",
+        "family": "C",
+        "verdict": "KEEP",
+        "rechecked": false
+       }
+      ]
+     },
+     {
+      "barren": true
+     }
+    ],
+    "swept": 10,
+    "kept": 6,
+    "barren_after_full": 1
+   },
+   {
+    "run": "R4",
+    "cycles": [
+     {
+      "barren": false,
+      "items": [
+       {
+        "name": "billing-rates-helpers",
+        "family": "B",
+        "verdict": "KEEP",
+        "rechecked": false
+       }
+      ]
+     },
+     {
+      "barren": false,
+      "items": [
+       {
+        "name": "changelog-for-user-visible-changes",
+        "family": "A",
+        "verdict": "KILL",
+        "rechecked": false
+       }
+      ]
+     },
+     {
+      "barren": false,
+      "items": [
+       {
+        "name": "exporter-checklist",
+        "family": "C",
+        "verdict": "KEEP",
+        "rechecked": false
+       }
+      ]
+     },
+     {
+      "barren": false,
+      "items": [
+       {
+        "name": "changelog-moment-check",
+        "family": "A",
+        "verdict": "RERUN",
+        "rechecked": false
+       },
+       {
+        "name": "changelog-contributing-reminder",
+        "family": "A",
+        "verdict": "KILL",
+        "rechecked": false
+       }
+      ]
+     },
+     {
+      "barren": false,
+      "items": [
+       {
+        "name": "shop-clock-queries",
+        "family": "E",
+        "verdict": "KEEP",
+        "rechecked": false
+       }
+      ]
+     },
+     {
+      "barren": false,
+      "items": [
+       {
+        "name": "shop-changelog-reminder",
+        "family": "A",
+        "verdict": "KEEP",
+        "rechecked": true
+       }
+      ]
+     },
+     {
+      "barren": true
+     },
+     {
+      "barren": true
+     },
+     {
+      "barren": true
+     },
+     {
+      "barren": true
+     }
+    ],
+    "swept": 7,
+    "kept": 4,
+    "barren_after_full": 4
+   }
+  ],
+  "ncycles": 11,
+  "barren": 14,
+  "barren_after_full": 13
+ },
+ "loaded": {
+  "kept_rules": 16,
+  "kept_skills": 2,
+  "kept_skill_paths": [
+   "shop/plugins/**"
+  ],
+  "gated": {
+   "offered": 66,
+   "invoked": 28,
+   "candidates": 4
+  },
+  "always": {
+   "offered": 198,
+   "invoked": 0,
+   "candidates": 25
+  },
+  "swept": {
+   "rule": 22,
+   "gated": 3,
+   "always": 1
+  }
+ },
+ "setup": {
+  "SessionsPerRun": "26",
+  "Rounds": "10",
+  "TrainTasks": "26",
+  "HoldoutTasks": "30",
+  "EvalRuns": "4",
+  "TrainK": "3",
+  "ConfirmSweepRollouts": "156",
+  "MaxRunsDefault": "60",
+  "MaxRunsEval": "200",
+  "StopAfterBarrenEval": "3",
+  "ClaudeCodeVersion": "2.1.278",
+  "CompleteTasks": "23",
+  "GateCandidates": "29",
+  "Placebos": "20",
+  "PlaceboTopic": "10",
+  "PlaceboMoment": "10",
+  "Harmful": "5",
+  "Positives": "4",
+  "Planted": "4",
+  "RunOneItems": "4",
+  "ModelChangeK": "3",
+  "SecondRepo": "structlog",
+  "SecondRepoHoldout": "4",
+  "SecondRepoK": "5",
+  "ExcludedScenario": "HA6",
+  "ExcludedFrom": "R4",
+  "PlantedPlacebos": "2",
+  "MaxCorrections": "3",
+  "PruneRun": "R1",
+  "ModelChangeSource": "R1",
+  "families": {
+   "A": {
+    "train": "6",
+    "holdout": "6"
+   },
+   "B": {
+    "train": "6",
+    "holdout": "6"
+   },
+   "C": {
+    "train": "6",
+    "holdout": "6"
+   },
+   "D": {
+    "train": "4",
+    "holdout": "6"
+   },
+   "E": {
+    "train": "4",
+    "holdout": "6"
+   }
+  },
+  "rounds": [
+   [
+    "B",
+    "B",
+    "B"
+   ],
+   [
+    "A",
+    "A",
+    "A"
+   ],
+   [
+    "C",
+    "C",
+    "C"
+   ],
+   [
+    "E",
+    "E",
+    "E"
+   ],
+   [
+    "D",
+    "D",
+    "D"
+   ],
+   [
+    "A",
+    "B",
+    "C"
+   ],
+   [
+    "A",
+    "B",
+    "E"
+   ],
+   [
+    "C",
+    "D"
+   ],
+   [
+    "A",
+    "B"
+   ],
+   [
+    "C"
+   ]
+  ],
+  "max_corrections": 3,
+  "arm_runs": {
+   "none": "R1\u2013R4, C1",
+   "evolved": "R1\u2013R4",
+   "none2": "R1",
+   "kitchen": "R1",
+   "ideal": "R1",
+   "desc-only": "R1",
+   "flat": "R1",
+   "accept-all": "R2"
+  }
+ }
+}

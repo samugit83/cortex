@@ -1,0 +1,1640 @@
+{
+ "families": {
+  "A": "user-visible change",
+  "B": "money",
+  "C": "new exporter",
+  "D": "control",
+  "E": "time"
+ },
+ "runs": [
+  "R1",
+  "R2",
+  "R3",
+  "R4"
+ ],
+ "headline": {
+  "A": {
+   "a": 0.0,
+   "b": 97.0,
+   "diff": 97.0,
+   "lo": 91.0,
+   "hi": 100.0,
+   "p": 9.999000099990002e-05,
+   "cells": 20,
+   "runs": {
+    "R1": [
+     0.0,
+     100.0
+    ],
+    "R2": [
+     0.0,
+     96.0
+    ],
+    "R3": [
+     0.0,
+     100.0
+    ],
+    "R4": [
+     0.0,
+     92.0
+    ]
+   },
+   "holm": 0.00039996000399960006
+  },
+  "B": {
+   "a": 25.8,
+   "b": 79.2,
+   "diff": 53.3,
+   "lo": 17.5,
+   "hi": 88.3,
+   "p": 9.999000099990002e-05,
+   "cells": 24,
+   "runs": {
+    "R1": [
+     26.7,
+     90.0
+    ],
+    "R2": [
+     23.3,
+     100.0
+    ],
+    "R3": [
+     26.7,
+     26.7
+    ],
+    "R4": [
+     26.7,
+     100.0
+    ]
+   },
+   "holm": 0.00039996000399960006
+  },
+  "C": {
+   "a": 1.7,
+   "b": 51.7,
+   "diff": 50.0,
+   "lo": 25.0,
+   "hi": 73.3,
+   "p": 9.999000099990002e-05,
+   "cells": 24,
+   "runs": {
+    "R1": [
+     0.0,
+     70.0
+    ],
+    "R2": [
+     3.3,
+     56.7
+    ],
+    "R3": [
+     3.3,
+     40.0
+    ],
+    "R4": [
+     0.0,
+     40.0
+    ]
+   },
+   "holm": 0.00039996000399960006
+  },
+  "D": {
+   "a": 100.0,
+   "b": 99.2,
+   "diff": -0.8,
+   "lo": -5.0,
+   "hi": 0.0,
+   "p": 1.0,
+   "cells": 24,
+   "runs": {
+    "R1": [
+     100.0,
+     100.0
+    ],
+    "R2": [
+     100.0,
+     96.7
+    ],
+    "R3": [
+     100.0,
+     100.0
+    ],
+    "R4": [
+     100.0,
+     100.0
+    ]
+   }
+  },
+  "E": {
+   "a": 55.0,
+   "b": 81.7,
+   "diff": 26.7,
+   "lo": 1.7,
+   "hi": 60.0,
+   "p": 9.999000099990002e-05,
+   "cells": 24,
+   "runs": {
+    "R1": [
+     56.7,
+     90.0
+    ],
+    "R2": [
+     56.7,
+     93.3
+    ],
+    "R3": [
+     56.7,
+     50.0
+    ],
+    "R4": [
+     50.0,
+     93.3
+    ]
+   },
+   "holm": 0.00039996000399960006
+  },
+  "pool": {
+   "a": 21.5,
+   "b": 76.5,
+   "diff": 55.0,
+   "lo": 34.1,
+   "hi": 74.1,
+   "p": 9.999000099990002e-05,
+   "cells": 92,
+   "runs": {
+    "R1": [
+     21.7,
+     87.0
+    ],
+    "R2": [
+     21.7,
+     86.1
+    ],
+    "R3": [
+     22.6,
+     52.2
+    ],
+    "R4": [
+     20.0,
+     80.9
+    ]
+   }
+  }
+ },
+ "aa": {
+  "diff": -3.3,
+  "lo": -7.3,
+  "hi": 0.0,
+  "run": [
+   "R1"
+  ]
+ },
+ "ablations": [
+  {
+   "arm": "none",
+   "runs": [
+    "R1"
+   ],
+   "evolved": 87.5,
+   "rate": 20.8,
+   "diff": -66.7,
+   "lo": -80.8,
+   "hi": -51.7,
+   "chars": 559,
+   "evolved_chars": 559
+  },
+  {
+   "arm": "none2",
+   "runs": [
+    "R1"
+   ],
+   "evolved": 87.5,
+   "rate": 16.7,
+   "diff": -70.8,
+   "lo": -85.8,
+   "hi": -55.0,
+   "chars": 559,
+   "evolved_chars": 559
+  },
+  {
+   "arm": "kitchen",
+   "runs": [
+    "R1"
+   ],
+   "evolved": 87.5,
+   "rate": 76.4,
+   "diff": -11.1,
+   "lo": -22.5,
+   "hi": -0.0,
+   "chars": 2519,
+   "evolved_chars": 559
+  },
+  {
+   "arm": "ideal",
+   "runs": [
+    "R1"
+   ],
+   "evolved": 87.5,
+   "rate": 48.6,
+   "diff": -38.9,
+   "lo": -58.1,
+   "hi": -20.0,
+   "chars": 728,
+   "evolved_chars": 559
+  },
+  {
+   "arm": "flat",
+   "runs": [
+    "R1"
+   ],
+   "evolved": 87.5,
+   "rate": 75.0,
+   "diff": -12.5,
+   "lo": -28.3,
+   "hi": 1.7,
+   "chars": 1688,
+   "evolved_chars": 559
+  },
+  {
+   "arm": "desc-only",
+   "runs": [
+    "R1"
+   ],
+   "evolved": 87.5,
+   "rate": 73.6,
+   "diff": -13.9,
+   "lo": -28.9,
+   "hi": -0.0,
+   "chars": 559,
+   "evolved_chars": 559
+  },
+  {
+   "arm": "accept-all",
+   "runs": [
+    "R2"
+   ],
+   "evolved": 86.7,
+   "rate": 77.8,
+   "diff": -8.9,
+   "lo": -16.1,
+   "hi": -1.7,
+   "chars": 559,
+   "evolved_chars": 559
+  }
+ ],
+ "model": {
+  "source": [
+   "R1"
+  ],
+  "strong_runs": [
+   "M1"
+  ],
+  "weak": {
+   "a": 20.8,
+   "b": 87.5,
+   "diff": 66.7,
+   "lo": 51.7,
+   "hi": 80.8,
+   "p": 9.999000099990002e-05,
+   "cells": 24,
+   "runs": {
+    "R1": [
+     20.8,
+     87.5
+    ]
+   }
+  },
+  "strong": {
+   "a": 88.9,
+   "b": 94.4,
+   "diff": 5.6,
+   "lo": -2.8,
+   "hi": 13.9,
+   "p": 0.30226977302269775,
+   "cells": 24,
+   "runs": {
+    "M1": [
+     88.9,
+     94.4
+    ]
+   }
+  },
+  "weak_by_family": {
+   "A": {
+    "a": 0.0,
+    "b": 100.0,
+    "diff": 100.0,
+    "lo": 100.0,
+    "hi": 100.0,
+    "p": 9.999000099990002e-05,
+    "cells": 6,
+    "runs": {
+     "R1": [
+      0.0,
+      100.0
+     ]
+    }
+   },
+   "B": {
+    "a": 26.7,
+    "b": 90.0,
+    "diff": 63.3,
+    "lo": 36.7,
+    "hi": 86.7,
+    "p": 9.999000099990002e-05,
+    "cells": 6,
+    "runs": {
+     "R1": [
+      26.7,
+      90.0
+     ]
+    }
+   },
+   "C": {
+    "a": 0.0,
+    "b": 70.0,
+    "diff": 70.0,
+    "lo": 50.0,
+    "hi": 90.0,
+    "p": 9.999000099990002e-05,
+    "cells": 6,
+    "runs": {
+     "R1": [
+      0.0,
+      70.0
+     ]
+    }
+   },
+   "D": {
+    "a": 100.0,
+    "b": 100.0,
+    "diff": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "p": 1.0,
+    "cells": 6,
+    "runs": {
+     "R1": [
+      100.0,
+      100.0
+     ]
+    }
+   },
+   "E": {
+    "a": 56.7,
+    "b": 90.0,
+    "diff": 33.3,
+    "lo": 6.7,
+    "hi": 66.7,
+    "p": 0.00019998000199980003,
+    "cells": 6,
+    "runs": {
+     "R1": [
+      56.7,
+      90.0
+     ]
+    }
+   }
+  },
+  "strong_by_family": {
+   "A": {
+    "a": 94.4,
+    "b": 100.0,
+    "diff": 5.6,
+    "lo": 0.0,
+    "hi": 16.7,
+    "p": 1.0,
+    "cells": 6,
+    "runs": {
+     "M1": [
+      94.4,
+      100.0
+     ]
+    }
+   },
+   "B": {
+    "a": 100.0,
+    "b": 100.0,
+    "diff": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "p": 1.0,
+    "cells": 6,
+    "runs": {
+     "M1": [
+      100.0,
+      100.0
+     ]
+    }
+   },
+   "C": {
+    "a": 77.8,
+    "b": 88.9,
+    "diff": 11.1,
+    "lo": -11.1,
+    "hi": 38.9,
+    "p": 0.6086391360863913,
+    "cells": 6,
+    "runs": {
+     "M1": [
+      77.8,
+      88.9
+     ]
+    }
+   },
+   "D": {
+    "a": 100.0,
+    "b": 100.0,
+    "diff": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "p": 1.0,
+    "cells": 6,
+    "runs": {
+     "M1": [
+      100.0,
+      100.0
+     ]
+    }
+   },
+   "E": {
+    "a": 83.3,
+    "b": 88.9,
+    "diff": 5.6,
+    "lo": -11.1,
+    "hi": 22.2,
+    "p": 1.0,
+    "cells": 6,
+    "runs": {
+     "M1": [
+      83.3,
+      88.9
+     ]
+    }
+   }
+  }
+ },
+ "failures": {
+  "B": {
+   "none": {
+    "rule": 85,
+    "n": 120,
+    "pass": 31,
+    "test": 4
+   },
+   "evolved": {
+    "pass": 95,
+    "n": 120,
+    "rule": 25
+   }
+  },
+  "D": {
+   "none": {
+    "pass": 120,
+    "n": 120
+   },
+   "evolved": {
+    "pass": 119,
+    "n": 120,
+    "test": 1
+   }
+  },
+  "A": {
+   "none": {
+    "rule": 98,
+    "n": 100,
+    "test": 2,
+    "pass": 0
+   },
+   "evolved": {
+    "pass": 97,
+    "n": 100,
+    "rule": 2,
+    "test": 1
+   }
+  },
+  "C": {
+   "none": {
+    "rule": 108,
+    "n": 120,
+    "tampered": 7,
+    "test": 3,
+    "pass": 2
+   },
+   "evolved": {
+    "rule": 43,
+    "n": 120,
+    "pass": 62,
+    "test": 7,
+    "tampered": 8
+   }
+  },
+  "E": {
+   "none": {
+    "pass": 66,
+    "n": 120,
+    "rule": 50,
+    "tampered": 2,
+    "test": 2
+   },
+   "evolved": {
+    "pass": 98,
+    "n": 120,
+    "tampered": 5,
+    "rule": 16,
+    "test": 1
+   }
+  }
+ },
+ "kept_grid": {
+  "R1": {
+   "A": {
+    "items": [
+     {
+      "name": "changelog-requirement",
+      "kind": "rule",
+      "scope": "shop/**",
+      "glob": true
+     }
+    ],
+    "loaded": 25,
+    "n": 25,
+    "gain": 100.0
+   },
+   "B": {
+    "items": [
+     {
+      "name": "billing-helpers",
+      "kind": "rule",
+      "scope": "shop/billing/**",
+      "glob": true
+     }
+    ],
+    "loaded": 28,
+    "n": 30,
+    "gain": 63.3
+   },
+   "C": {
+    "items": [
+     {
+      "name": "exporter-checklist",
+      "kind": "skill",
+      "scope": "shop/plugins/**",
+      "glob": true
+     }
+    ],
+    "loaded": 30,
+    "n": 30,
+    "gain": 70.0
+   },
+   "E": {
+    "items": [
+     {
+      "name": "shop-clock-rule",
+      "kind": "rule",
+      "scope": "shop/**",
+      "glob": true
+     }
+    ],
+    "loaded": 29,
+    "n": 30,
+    "gain": 33.3
+   }
+  },
+  "R2": {
+   "A": {
+    "items": [
+     {
+      "name": "changelog-user-visible",
+      "kind": "rule",
+      "scope": "shop/**",
+      "glob": true
+     }
+    ],
+    "loaded": 25,
+    "n": 25,
+    "gain": 96.0
+   },
+   "B": {
+    "items": [
+     {
+      "name": "billing-exact-arithmetic",
+      "kind": "rule",
+      "scope": "shop/billing/**",
+      "glob": true
+     }
+    ],
+    "loaded": 30,
+    "n": 30,
+    "gain": 76.7
+   },
+   "C": {
+    "items": [
+     {
+      "name": "exporter-docs-and-golden",
+      "kind": "rule",
+      "scope": "shop/plugins/**",
+      "glob": true
+     }
+    ],
+    "loaded": 30,
+    "n": 30,
+    "gain": 53.3
+   },
+   "E": {
+    "items": [
+     {
+      "name": "shop-clock-not-datetime",
+      "kind": "rule",
+      "scope": "shop/**",
+      "glob": true
+     }
+    ],
+    "loaded": 27,
+    "n": 30,
+    "gain": 36.7
+   }
+  },
+  "R3": {
+   "A": {
+    "items": [
+     {
+      "name": "changelog-shop-reminder",
+      "kind": "rule",
+      "scope": "shop/**",
+      "glob": true
+     },
+     {
+      "name": "changelog-user-facing",
+      "kind": "rule",
+      "scope": "3 files in shop/",
+      "glob": false
+     }
+    ],
+    "loaded": 25,
+    "n": 25,
+    "gain": 100.0
+   },
+   "B": {
+    "items": [
+     {
+      "name": "billing-rate-helpers",
+      "kind": "rule",
+      "scope": "2 files in shop/billing/",
+      "glob": false
+     },
+     {
+      "name": "rate-helpers-narrow",
+      "kind": "rule",
+      "scope": "3 files in shop/billing/",
+      "glob": false
+     }
+    ],
+    "loaded": 0,
+    "n": 30,
+    "gain": 0.0
+   },
+   "C": {
+    "items": [
+     {
+      "name": "exporter-checklist-v2",
+      "kind": "rule",
+      "scope": "shop/plugins/*_export.py",
+      "glob": true
+     }
+    ],
+    "loaded": 30,
+    "n": 30,
+    "gain": 36.7
+   },
+   "E": {
+    "items": [
+     {
+      "name": "shop-clock-narrow",
+      "kind": "rule",
+      "scope": "3 files in shop/",
+      "glob": false
+     }
+    ],
+    "loaded": 10,
+    "n": 30,
+    "gain": -6.7
+   }
+  },
+  "R4": {
+   "A": {
+    "items": [
+     {
+      "name": "shop-changelog-reminder",
+      "kind": "rule",
+      "scope": "shop/**",
+      "glob": true
+     }
+    ],
+    "loaded": 25,
+    "n": 25,
+    "gain": 92.0
+   },
+   "B": {
+    "items": [
+     {
+      "name": "billing-rates-helpers",
+      "kind": "rule",
+      "scope": "shop/billing/**",
+      "glob": true
+     }
+    ],
+    "loaded": 30,
+    "n": 30,
+    "gain": 73.3
+   },
+   "C": {
+    "items": [
+     {
+      "name": "exporter-checklist",
+      "kind": "skill",
+      "scope": "shop/plugins/**",
+      "glob": true
+     }
+    ],
+    "loaded": 26,
+    "n": 30,
+    "gain": 40.0
+   },
+   "E": {
+    "items": [
+     {
+      "name": "shop-clock-queries",
+      "kind": "rule",
+      "scope": "shop/**",
+      "glob": true
+     }
+    ],
+    "loaded": 27,
+    "n": 30,
+    "gain": 43.3
+   }
+  }
+ },
+ "confirm_sweeps": [
+  {
+   "run": "R1",
+   "name": "billing-helpers",
+   "net": 9,
+   "drop": 0.0,
+   "verdict": "KEEP",
+   "rechecked": false,
+   "protected": false
+  },
+  {
+   "run": "R1",
+   "name": "changelog-requirement",
+   "net": 7,
+   "drop": 0.0,
+   "verdict": "KEEP",
+   "rechecked": false,
+   "protected": false
+  },
+  {
+   "run": "R1",
+   "name": "shop-clock-rule",
+   "net": 6,
+   "drop": 0.333,
+   "verdict": "KEEP",
+   "rechecked": true,
+   "protected": true
+  },
+  {
+   "run": "R1",
+   "name": "exporter-checklist",
+   "net": 4,
+   "drop": 0.0,
+   "verdict": "KEEP",
+   "rechecked": false,
+   "protected": false
+  },
+  {
+   "run": "R2",
+   "name": "billing-exact-arithmetic",
+   "net": 5,
+   "drop": 0.0,
+   "verdict": "KEEP",
+   "rechecked": false,
+   "protected": false
+  },
+  {
+   "run": "R2",
+   "name": "changelog-user-visible",
+   "net": 6,
+   "drop": 0.0,
+   "verdict": "KEEP",
+   "rechecked": false,
+   "protected": false
+  },
+  {
+   "run": "R2",
+   "name": "exporter-docs-and-golden",
+   "net": 8,
+   "drop": 0.0,
+   "verdict": "KEEP",
+   "rechecked": false,
+   "protected": false
+  },
+  {
+   "run": "R2",
+   "name": "shop-clock-not-datetime",
+   "net": 6,
+   "drop": 0.0,
+   "verdict": "KEEP",
+   "rechecked": false,
+   "protected": false
+  },
+  {
+   "run": "R3",
+   "name": "use-rate-helpers",
+   "net": 5,
+   "drop": 0.0,
+   "verdict": "RERUN",
+   "rechecked": false,
+   "protected": false
+  },
+  {
+   "run": "R3",
+   "name": "rate-helpers-narrow",
+   "net": 9,
+   "drop": 0.0,
+   "verdict": "KEEP",
+   "rechecked": false,
+   "protected": false
+  },
+  {
+   "run": "R3",
+   "name": "changelog-user-facing",
+   "net": 7,
+   "drop": 0.0,
+   "verdict": "KEEP",
+   "rechecked": false,
+   "protected": false
+  },
+  {
+   "run": "R3",
+   "name": "exporter-checklist",
+   "net": 1,
+   "drop": 0.0,
+   "verdict": "KILL",
+   "rechecked": false,
+   "protected": false
+  },
+  {
+   "run": "R3",
+   "name": "changelog-shop-reminder",
+   "net": 4,
+   "drop": 0.0,
+   "verdict": "KEEP",
+   "rechecked": false,
+   "protected": false
+  },
+  {
+   "run": "R3",
+   "name": "shop-clock-access",
+   "net": 8,
+   "drop": 0.333,
+   "verdict": "KILL",
+   "rechecked": true,
+   "protected": true
+  },
+  {
+   "run": "R3",
+   "name": "shop-clock-narrow",
+   "net": 7,
+   "drop": 0.0,
+   "verdict": "KEEP",
+   "rechecked": false,
+   "protected": false
+  },
+  {
+   "run": "R3",
+   "name": "billing-rate-helpers",
+   "net": 2,
+   "drop": 0.0,
+   "verdict": "KEEP",
+   "rechecked": false,
+   "protected": false
+  },
+  {
+   "run": "R3",
+   "name": "text-utilities-correctness",
+   "net": -4,
+   "drop": 0.667,
+   "verdict": "KILL",
+   "rechecked": false,
+   "protected": true
+  },
+  {
+   "run": "R3",
+   "name": "exporter-checklist-v2",
+   "net": 15,
+   "drop": 0.0,
+   "verdict": "KEEP",
+   "rechecked": false,
+   "protected": false
+  },
+  {
+   "run": "R4",
+   "name": "billing-rates-helpers",
+   "net": 9,
+   "drop": 0.0,
+   "verdict": "KEEP",
+   "rechecked": false,
+   "protected": false
+  },
+  {
+   "run": "R4",
+   "name": "exporter-checklist",
+   "net": 5,
+   "drop": 0.0,
+   "verdict": "KEEP",
+   "rechecked": false,
+   "protected": false
+  },
+  {
+   "run": "R4",
+   "name": "shop-clock-queries",
+   "net": 6,
+   "drop": 0.333,
+   "verdict": "KEEP",
+   "rechecked": false,
+   "protected": false
+  },
+  {
+   "run": "R4",
+   "name": "shop-changelog-reminder",
+   "net": 7,
+   "drop": 0.333,
+   "verdict": "KEEP",
+   "rechecked": true,
+   "protected": true
+  }
+ ],
+ "heatmap": {
+  "cols": [
+   {
+    "run": "R1",
+    "arm": "none"
+   },
+   {
+    "run": "R1",
+    "arm": "evolved"
+   },
+   {
+    "run": "R2",
+    "arm": "none"
+   },
+   {
+    "run": "R2",
+    "arm": "evolved"
+   },
+   {
+    "run": "R3",
+    "arm": "none"
+   },
+   {
+    "run": "R3",
+    "arm": "evolved"
+   },
+   {
+    "run": "R4",
+    "arm": "none"
+   },
+   {
+    "run": "R4",
+    "arm": "evolved"
+   },
+   {
+    "run": "R1",
+    "arm": "none2"
+   },
+   {
+    "run": "R1",
+    "arm": "kitchen"
+   },
+   {
+    "run": "R1",
+    "arm": "ideal"
+   },
+   {
+    "run": "R1",
+    "arm": "flat"
+   },
+   {
+    "run": "R1",
+    "arm": "desc-only"
+   },
+   {
+    "run": "R2",
+    "arm": "accept-all"
+   }
+  ],
+  "rows": [
+   {
+    "task": "HA1",
+    "family": "A",
+    "cells": [
+     0,
+     100,
+     0,
+     80,
+     0,
+     100,
+     0,
+     80,
+     0,
+     67,
+     0,
+     100,
+     100,
+     33
+    ]
+   },
+   {
+    "task": "HA2",
+    "family": "A",
+    "cells": [
+     0,
+     100,
+     0,
+     100,
+     0,
+     100,
+     0,
+     80,
+     0,
+     67,
+     0,
+     100,
+     100,
+     67
+    ]
+   },
+   {
+    "task": "HA3",
+    "family": "A",
+    "cells": [
+     0,
+     100,
+     0,
+     100,
+     0,
+     100,
+     0,
+     100,
+     0,
+     33,
+     0,
+     100,
+     100,
+     100
+    ]
+   },
+   {
+    "task": "HA4",
+    "family": "A",
+    "cells": [
+     0,
+     100,
+     0,
+     100,
+     0,
+     100,
+     0,
+     100,
+     0,
+     67,
+     0,
+     100,
+     100,
+     100
+    ]
+   },
+   {
+    "task": "HA5",
+    "family": "A",
+    "cells": [
+     0,
+     100,
+     0,
+     100,
+     0,
+     100,
+     0,
+     100,
+     0,
+     67,
+     0,
+     100,
+     100,
+     100
+    ]
+   },
+   {
+    "task": "HA6",
+    "family": "A",
+    "cells": [
+     0,
+     100,
+     0,
+     100,
+     0,
+     100,
+     null,
+     null,
+     0,
+     33,
+     0,
+     100,
+     100,
+     100
+    ]
+   },
+   {
+    "task": "HB1",
+    "family": "B",
+    "cells": [
+     0,
+     60,
+     0,
+     100,
+     0,
+     0,
+     0,
+     100,
+     0,
+     100,
+     100,
+     100,
+     100,
+     100
+    ]
+   },
+   {
+    "task": "HB2",
+    "family": "B",
+    "cells": [
+     40,
+     100,
+     0,
+     100,
+     40,
+     40,
+     40,
+     100,
+     0,
+     100,
+     100,
+     100,
+     100,
+     100
+    ]
+   },
+   {
+    "task": "HB3",
+    "family": "B",
+    "cells": [
+     0,
+     80,
+     0,
+     100,
+     0,
+     0,
+     20,
+     100,
+     0,
+     100,
+     100,
+     100,
+     67,
+     100
+    ]
+   },
+   {
+    "task": "HB4",
+    "family": "B",
+    "cells": [
+     20,
+     100,
+     20,
+     100,
+     20,
+     20,
+     0,
+     100,
+     0,
+     100,
+     33,
+     100,
+     67,
+     100
+    ]
+   },
+   {
+    "task": "HB5",
+    "family": "B",
+    "cells": [
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100
+    ]
+   },
+   {
+    "task": "HB6",
+    "family": "B",
+    "cells": [
+     0,
+     100,
+     20,
+     100,
+     0,
+     0,
+     0,
+     100,
+     0,
+     67,
+     100,
+     100,
+     100,
+     100
+    ]
+   },
+   {
+    "task": "HC1",
+    "family": "C",
+    "cells": [
+     0,
+     40,
+     0,
+     60,
+     0,
+     0,
+     0,
+     20,
+     0,
+     33,
+     33,
+     0,
+     0,
+     33
+    ]
+   },
+   {
+    "task": "HC2",
+    "family": "C",
+    "cells": [
+     0,
+     100,
+     0,
+     60,
+     0,
+     40,
+     0,
+     60,
+     0,
+     67,
+     33,
+     0,
+     0,
+     33
+    ]
+   },
+   {
+    "task": "HC3",
+    "family": "C",
+    "cells": [
+     0,
+     80,
+     0,
+     60,
+     0,
+     20,
+     0,
+     60,
+     0,
+     67,
+     100,
+     0,
+     0,
+     33
+    ]
+   },
+   {
+    "task": "HC4",
+    "family": "C",
+    "cells": [
+     0,
+     100,
+     0,
+     80,
+     0,
+     100,
+     0,
+     80,
+     0,
+     100,
+     67,
+     0,
+     0,
+     67
+    ]
+   },
+   {
+    "task": "HC5",
+    "family": "C",
+    "cells": [
+     0,
+     60,
+     20,
+     80,
+     20,
+     80,
+     0,
+     20,
+     0,
+     100,
+     33,
+     0,
+     67,
+     67
+    ]
+   },
+   {
+    "task": "HC6",
+    "family": "C",
+    "cells": [
+     0,
+     40,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     33,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "task": "HD1",
+    "family": "D",
+    "cells": [
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100
+    ]
+   },
+   {
+    "task": "HD2",
+    "family": "D",
+    "cells": [
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100
+    ]
+   },
+   {
+    "task": "HD3",
+    "family": "D",
+    "cells": [
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100
+    ]
+   },
+   {
+    "task": "HD4",
+    "family": "D",
+    "cells": [
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100
+    ]
+   },
+   {
+    "task": "HD5",
+    "family": "D",
+    "cells": [
+     100,
+     100,
+     100,
+     80,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100
+    ]
+   },
+   {
+    "task": "HD6",
+    "family": "D",
+    "cells": [
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100
+    ]
+   },
+   {
+    "task": "HE1",
+    "family": "E",
+    "cells": [
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     80,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100
+    ]
+   },
+   {
+    "task": "HE2",
+    "family": "E",
+    "cells": [
+     0,
+     40,
+     20,
+     60,
+     0,
+     0,
+     0,
+     80,
+     0,
+     67,
+     0,
+     100,
+     100,
+     100
+    ]
+   },
+   {
+    "task": "HE3",
+    "family": "E",
+    "cells": [
+     100,
+     100,
+     80,
+     100,
+     80,
+     80,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100
+    ]
+   },
+   {
+    "task": "HE4",
+    "family": "E",
+    "cells": [
+     40,
+     100,
+     40,
+     100,
+     60,
+     20,
+     20,
+     100,
+     0,
+     100,
+     33,
+     100,
+     100,
+     67
+    ]
+   },
+   {
+    "task": "HE5",
+    "family": "E",
+    "cells": [
+     0,
+     100,
+     0,
+     100,
+     0,
+     0,
+     0,
+     80,
+     0,
+     100,
+     0,
+     100,
+     67,
+     67
+    ]
+   },
+   {
+    "task": "HE6",
+    "family": "E",
+    "cells": [
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100
+    ]
+   }
+  ]
+ }
+}

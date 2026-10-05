@@ -6,9 +6,10 @@
 A table with many cells is written here, row by row, from lab/reports/data, so no cell is
 ever typed; the section files hold only each table's frame (columns, headings, caption).
 Every table is checked against numbers the text already quotes, and the script stops if
-they disagree. Writes paper/generated/tab-*.tex. Two more sets of rows are built only to
-be checked against the text that quotes them (what a rollout costs, what rollouts read
-through git) and are not written.
+they disagree. Writes paper/generated/tab-*.tex, and the same rows as data to
+lab/reports/paper-data/table-*.csv, which is part of the repository. Two more sets of rows
+are built only to be checked against the text that quotes them (what a rollout costs, what
+rollouts read through git) and are not written.
 """
 import csv
 import json
@@ -20,6 +21,7 @@ CORTEX = Path(__file__).resolve().parents[3]
 PAPER = CORTEX / "paper"                      # the paper's sources, kept outside the repository
 sys.path.insert(0, str(CORTEX / "lab" / "reports" / "analysis"))
 import load                                   # noqa: E402
+import paper_data                             # noqa: E402  the same rows, as data in the repository
 import rebuild as RB                          # noqa: E402
 import rescore                                # noqa: E402
 import stats as S                             # noqa: E402
@@ -113,6 +115,8 @@ def main():
                     rf"[{signed(c['lo'])}, {signed(c['hi'])}] & {pval(c['p'])} & "
                     rf"{pval(holm[f]) if f in holm else ''} \\")
     write("tab-main.tex", "\n".join(body) + "\n")
+    paper_data.write_table("main", ("family", "scenarios", "rollouts", "pass_rate_none", "pass_rate_evolved",
+                                    "gain_points", "ci95_low", "ci95_high", "p", "holm_p"), body)
 
     # ---- what a held-out rollout costs, by harness, in the runs that measured it ---------
     # (§5.4 quotes these in a paragraph; the rows are built to check what it says)
@@ -205,6 +209,8 @@ def main():
                                                  M["GateHarmfulKilled"], M["GateHarmfulUnscored"]):
         stop("the gate table disagrees with the text's counts")
     write("tab-gates.tex", "\n".join(body) + "\n")
+    paper_data.write_table("gates", ("candidate", "tier", "n", "fired", "keep", "kill", "rerun",
+                                     "recorded_kill"), body)
 
     # ---- the items the loop kept ----------------------------------------------------------
     fam = {(r["run"], r["name"]): r["family"] for r in
@@ -231,6 +237,8 @@ def main():
     if str(n_items) != M["KeptItems"]:
         stop("the kept-items table does not list every kept item")
     write("tab-kept.tex", "\n".join(body) + "\n")
+    paper_data.write_table("kept", ("run", "family", "item", "form", "scope", "chars", "fires_own_pct",
+                                    "fires_other_pct", "score", "held_out_loaded"), body)
 
     # ---- what rollouts read that their harness did not give them (Limitations) -----------
     # (the rows are built to check the counts the text quotes; no table is written)

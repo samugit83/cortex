@@ -1,0 +1,8 @@
+candidate,tier,n,fired,keep,kill,rerun,recorded_kill
+"placebo, about a topic",always-on skill,10,0,0,7,3,10
+"placebo, about a moment",always-on skill,10,0,0,5,5,10
+harmful,rule,3,3,0,0,3,3
+harmful,always-on skill,2,0,0,2,0,2
+known-good,rule,1,1,1,0,0,0
+known-good,gated skill,1,1,1,0,0,0
+known-good,always-on skill,2,0,0,1,1,2

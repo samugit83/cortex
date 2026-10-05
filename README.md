@@ -80,6 +80,7 @@ and the gain belongs to a weak model. Under `claude-sonnet-5` the same harness g
 
 [One-page summary](lab/reports/SUMMARY.md) · [Full report](lab/reports/REPORT.md) ·
 [Rebuild every number offline](lab/reports/REPRODUCE.md) ·
+[The paper's numbers, as data](lab/reports/paper-data/) ·
 [Visual walk-through](https://samugit83.github.io/cortex/diagram/lab.html)
 
 ## Requirements

@@ -2,11 +2,14 @@
 """gen_numbers.py — every number the paper quotes, as LaTeX macros.
 
   python3 lab/reports/analysis/gen_numbers.py   -> paper/generated/numbers.tex
+                                                   lab/reports/paper-data/numbers.csv
 
 The paper never types a number. Each macro is read from lab/reports/ — the scorecard
 the report wrote, or the rows themselves through the report's own analysis code — so
 if the data moves, the paper moves with it, and `grep` can prove a number's origin.
-Needs the analysis environment (numpy): run it through `make numbers`.
+The same values are written, as the paper prints them, to lab/reports/paper-data/numbers.csv,
+which is part of the repository. Needs the analysis environment (numpy): run it through
+`make numbers`.
 """
 import json
 import re
@@ -19,6 +22,7 @@ sys.path.insert(0, str(CORTEX / "lab" / "reports" / "analysis"))
 import load                                   # noqa: E402
 import stats as S                             # noqa: E402
 import rescore                                # noqa: E402
+import paper_data                             # noqa: E402  the same numbers, as data in the repository
 
 DATA = CORTEX / "lab" / "reports" / "data"
 OUT = PAPER / "generated" / "numbers.tex"
@@ -362,6 +366,7 @@ def main():
     lines += [rf"\newcommand{{\{k}}}{{{v}}}" for k, v in sorted(M.items())]
     OUT.write_text("\n".join(lines) + "\n")
     print(f"{len(M)} numbers -> {OUT}")
+    paper_data.write_numbers(M)
 
 
 def results(d, M, cards, ev, gates_all, sessions, at_tag):
