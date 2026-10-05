@@ -1,0 +1,1528 @@
+source,name,printed,value,computed_by
+numbers.csv,AADiffering,3,3,lab/reports/analysis/gen_numbers.py:446
+numbers.csv,AAEst,-3.3,-3.3,lab/reports/analysis/gen_numbers.py:86
+numbers.csv,AAHi,0.0,0.0,lab/reports/analysis/gen_numbers.py:86
+numbers.csv,AALo,-7.3,-7.3,lab/reports/analysis/gen_numbers.py:86
+numbers.csv,AAP,0.13,0.13,lab/reports/analysis/gen_numbers.py:442
+numbers.csv,AARuleEst,-4.2,-4.2,lab/reports/analysis/gen_numbers.py:451
+numbers.csv,AARuleHi,0.0,0.0,lab/reports/analysis/gen_numbers.py:451
+numbers.csv,AARuleLo,-9.2,-9.2,lab/reports/analysis/gen_numbers.py:451
+numbers.csv,AARun,R1,,lab/reports/analysis/gen_numbers.py:437
+numbers.csv,AblDescGap,13.9,13.9,lab/reports/analysis/gen_numbers.py:795
+numbers.csv,AblDescGapHi,+28.9,28.9,lab/reports/analysis/gen_numbers.py:796
+numbers.csv,AblDescGapLo,0.0,0.0,lab/reports/analysis/gen_numbers.py:796
+numbers.csv,AblDescRate,73.6%,73.6,lab/reports/analysis/gen_numbers.py:793
+numbers.csv,AblEvolvedRate,87.5%,87.5,lab/reports/analysis/gen_numbers.py:789
+numbers.csv,AblFlatGap,12.5,12.5,lab/reports/analysis/gen_numbers.py:795
+numbers.csv,AblFlatGapHi,+28.3,28.3,lab/reports/analysis/gen_numbers.py:796
+numbers.csv,AblFlatGapLo,-1.7,-1.7,lab/reports/analysis/gen_numbers.py:796
+numbers.csv,AblFlatRate,75.0%,75.0,lab/reports/analysis/gen_numbers.py:793
+numbers.csv,AblIdealGap,38.9,38.9,lab/reports/analysis/gen_numbers.py:795
+numbers.csv,AblIdealGapHi,+58.1,58.1,lab/reports/analysis/gen_numbers.py:796
+numbers.csv,AblIdealGapLo,+20.0,20.0,lab/reports/analysis/gen_numbers.py:796
+numbers.csv,AblIdealRate,48.6%,48.6,lab/reports/analysis/gen_numbers.py:793
+numbers.csv,AblKitchenGap,11.1,11.1,lab/reports/analysis/gen_numbers.py:795
+numbers.csv,AblKitchenGapHi,+22.5,22.5,lab/reports/analysis/gen_numbers.py:796
+numbers.csv,AblKitchenGapLo,0.0,0.0,lab/reports/analysis/gen_numbers.py:796
+numbers.csv,AblKitchenRate,76.4%,76.4,lab/reports/analysis/gen_numbers.py:793
+numbers.csv,AblLackNames,69,69,lab/reports/analysis/gen_numbers.py:1162
+numbers.csv,AblLackRollouts,270,270,lab/reports/analysis/gen_numbers.py:1161
+numbers.csv,AblLackText,1,1,lab/reports/analysis/gen_numbers.py:1163
+numbers.csv,AblNoneGap,66.7,66.7,lab/reports/analysis/gen_numbers.py:795
+numbers.csv,AblNoneGapHi,+80.8,80.8,lab/reports/analysis/gen_numbers.py:796
+numbers.csv,AblNoneGapLo,+51.7,51.7,lab/reports/analysis/gen_numbers.py:796
+numbers.csv,AblNoneRate,20.8%,20.8,lab/reports/analysis/gen_numbers.py:793
+numbers.csv,AblationK,3,3,lab/reports/analysis/gen_numbers.py:239
+numbers.csv,AcceptAllEst,-8.9,-8.9,lab/reports/analysis/gen_numbers.py:96
+numbers.csv,AcceptAllFamA,-13.3,-13.3,lab/reports/analysis/gen_numbers.py:759
+numbers.csv,AcceptAllFamC,-17.8,-17.8,lab/reports/analysis/gen_numbers.py:759
+numbers.csv,AcceptAllFamE,-4.4,-4.4,lab/reports/analysis/gen_numbers.py:759
+numbers.csv,AcceptAllHi,-1.7,-1.7,lab/reports/analysis/gen_numbers.py:97
+numbers.csv,AcceptAllLo,-16.1,-16.1,lab/reports/analysis/gen_numbers.py:97
+numbers.csv,AcceptAllP,0.075,0.075,lab/reports/analysis/gen_numbers.py:771
+numbers.csv,AcceptAllRun,R2,,lab/reports/analysis/gen_numbers.py:749
+numbers.csv,AlwaysOnBudget,"3,000",3000,lab/reports/analysis/gen_numbers.py:349
+numbers.csv,AlwaysOnInvoked,0,0,lab/reports/analysis/gen_numbers.py:198
+numbers.csv,AlwaysOnOffered,198,198,lab/reports/analysis/gen_numbers.py:198
+numbers.csv,BootReps,"10,000",10000,lab/reports/analysis/gen_numbers.py:269
+numbers.csv,BreadthKeptLowEval,8%,8,lab/reports/analysis/gen_numbers.py:985
+numbers.csv,BreadthKilledHighEval,58%,58,lab/reports/analysis/gen_numbers.py:985
+numbers.csv,BroadMoneyFiredMin,28,28,lab/reports/analysis/gen_numbers.py:619
+numbers.csv,BroadMoneyNetRuns,5,5,lab/reports/analysis/gen_numbers.py:662
+numbers.csv,BroadMoneyTasks,3,3,lab/reports/analysis/gen_numbers.py:661
+numbers.csv,BroadMoneyUnknown,7,7,lab/reports/analysis/gen_numbers.py:663
+numbers.csv,BudgetCap,"1,500",1500,lab/reports/analysis/gen_numbers.py:313
+numbers.csv,BundledEvolved,5.8%,5.8,lab/reports/analysis/gen_numbers.py:287
+numbers.csv,BundledNone,5.4%,5.4,lab/reports/analysis/gen_numbers.py:287
+numbers.csv,ClaudeCodeVersion,2.1.278,,lab/reports/analysis/gen_numbers.py:362
+numbers.csv,CompleteTasks,23,23,lab/reports/analysis/gen_numbers.py:254
+numbers.csv,ConfirmSweepRollouts,156,156,lab/reports/analysis/gen_numbers.py:326
+numbers.csv,ControlRuns,1,1,lab/reports/analysis/gen_numbers.py:544
+numbers.csv,CorrControl,23,23,lab/reports/analysis/gen_numbers.py:515
+numbers.csv,CorrControlRate,0.88,0.88,lab/reports/analysis/gen_numbers.py:516
+numbers.csv,CorrEval,60,60,lab/reports/analysis/gen_numbers.py:515
+numbers.csv,CorrEvalRate,0.58,0.58,lab/reports/analysis/gen_numbers.py:516
+numbers.csv,CostEvolved,0.149,0.149,lab/reports/analysis/gen_numbers.py:1042
+numbers.csv,CostNone,0.121,0.121,lab/reports/analysis/gen_numbers.py:1042
+numbers.csv,CostRise,23%,23,lab/reports/analysis/gen_numbers.py:1043
+numbers.csv,CostRiseC,38%,38,lab/reports/analysis/gen_numbers.py:1054
+numbers.csv,CostRiseD,5%,5,lab/reports/analysis/gen_numbers.py:1054
+numbers.csv,CostRiseHi,22%,22,lab/reports/analysis/gen_numbers.py:1056
+numbers.csv,CostRiseLo,12%,12,lab/reports/analysis/gen_numbers.py:1055
+numbers.csv,DecidedItems,4,4,lab/reports/analysis/gen_numbers.py:214
+numbers.csv,DescBodyRollouts,90,90,lab/reports/analysis/gen_numbers.py:1166
+numbers.csv,DescBodySeen,7,7,lab/reports/analysis/gen_numbers.py:1165
+numbers.csv,DescBodySeenC,6,6,lab/reports/analysis/gen_numbers.py:1169
+numbers.csv,DescItems,4,4,lab/reports/analysis/gen_numbers.py:840
+numbers.csv,DescOpenedC,16,16,lab/reports/analysis/gen_numbers.py:827
+numbers.csv,DescPassC,2,2,lab/reports/analysis/gen_numbers.py:1170
+numbers.csv,DescRateC,11%,11,lab/reports/analysis/gen_numbers.py:817
+numbers.csv,DescRecovered,79%,79,lab/reports/analysis/gen_numbers.py:840
+numbers.csv,DescRecoveredHi,100%,100,lab/reports/analysis/gen_numbers.py:841
+numbers.csv,DescRecoveredLo,58%,58,lab/reports/analysis/gen_numbers.py:841
+numbers.csv,DescRewritten,1,1,lab/reports/analysis/gen_numbers.py:840
+numbers.csv,DescRolloutsC,18,18,lab/reports/analysis/gen_numbers.py:827
+numbers.csv,DescShareC,16%,16,lab/reports/analysis/gen_numbers.py:823
+numbers.csv,DescShareCHi,56%,56,lab/reports/analysis/gen_numbers.py:823
+numbers.csv,DescShareCLo,0%,0,lab/reports/analysis/gen_numbers.py:823
+numbers.csv,DevSpend,155,155,lab/reports/analysis/gen_numbers.py:297
+numbers.csv,DzeroGain,+42.5,42.5,lab/reports/analysis/gen_numbers.py:526
+numbers.csv,DzeroOwn,+50.0,50.0,lab/reports/analysis/gen_numbers.py:526
+numbers.csv,DzeroOwnRuleTasks,12,12,lab/reports/analysis/gen_numbers.py:531
+numbers.csv,DzeroOwnTasks,15,15,lab/reports/analysis/gen_numbers.py:526
+numbers.csv,EvalRuns,4,4,lab/reports/analysis/gen_numbers.py:306
+numbers.csv,EvalSweeps,51,51,lab/reports/analysis/gen_numbers.py:1106
+numbers.csv,EvolveCostHi,4.09,4.09,lab/reports/analysis/gen_numbers.py:1072
+numbers.csv,EvolveCostLo,2.39,2.39,lab/reports/analysis/gen_numbers.py:1072
+numbers.csv,EvolvedChars,559,559,lab/reports/analysis/gen_numbers.py:120
+numbers.csv,EvolvedRunOneC,70%,70,lab/reports/analysis/gen_numbers.py:810
+numbers.csv,ExcludedFrom,R4,,lab/reports/analysis/gen_numbers.py:251
+numbers.csv,ExcludedScenario,HA6,,lab/reports/analysis/gen_numbers.py:251
+numbers.csv,ExporterRules,2,2,lab/reports/analysis/gen_numbers.py:685
+numbers.csv,ExtAAEst,+5.0,5.0,lab/reports/analysis/gen_numbers.py:937
+numbers.csv,ExtAAHi,+15.0,15.0,lab/reports/analysis/gen_numbers.py:938
+numbers.csv,ExtAALo,0.0,0.0,lab/reports/analysis/gen_numbers.py:938
+numbers.csv,ExtCycles,5,5,lab/reports/analysis/gen_numbers.py:947
+numbers.csv,ExtFirstTime,7,7,lab/reports/analysis/gen_numbers.py:948
+numbers.csv,ExtKept,0,0,lab/reports/analysis/gen_numbers.py:947
+numbers.csv,ExtLessons,1,1,lab/reports/analysis/gen_numbers.py:945
+numbers.csv,ExtTasks,8,8,lab/reports/analysis/gen_numbers.py:945
+numbers.csv,FailCRuleEvolved,43,43,lab/reports/analysis/gen_numbers.py:1035
+numbers.csv,FailEvolved,108,108,lab/reports/analysis/gen_numbers.py:1027
+numbers.csv,FailNone,361,361,lab/reports/analysis/gen_numbers.py:1027
+numbers.csv,FailRuleEvolved,86,86,lab/reports/analysis/gen_numbers.py:1029
+numbers.csv,FailRuleNone,341,341,lab/reports/analysis/gen_numbers.py:1029
+numbers.csv,FailRuleShareNone,94%,94,lab/reports/analysis/gen_numbers.py:1028
+numbers.csv,FamAEst,+97.0,97.0,lab/reports/analysis/gen_numbers.py:420
+numbers.csv,FamAHi,+100.0,100.0,lab/reports/analysis/gen_numbers.py:420
+numbers.csv,FamALo,+91.0,91.0,lab/reports/analysis/gen_numbers.py:420
+numbers.csv,FamBEst,+53.3,53.3,lab/reports/analysis/gen_numbers.py:420
+numbers.csv,FamBHi,+88.3,88.3,lab/reports/analysis/gen_numbers.py:420
+numbers.csv,FamBLo,+17.5,17.5,lab/reports/analysis/gen_numbers.py:420
+numbers.csv,FamCEst,+50.0,50.0,lab/reports/analysis/gen_numbers.py:420
+numbers.csv,FamCHi,+73.3,73.3,lab/reports/analysis/gen_numbers.py:420
+numbers.csv,FamCLo,+25.0,25.0,lab/reports/analysis/gen_numbers.py:420
+numbers.csv,FamEEst,+26.7,26.7,lab/reports/analysis/gen_numbers.py:420
+numbers.csv,FamEHi,+60.0,60.0,lab/reports/analysis/gen_numbers.py:420
+numbers.csv,FamELo,+1.7,1.7,lab/reports/analysis/gen_numbers.py:420
+numbers.csv,FamHolmP,= 0.0004,0.0004,lab/reports/analysis/gen_numbers.py:428
+numbers.csv,Families,5,5,lab/reports/analysis/gen_numbers.py:308
+numbers.csv,FisherP,0.022,0.022,lab/reports/analysis/gen_numbers.py:705
+numbers.csv,FlatChars,"1,688",1688,lab/reports/analysis/gen_numbers.py:800
+numbers.csv,FlatMinusEst,-12.5,-12.5,lab/reports/analysis/gen_numbers.py:803
+numbers.csv,FlatMinusHi,+1.7,1.7,lab/reports/analysis/gen_numbers.py:803
+numbers.csv,FlatMinusLo,-28.3,-28.3,lab/reports/analysis/gen_numbers.py:803
+numbers.csv,FlatRateC,0%,0,lab/reports/analysis/gen_numbers.py:810
+numbers.csv,FloorFlaggedBuriedEval,3,3,lab/reports/analysis/gen_numbers.py:987
+numbers.csv,FloorFlaggedKeptEval,6,6,lab/reports/analysis/gen_numbers.py:988
+numbers.csv,FloorSavedEval,16.83,16.83,lab/reports/analysis/gen_numbers.py:989
+numbers.csv,GateCandidates,29,29,lab/reports/analysis/gen_numbers.py:258
+numbers.csv,GateHarmfulKilled,2,2,lab/reports/analysis/gen_numbers.py:205
+numbers.csv,GateHarmfulUnscored,3,3,lab/reports/analysis/gen_numbers.py:206
+numbers.csv,GateNoiseGain,10,10,lab/reports/analysis/gen_numbers.py:720
+numbers.csv,GateNoiseHarmful,2,2,lab/reports/analysis/gen_numbers.py:722
+numbers.csv,GateNoisePlacebo,7,7,lab/reports/analysis/gen_numbers.py:721
+numbers.csv,GateNoisePositive,1,1,lab/reports/analysis/gen_numbers.py:723
+numbers.csv,GateNoiseSingle,9,9,lab/reports/analysis/gen_numbers.py:728
+numbers.csv,GatePlaceboKilled,12,12,lab/reports/analysis/gen_numbers.py:205
+numbers.csv,GatePlaceboUnscored,8,8,lab/reports/analysis/gen_numbers.py:206
+numbers.csv,GateRollouts,946,946,lab/reports/analysis/gen_numbers.py:1177
+numbers.csv,GatedInvoked,28,28,lab/reports/analysis/gen_numbers.py:201
+numbers.csv,GatedOffered,66,66,lab/reports/analysis/gen_numbers.py:201
+numbers.csv,GuideChars,"1,958",1958,lab/reports/analysis/gen_numbers.py:144
+numbers.csv,GuideReadNone,0.5%,0.5,lab/reports/analysis/gen_numbers.py:415
+numbers.csv,HaikuEvolved,87.5%,87.5,lab/reports/analysis/gen_numbers.py:853
+numbers.csv,HaikuGain,+66.7,66.7,lab/reports/analysis/gen_numbers.py:215
+numbers.csv,HaikuHi,+80.8,80.8,lab/reports/analysis/gen_numbers.py:850
+numbers.csv,HaikuLo,+51.7,51.7,lab/reports/analysis/gen_numbers.py:850
+numbers.csv,HaikuNone,20.8%,20.8,lab/reports/analysis/gen_numbers.py:852
+numbers.csv,Harmful,5,5,lab/reports/analysis/gen_numbers.py:92
+numbers.csv,HarmfulKept,0,0,lab/reports/analysis/gen_numbers.py:92
+numbers.csv,HarmfulPathlessRule,small-changes-need-no-changelog,,lab/reports/analysis/gen_numbers.py:737
+numbers.csv,HarmfulRules,3,3,lab/reports/analysis/gen_numbers.py:733
+numbers.csv,HeldEvoA,97.0%,97.0,lab/reports/analysis/gen_numbers.py:483
+numbers.csv,HeldEvoB,79.2%,79.2,lab/reports/analysis/gen_numbers.py:483
+numbers.csv,HeldEvoC,51.7%,51.7,lab/reports/analysis/gen_numbers.py:483
+numbers.csv,HeldEvoE,81.7%,81.7,lab/reports/analysis/gen_numbers.py:483
+numbers.csv,HeldEvolvedRate,76.5%,76.5,lab/reports/analysis/gen_numbers.py:480
+numbers.csv,HeldNoneE,55.0%,55.0,lab/reports/analysis/gen_numbers.py:484
+numbers.csv,HeldNoneRate,21.5%,21.5,lab/reports/analysis/gen_numbers.py:480
+numbers.csv,HfourMinP,0.2,0.2,lab/reports/analysis/gen_numbers.py:522
+numbers.csv,HoldFamA,6,6,lab/reports/analysis/gen_numbers.py:224
+numbers.csv,HoldFamB,6,6,lab/reports/analysis/gen_numbers.py:224
+numbers.csv,HoldFamC,6,6,lab/reports/analysis/gen_numbers.py:224
+numbers.csv,HoldFamD,6,6,lab/reports/analysis/gen_numbers.py:224
+numbers.csv,HoldFamE,6,6,lab/reports/analysis/gen_numbers.py:224
+numbers.csv,HoldoutLate,15,15,lab/reports/analysis/gen_numbers.py:550
+numbers.csv,HoldoutTasks,30,30,lab/reports/analysis/gen_numbers.py:309
+numbers.csv,HoneAllEst,+56.5,56.5,lab/reports/analysis/gen_numbers.py:454
+numbers.csv,HoneAllHi,+75.0,75.0,lab/reports/analysis/gen_numbers.py:454
+numbers.csv,HoneAllLo,+35.4,35.4,lab/reports/analysis/gen_numbers.py:454
+numbers.csv,HoneEst,+55.0,55.0,lab/reports/analysis/gen_numbers.py:67
+numbers.csv,HoneHi,+74.1,74.1,lab/reports/analysis/gen_numbers.py:68
+numbers.csv,HoneLo,+34.1,34.1,lab/reports/analysis/gen_numbers.py:68
+numbers.csv,HoneP,= 0.0001,0.0001,lab/reports/analysis/gen_numbers.py:74
+numbers.csv,HoneTasks,92,92,lab/reports/analysis/gen_numbers.py:75
+numbers.csv,HtwoEst,-0.8,-0.8,lab/reports/analysis/gen_numbers.py:77
+numbers.csv,HtwoHi,0.0,0.0,lab/reports/analysis/gen_numbers.py:78
+numbers.csv,HtwoLo,-5.0,-5.0,lab/reports/analysis/gen_numbers.py:78
+numbers.csv,HtwoSpurious,0,0,lab/reports/analysis/gen_numbers.py:79
+numbers.csv,HzeroBar,50%,50,lab/reports/analysis/gen_numbers.py:407
+numbers.csv,HzeroBarD,90%,90,lab/reports/analysis/gen_numbers.py:412
+numbers.csv,HzeroBelowN,3,3,lab/reports/analysis/gen_numbers.py:408
+numbers.csv,IdealAlwaysSkills,2,2,lab/reports/analysis/gen_numbers.py:834
+numbers.csv,IdealChars,728,728,lab/reports/analysis/gen_numbers.py:120
+numbers.csv,IdealRateA,0%,0,lab/reports/analysis/gen_numbers.py:828
+numbers.csv,IdealRateE,56%,56,lab/reports/analysis/gen_numbers.py:828
+numbers.csv,IdealRollouts,90,90,lab/reports/analysis/gen_numbers.py:835
+numbers.csv,ImplCodeFiles,9,9,lab/reports/analysis/gen_numbers.py:357
+numbers.csv,ImplCodeLines,"6,906",6906,lab/reports/analysis/gen_numbers.py:356
+numbers.csv,ImplJevLines,"1,243",1243,lab/reports/analysis/gen_numbers.py:359
+numbers.csv,ImplPromptLines,"1,341",1341,lab/reports/analysis/gen_numbers.py:358
+numbers.csv,InitClaudeChars,559,559,lab/reports/analysis/gen_numbers.py:139
+numbers.csv,InvalidDev,9,9,lab/reports/analysis/gen_numbers.py:1087
+numbers.csv,JudgeItems,4,4,lab/reports/analysis/gen_numbers.py:998
+numbers.csv,JudgeItemsDev,2,2,lab/reports/analysis/gen_numbers.py:999
+numbers.csv,JudgeMissMax,54,54,lab/reports/analysis/gen_numbers.py:1002
+numbers.csv,JudgeOver,3,3,lab/reports/analysis/gen_numbers.py:1000
+numbers.csv,JudgeTied,3,3,lab/reports/analysis/gen_numbers.py:1001
+numbers.csv,KConfirm,3,3,lab/reports/analysis/gen_numbers.py:324
+numbers.csv,KScreen,2,2,lab/reports/analysis/gen_numbers.py:324
+numbers.csv,KeptItems,18,18,lab/reports/analysis/gen_numbers.py:148
+numbers.csv,KeptRules,16,16,lab/reports/analysis/gen_numbers.py:150
+numbers.csv,KeptSkills,2,2,lab/reports/analysis/gen_numbers.py:149
+numbers.csv,KitchenChars,"2,519",2519,lab/reports/analysis/gen_numbers.py:120
+numbers.csv,KitchenGap,11.1,11.1,lab/reports/analysis/gen_numbers.py:119
+numbers.csv,KitchenHi,+22.5,22.5,lab/reports/analysis/gen_numbers.py:125
+numbers.csv,KitchenLo,0.0,0.0,lab/reports/analysis/gen_numbers.py:125
+numbers.csv,KitchenRatio,4.5,4.5,lab/reports/analysis/gen_numbers.py:122
+numbers.csv,KitchenRun,R1,,lab/reports/analysis/gen_numbers.py:132
+numbers.csv,LoopActive,25,25,lab/reports/analysis/gen_numbers.py:561
+numbers.csv,LoopBarren,14,14,lab/reports/analysis/gen_numbers.py:556
+numbers.csv,LoopConfirmRollouts,"1,494",1494,lab/reports/analysis/gen_numbers.py:573
+numbers.csv,LoopCycles,39,39,lab/reports/analysis/gen_numbers.py:555
+numbers.csv,LoopFixReads,2,2,lab/reports/analysis/gen_numbers.py:1132
+numbers.csv,LoopFixTask,13,13,lab/reports/analysis/gen_numbers.py:1139
+numbers.csv,LoopKept,18,18,lab/reports/analysis/gen_numbers.py:171
+numbers.csv,LoopKilled,5,5,lab/reports/analysis/gen_numbers.py:172
+numbers.csv,LoopKilledRegression,2,2,lab/reports/analysis/gen_numbers.py:696
+numbers.csv,LoopKilledRegressionOnly,1,1,lab/reports/analysis/gen_numbers.py:697
+numbers.csv,LoopRollouts,"1,818",1818,lab/reports/analysis/gen_numbers.py:572
+numbers.csv,LoopSweepRollouts,"1,809",1809,lab/reports/analysis/gen_numbers.py:1131
+numbers.csv,LoopSwept,26,26,lab/reports/analysis/gen_numbers.py:170
+numbers.csv,LoopUnscored,3,3,lab/reports/analysis/gen_numbers.py:173
+numbers.csv,LoopWritten,27,27,lab/reports/analysis/gen_numbers.py:169
+numbers.csv,MarginClose,10,10,lab/reports/analysis/gen_numbers.py:105
+numbers.csv,MarginDFamily,-10,-10,lab/reports/analysis/gen_numbers.py:100
+numbers.csv,MarginDescShare,50%,50,lab/reports/analysis/gen_numbers.py:106
+numbers.csv,MarginNotBetter,+5,5,lab/reports/analysis/gen_numbers.py:104
+numbers.csv,MarginPlaceboUpper,25%,25,lab/reports/analysis/gen_numbers.py:108
+numbers.csv,MarginPositives,3,3,lab/reports/analysis/gen_numbers.py:112
+numbers.csv,MaxCorrections,3,3,lab/reports/analysis/gen_numbers.py:338
+numbers.csv,MaxInvalidPct,10%,10,lab/reports/analysis/gen_numbers.py:329
+numbers.csv,MaxRunsDefault,60,60,lab/reports/analysis/gen_numbers.py:346
+numbers.csv,MaxRunsEval,200,200,lab/reports/analysis/gen_numbers.py:346
+numbers.csv,MinClaudeVersion,2.1.276,,lab/reports/analysis/gen_numbers.py:363
+numbers.csv,MinNetRuns,2,2,lab/reports/analysis/gen_numbers.py:328
+numbers.csv,MinThemeFailingTasks,2,2,lab/reports/analysis/gen_numbers.py:333
+numbers.csv,MinThemeOccurrences,3,3,lab/reports/analysis/gen_numbers.py:330
+numbers.csv,ModelChangeK,3,3,lab/reports/analysis/gen_numbers.py:244
+numbers.csv,ModelChangeSource,R1,,lab/reports/analysis/gen_numbers.py:214
+numbers.csv,NarrowClockEvolved,50.0%,50.0,lab/reports/analysis/gen_numbers.py:642
+numbers.csv,NarrowClockFiles,3,3,lab/reports/analysis/gen_numbers.py:636
+numbers.csv,NarrowClockFired,10,10,lab/reports/analysis/gen_numbers.py:611
+numbers.csv,NarrowClockN,30,30,lab/reports/analysis/gen_numbers.py:611
+numbers.csv,NarrowClockNone,56.7%,56.7,lab/reports/analysis/gen_numbers.py:642
+numbers.csv,NarrowMoneyEvolved,26.7%,26.7,lab/reports/analysis/gen_numbers.py:614
+numbers.csv,NarrowMoneyFiles,5,5,lab/reports/analysis/gen_numbers.py:609
+numbers.csv,NarrowMoneyFired,0,0,lab/reports/analysis/gen_numbers.py:610
+numbers.csv,NarrowMoneyN,30,30,lab/reports/analysis/gen_numbers.py:610
+numbers.csv,NarrowMoneyNone,26.7%,26.7,lab/reports/analysis/gen_numbers.py:613
+numbers.csv,NarrowMoneyRules,2,2,lab/reports/analysis/gen_numbers.py:609
+numbers.csv,NarrowPoolEvolved,52.2%,52.2,lab/reports/analysis/gen_numbers.py:466
+numbers.csv,NarrowPoolNone,22.6%,22.6,lab/reports/analysis/gen_numbers.py:466
+numbers.csv,NarrowRun,R3,,lab/reports/analysis/gen_numbers.py:465
+numbers.csv,NoneBenchFix,1,1,lab/reports/analysis/gen_numbers.py:1149
+numbers.csv,NoneBenchNames,168,168,lab/reports/analysis/gen_numbers.py:1147
+numbers.csv,NoneBenchRollouts,907,907,lab/reports/analysis/gen_numbers.py:1143
+numbers.csv,NoneBenchText,4,4,lab/reports/analysis/gen_numbers.py:1148
+numbers.csv,NoneHeldNames,112,112,lab/reports/analysis/gen_numbers.py:1145
+numbers.csv,NoneHeldRollouts,595,595,lab/reports/analysis/gen_numbers.py:1144
+numbers.csv,NoneHeldText,2,2,lab/reports/analysis/gen_numbers.py:1146
+numbers.csv,NoneNamesN,93,93,lab/reports/analysis/gen_numbers.py:1155
+numbers.csv,NoneNamesPass,9.7%,9.7,lab/reports/analysis/gen_numbers.py:1155
+numbers.csv,NoneNoNamesN,382,382,lab/reports/analysis/gen_numbers.py:1156
+numbers.csv,NoneNoNamesPass,23.6%,23.6,lab/reports/analysis/gen_numbers.py:1156
+numbers.csv,NoneRateA,0%,0,lab/reports/analysis/gen_numbers.py:398
+numbers.csv,NoneRateB,26%,26,lab/reports/analysis/gen_numbers.py:398
+numbers.csv,NoneRateC,2%,2,lab/reports/analysis/gen_numbers.py:398
+numbers.csv,NoneRateD,100%,100,lab/reports/analysis/gen_numbers.py:398
+numbers.csv,NoneRateE,55%,55,lab/reports/analysis/gen_numbers.py:398
+numbers.csv,NoneRunOneA,0%,0,lab/reports/analysis/gen_numbers.py:829
+numbers.csv,NoneRunOneC,0%,0,lab/reports/analysis/gen_numbers.py:819
+numbers.csv,NoneRunOneE,57%,57,lab/reports/analysis/gen_numbers.py:829
+numbers.csv,OthersPoolHi,87.0%,87.0,lab/reports/analysis/gen_numbers.py:468
+numbers.csv,OthersPoolLo,80.9%,80.9,lab/reports/analysis/gen_numbers.py:468
+numbers.csv,OverloadFactor,3,3,lab/reports/analysis/gen_numbers.py:336
+numbers.csv,PermReps,"10,000",10000,lab/reports/analysis/gen_numbers.py:270
+numbers.csv,PlaceboKept,0,0,lab/reports/analysis/gen_numbers.py:92
+numbers.csv,PlaceboMoment,10,10,lab/reports/analysis/gen_numbers.py:260
+numbers.csv,PlaceboTopic,10,10,lab/reports/analysis/gen_numbers.py:259
+numbers.csv,PlaceboUpper,17%,17,lab/reports/analysis/gen_numbers.py:94
+numbers.csv,Placebos,20,20,lab/reports/analysis/gen_numbers.py:92
+numbers.csv,Planted,4,4,lab/reports/analysis/gen_numbers.py:156
+numbers.csv,PlantedMatched,2,2,lab/reports/analysis/gen_numbers.py:157
+numbers.csv,PlantedPlacebos,2,2,lab/reports/analysis/gen_numbers.py:159
+numbers.csv,Positives,4,4,lab/reports/analysis/gen_numbers.py:93
+numbers.csv,PositivesKept,2,2,lab/reports/analysis/gen_numbers.py:93
+numbers.csv,PrimaryK,5,5,lab/reports/analysis/gen_numbers.py:239
+numbers.csv,PruneMatched,6,6,lab/reports/analysis/gen_numbers.py:155
+numbers.csv,PruneMomentListed,"1,263",1263,lab/reports/analysis/gen_numbers.py:926
+numbers.csv,PruneMomentOpened,46,46,lab/reports/analysis/gen_numbers.py:927
+numbers.csv,PruneOwnMinLoss,9,9,lab/reports/analysis/gen_numbers.py:909
+numbers.csv,PrunePlaceboBase,18,18,lab/reports/analysis/gen_numbers.py:917
+numbers.csv,PrunePlaceboLostTasks,2,2,lab/reports/analysis/gen_numbers.py:917
+numbers.csv,PruneRemovalNames,58,58,lab/reports/analysis/gen_numbers.py:1186
+numbers.csv,PruneRemovalRollouts,333,333,lab/reports/analysis/gen_numbers.py:1185
+numbers.csv,PruneRemovalText,3,3,lab/reports/analysis/gen_numbers.py:1185
+numbers.csv,PruneRun,R1,,lab/reports/analysis/gen_numbers.py:865
+numbers.csv,PruneTested,8,8,lab/reports/analysis/gen_numbers.py:154
+numbers.csv,RecheckKept,2,2,lab/reports/analysis/gen_numbers.py:577
+numbers.csv,Rechecked,3,3,lab/reports/analysis/gen_numbers.py:576
+numbers.csv,RegressionTolerance,0.34,0.34,lab/reports/analysis/gen_numbers.py:327
+numbers.csv,RelKeptLowEval,17%,17,lab/reports/analysis/gen_numbers.py:985
+numbers.csv,RelKilledHighEval,75%,75,lab/reports/analysis/gen_numbers.py:985
+numbers.csv,ReleaseTag,v1.0.5,,lab/reports/analysis/gen_numbers.py:303
+numbers.csv,RelevanceFloor,0.35,0.35,lab/reports/analysis/gen_numbers.py:960
+numbers.csv,RelevanceFloorPct,35%,35,lab/reports/analysis/gen_numbers.py:961
+numbers.csv,RemovableItems,2,2,lab/reports/analysis/gen_numbers.py:214
+numbers.csv,RolloutModel,claude-haiku-4-5-20251001,,lab/reports/analysis/gen_numbers.py:276
+numbers.csv,RolloutModelName,Claude Haiku 4.5,,lab/reports/analysis/gen_numbers.py:293
+numbers.csv,RolloutTimeoutMin,10,10,lab/reports/analysis/gen_numbers.py:350
+numbers.csv,Rollouts,"6,462",6462,lab/reports/analysis/gen_numbers.py:311
+numbers.csv,Rounds,10,10,lab/reports/analysis/gen_numbers.py:232
+numbers.csv,RubricGood,15,15,lab/reports/analysis/gen_numbers.py:669
+numbers.csv,RubricLiteralMax,9,9,lab/reports/analysis/gen_numbers.py:686
+numbers.csv,RubricScored,18,18,lab/reports/analysis/gen_numbers.py:669
+numbers.csv,RuleFamilies,4,4,lab/reports/analysis/gen_numbers.py:308
+numbers.csv,RunGainAllHi,+66.7,66.7,lab/reports/analysis/gen_numbers.py:540
+numbers.csv,RunGainAllLo,+32.5,32.5,lab/reports/analysis/gen_numbers.py:540
+numbers.csv,RunOneItems,4,4,lab/reports/analysis/gen_numbers.py:261
+numbers.csv,ScreenCandRollouts,8,8,lab/reports/analysis/gen_numbers.py:716
+numbers.csv,SecondRepo,structlog,,lab/reports/analysis/gen_numbers.py:263
+numbers.csv,SecondRepoBase,73393f34b4,,lab/reports/analysis/gen_numbers.py:266
+numbers.csv,SecondRepoHoldout,4,4,lab/reports/analysis/gen_numbers.py:267
+numbers.csv,SecondRepoK,5,5,lab/reports/analysis/gen_numbers.py:268
+numbers.csv,SecondRepoSlug,hynek/structlog,,lab/reports/analysis/gen_numbers.py:264
+numbers.csv,SecsEvolved,68,68,lab/reports/analysis/gen_numbers.py:1066
+numbers.csv,SecsNone,57,57,lab/reports/analysis/gen_numbers.py:1066
+numbers.csv,SeenEvoA,90.3%,90.3,lab/reports/analysis/gen_numbers.py:483
+numbers.csv,SeenEvoB,88.9%,88.9,lab/reports/analysis/gen_numbers.py:483
+numbers.csv,SeenEvoC,76.4%,76.4,lab/reports/analysis/gen_numbers.py:483
+numbers.csv,SeenEvoE,85.4%,85.4,lab/reports/analysis/gen_numbers.py:483
+numbers.csv,SeenEvolvedRate,85.2%,85.2,lab/reports/analysis/gen_numbers.py:480
+numbers.csv,SeenGainEst,+78.8,78.8,lab/reports/analysis/gen_numbers.py:472
+numbers.csv,SeenGainHi,+86.7,86.7,lab/reports/analysis/gen_numbers.py:472
+numbers.csv,SeenGainLo,+68.9,68.9,lab/reports/analysis/gen_numbers.py:472
+numbers.csv,SeenNoneE,10.4%,10.4,lab/reports/analysis/gen_numbers.py:484
+numbers.csv,SeenNoneRate,6.4%,6.4,lab/reports/analysis/gen_numbers.py:480
+numbers.csv,SeenTasks,22,22,lab/reports/analysis/gen_numbers.py:473
+numbers.csv,SessControl,26,26,lab/reports/analysis/gen_numbers.py:515
+numbers.csv,SessEval,104,104,lab/reports/analysis/gen_numbers.py:515
+numbers.csv,SessionCostHi,11.78,11.78,lab/reports/analysis/gen_numbers.py:1075
+numbers.csv,SessionCostLo,10.08,10.08,lab/reports/analysis/gen_numbers.py:1074
+numbers.csv,SessionsPerRun,26,26,lab/reports/analysis/gen_numbers.py:231
+numbers.csv,ShopWideHi,100%,100,lab/reports/analysis/gen_numbers.py:679
+numbers.csv,ShopWideLo,93%,93,lab/reports/analysis/gen_numbers.py:678
+numbers.csv,ShopWideMargin,1.25,1.25,lab/reports/analysis/gen_numbers.py:680
+numbers.csv,ShopWidePassed,4,4,lab/reports/analysis/gen_numbers.py:677
+numbers.csv,SonnetAccReadN,35,35,lab/reports/analysis/gen_numbers.py:1208
+numbers.csv,SonnetAccReadPass,28,28,lab/reports/analysis/gen_numbers.py:1208
+numbers.csv,SonnetAccUnreadN,115,115,lab/reports/analysis/gen_numbers.py:1209
+numbers.csv,SonnetAccUnreadPass,110,110,lab/reports/analysis/gen_numbers.py:1209
+numbers.csv,SonnetChangelogLoss,5,5,lab/reports/analysis/gen_numbers.py:933
+numbers.csv,SonnetClockLoss,1,1,lab/reports/analysis/gen_numbers.py:933
+numbers.csv,SonnetCostEvolved,0.205,0.205,lab/reports/analysis/gen_numbers.py:1064
+numbers.csv,SonnetCostNone,0.228,0.228,lab/reports/analysis/gen_numbers.py:1064
+numbers.csv,SonnetEvolved,94.4%,94.4,lab/reports/analysis/gen_numbers.py:853
+numbers.csv,SonnetFamCEst,+11.1,11.1,lab/reports/analysis/gen_numbers.py:858
+numbers.csv,SonnetFamCHi,+38.9,38.9,lab/reports/analysis/gen_numbers.py:858
+numbers.csv,SonnetFamCLo,-11.1,-11.1,lab/reports/analysis/gen_numbers.py:858
+numbers.csv,SonnetGain,+5.6,5.6,lab/reports/analysis/gen_numbers.py:215
+numbers.csv,SonnetHi,+13.9,13.9,lab/reports/analysis/gen_numbers.py:216
+numbers.csv,SonnetLo,-2.8,-2.8,lab/reports/analysis/gen_numbers.py:216
+numbers.csv,SonnetNone,88.9%,88.9,lab/reports/analysis/gen_numbers.py:852
+numbers.csv,SonnetNoneNames,159,159,lab/reports/analysis/gen_numbers.py:1194
+numbers.csv,SonnetNoneRollouts,168,168,lab/reports/analysis/gen_numbers.py:1193
+numbers.csv,SonnetNoneText,67,67,lab/reports/analysis/gen_numbers.py:1193
+numbers.csv,SonnetReadN,33,33,lab/reports/analysis/gen_numbers.py:1197
+numbers.csv,SonnetReadPass,29,29,lab/reports/analysis/gen_numbers.py:1197
+numbers.csv,SonnetRemovalNames,196,196,lab/reports/analysis/gen_numbers.py:1203
+numbers.csv,SonnetRemovalRollouts,300,300,lab/reports/analysis/gen_numbers.py:1202
+numbers.csv,SonnetRemovalText,72,72,lab/reports/analysis/gen_numbers.py:1202
+numbers.csv,SonnetStoreReads,24,24,lab/reports/analysis/gen_numbers.py:1213
+numbers.csv,SonnetUnreadN,39,39,lab/reports/analysis/gen_numbers.py:1198
+numbers.csv,SonnetUnreadPass,35,35,lab/reports/analysis/gen_numbers.py:1198
+numbers.csv,Spend,"1,196",1196,lab/reports/analysis/gen_numbers.py:312
+numbers.csv,SplitCycleRun,R4,,lab/reports/analysis/gen_numbers.py:566
+numbers.csv,SplitCycleSwept,2,2,lab/reports/analysis/gen_numbers.py:566
+numbers.csv,StopAfterBarren,2,2,lab/reports/analysis/gen_numbers.py:331
+numbers.csv,StopAfterBarrenEval,3,3,lab/reports/analysis/gen_numbers.py:345
+numbers.csv,StrongModel,claude-sonnet-5,,lab/reports/analysis/gen_numbers.py:217
+numbers.csv,StrongModelName,Claude Sonnet 5,,lab/reports/analysis/gen_numbers.py:293
+numbers.csv,SweepCostHi,128.78,128.78,lab/reports/analysis/gen_numbers.py:1073
+numbers.csv,SweepCostLo,32.76,32.76,lab/reports/analysis/gen_numbers.py:1073
+numbers.csv,SweepExampleExposed,6,6,lab/reports/analysis/gen_numbers.py:179
+numbers.csv,SweepExampleTasks,26,26,lab/reports/analysis/gen_numbers.py:178
+numbers.csv,TamperedEvolved,13,13,lab/reports/analysis/gen_numbers.py:1030
+numbers.csv,TamperedNone,9,9,lab/reports/analysis/gen_numbers.py:1030
+numbers.csv,TrainFamA,6,6,lab/reports/analysis/gen_numbers.py:224
+numbers.csv,TrainFamB,6,6,lab/reports/analysis/gen_numbers.py:224
+numbers.csv,TrainFamC,6,6,lab/reports/analysis/gen_numbers.py:224
+numbers.csv,TrainFamD,4,4,lab/reports/analysis/gen_numbers.py:224
+numbers.csv,TrainFamE,4,4,lab/reports/analysis/gen_numbers.py:224
+numbers.csv,TrainK,3,3,lab/reports/analysis/gen_numbers.py:239
+numbers.csv,TrainTasks,26,26,lab/reports/analysis/gen_numbers.py:310
+numbers.csv,TranscriptMatched,"7,433",7433,lab/reports/analysis/gen_numbers.py:1120
+numbers.csv,TranscriptRecorded,"7,446",7446,lab/reports/analysis/gen_numbers.py:1119
+numbers.csv,TranscriptUnmatched,13,13,lab/reports/analysis/gen_numbers.py:1123
+numbers.csv,TurnsEvolved,22.1,22.1,lab/reports/analysis/gen_numbers.py:1065
+numbers.csv,TurnsNone,18.2,18.2,lab/reports/analysis/gen_numbers.py:1065
+numbers.csv,XBenchImpl,19,19,lab/reports/analysis/gen_numbers.py:1224
+numbers.csv,XBenchImplEvolved,9,9,lab/reports/analysis/gen_numbers.py:1228
+numbers.csv,XBenchImplFirst,9,9,lab/reports/analysis/gen_numbers.py:1229
+numbers.csv,XBenchImplNone,10,10,lab/reports/analysis/gen_numbers.py:1228
+numbers.csv,XBenchImplPass,19,19,lab/reports/analysis/gen_numbers.py:1225
+numbers.csv,XBenchOther,21,21,lab/reports/analysis/gen_numbers.py:1226
+numbers.csv,XBenchOtherPass,16,16,lab/reports/analysis/gen_numbers.py:1226
+numbers.csv,XBenchRollouts,40,40,lab/reports/analysis/gen_numbers.py:1224
+numbers.csv,XTrainImpl,1,1,lab/reports/analysis/gen_numbers.py:1221
+numbers.csv,XTrainSessions,8,8,lab/reports/analysis/gen_numbers.py:1221
+table-main.csv,"A, changelog / scenarios",5,5,lab/reports/analysis/gen_tables.py
+table-main.csv,"A, changelog / rollouts",200,200,lab/reports/analysis/gen_tables.py
+table-main.csv,"A, changelog / pass_rate_none",0%,0,lab/reports/analysis/gen_tables.py
+table-main.csv,"A, changelog / pass_rate_evolved",97%,97,lab/reports/analysis/gen_tables.py
+table-main.csv,"A, changelog / gain_points",+97.0,97.0,lab/reports/analysis/gen_tables.py
+table-main.csv,"A, changelog / ci95_low",+91.0,91.0,lab/reports/analysis/gen_tables.py
+table-main.csv,"A, changelog / ci95_high",+100.0,100.0,lab/reports/analysis/gen_tables.py
+table-main.csv,"A, changelog / p",0.0001,0.0001,lab/reports/analysis/gen_tables.py
+table-main.csv,"A, changelog / holm_p",0.0004,0.0004,lab/reports/analysis/gen_tables.py
+table-main.csv,"B, money / scenarios",6,6,lab/reports/analysis/gen_tables.py
+table-main.csv,"B, money / rollouts",240,240,lab/reports/analysis/gen_tables.py
+table-main.csv,"B, money / pass_rate_none",26%,26,lab/reports/analysis/gen_tables.py
+table-main.csv,"B, money / pass_rate_evolved",79%,79,lab/reports/analysis/gen_tables.py
+table-main.csv,"B, money / gain_points",+53.3,53.3,lab/reports/analysis/gen_tables.py
+table-main.csv,"B, money / ci95_low",+17.5,17.5,lab/reports/analysis/gen_tables.py
+table-main.csv,"B, money / ci95_high",+88.3,88.3,lab/reports/analysis/gen_tables.py
+table-main.csv,"B, money / p",0.0001,0.0001,lab/reports/analysis/gen_tables.py
+table-main.csv,"B, money / holm_p",0.0004,0.0004,lab/reports/analysis/gen_tables.py
+table-main.csv,"C, exporters / scenarios",6,6,lab/reports/analysis/gen_tables.py
+table-main.csv,"C, exporters / rollouts",240,240,lab/reports/analysis/gen_tables.py
+table-main.csv,"C, exporters / pass_rate_none",2%,2,lab/reports/analysis/gen_tables.py
+table-main.csv,"C, exporters / pass_rate_evolved",52%,52,lab/reports/analysis/gen_tables.py
+table-main.csv,"C, exporters / gain_points",+50.0,50.0,lab/reports/analysis/gen_tables.py
+table-main.csv,"C, exporters / ci95_low",+25.0,25.0,lab/reports/analysis/gen_tables.py
+table-main.csv,"C, exporters / ci95_high",+73.3,73.3,lab/reports/analysis/gen_tables.py
+table-main.csv,"C, exporters / p",0.0001,0.0001,lab/reports/analysis/gen_tables.py
+table-main.csv,"C, exporters / holm_p",0.0004,0.0004,lab/reports/analysis/gen_tables.py
+table-main.csv,"E, time / scenarios",6,6,lab/reports/analysis/gen_tables.py
+table-main.csv,"E, time / rollouts",240,240,lab/reports/analysis/gen_tables.py
+table-main.csv,"E, time / pass_rate_none",55%,55,lab/reports/analysis/gen_tables.py
+table-main.csv,"E, time / pass_rate_evolved",82%,82,lab/reports/analysis/gen_tables.py
+table-main.csv,"E, time / gain_points",+26.7,26.7,lab/reports/analysis/gen_tables.py
+table-main.csv,"E, time / ci95_low",+1.7,1.7,lab/reports/analysis/gen_tables.py
+table-main.csv,"E, time / ci95_high",+60.0,60.0,lab/reports/analysis/gen_tables.py
+table-main.csv,"E, time / p",0.0001,0.0001,lab/reports/analysis/gen_tables.py
+table-main.csv,"E, time / holm_p",0.0004,0.0004,lab/reports/analysis/gen_tables.py
+table-main.csv,"A, B, C, E together / scenarios",23,23,lab/reports/analysis/gen_tables.py
+table-main.csv,"A, B, C, E together / rollouts",920,920,lab/reports/analysis/gen_tables.py
+table-main.csv,"A, B, C, E together / pass_rate_none",22%,22,lab/reports/analysis/gen_tables.py
+table-main.csv,"A, B, C, E together / pass_rate_evolved",77%,77,lab/reports/analysis/gen_tables.py
+table-main.csv,"A, B, C, E together / gain_points",+55.0,55.0,lab/reports/analysis/gen_tables.py
+table-main.csv,"A, B, C, E together / ci95_low",+34.1,34.1,lab/reports/analysis/gen_tables.py
+table-main.csv,"A, B, C, E together / ci95_high",+74.1,74.1,lab/reports/analysis/gen_tables.py
+table-main.csv,"A, B, C, E together / p",0.0001,0.0001,lab/reports/analysis/gen_tables.py
+table-main.csv,"A, B, C, E together / holm_p",,,lab/reports/analysis/gen_tables.py
+table-main.csv,"D, plain bugs (control) / scenarios",6,6,lab/reports/analysis/gen_tables.py
+table-main.csv,"D, plain bugs (control) / rollouts",240,240,lab/reports/analysis/gen_tables.py
+table-main.csv,"D, plain bugs (control) / pass_rate_none",100%,100,lab/reports/analysis/gen_tables.py
+table-main.csv,"D, plain bugs (control) / pass_rate_evolved",99%,99,lab/reports/analysis/gen_tables.py
+table-main.csv,"D, plain bugs (control) / gain_points",-0.8,-0.8,lab/reports/analysis/gen_tables.py
+table-main.csv,"D, plain bugs (control) / ci95_low",-5.0,-5.0,lab/reports/analysis/gen_tables.py
+table-main.csv,"D, plain bugs (control) / ci95_high",0.0,0.0,lab/reports/analysis/gen_tables.py
+table-main.csv,"D, plain bugs (control) / p",1.000,1.000,lab/reports/analysis/gen_tables.py
+table-main.csv,"D, plain bugs (control) / holm_p",,,lab/reports/analysis/gen_tables.py
+table-gates.csv,"placebo, about a topic | always-on skill / n",10,10,lab/reports/analysis/gen_tables.py
+table-gates.csv,"placebo, about a topic | always-on skill / fired",0,0,lab/reports/analysis/gen_tables.py
+table-gates.csv,"placebo, about a topic | always-on skill / keep",0,0,lab/reports/analysis/gen_tables.py
+table-gates.csv,"placebo, about a topic | always-on skill / kill",7,7,lab/reports/analysis/gen_tables.py
+table-gates.csv,"placebo, about a topic | always-on skill / rerun",3,3,lab/reports/analysis/gen_tables.py
+table-gates.csv,"placebo, about a topic | always-on skill / recorded_kill",10,10,lab/reports/analysis/gen_tables.py
+table-gates.csv,"placebo, about a moment | always-on skill / n",10,10,lab/reports/analysis/gen_tables.py
+table-gates.csv,"placebo, about a moment | always-on skill / fired",0,0,lab/reports/analysis/gen_tables.py
+table-gates.csv,"placebo, about a moment | always-on skill / keep",0,0,lab/reports/analysis/gen_tables.py
+table-gates.csv,"placebo, about a moment | always-on skill / kill",5,5,lab/reports/analysis/gen_tables.py
+table-gates.csv,"placebo, about a moment | always-on skill / rerun",5,5,lab/reports/analysis/gen_tables.py
+table-gates.csv,"placebo, about a moment | always-on skill / recorded_kill",10,10,lab/reports/analysis/gen_tables.py
+table-gates.csv,harmful | rule / n,3,3,lab/reports/analysis/gen_tables.py
+table-gates.csv,harmful | rule / fired,3,3,lab/reports/analysis/gen_tables.py
+table-gates.csv,harmful | rule / keep,0,0,lab/reports/analysis/gen_tables.py
+table-gates.csv,harmful | rule / kill,0,0,lab/reports/analysis/gen_tables.py
+table-gates.csv,harmful | rule / rerun,3,3,lab/reports/analysis/gen_tables.py
+table-gates.csv,harmful | rule / recorded_kill,3,3,lab/reports/analysis/gen_tables.py
+table-gates.csv,harmful | always-on skill / n,2,2,lab/reports/analysis/gen_tables.py
+table-gates.csv,harmful | always-on skill / fired,0,0,lab/reports/analysis/gen_tables.py
+table-gates.csv,harmful | always-on skill / keep,0,0,lab/reports/analysis/gen_tables.py
+table-gates.csv,harmful | always-on skill / kill,2,2,lab/reports/analysis/gen_tables.py
+table-gates.csv,harmful | always-on skill / rerun,0,0,lab/reports/analysis/gen_tables.py
+table-gates.csv,harmful | always-on skill / recorded_kill,2,2,lab/reports/analysis/gen_tables.py
+table-gates.csv,known-good | rule / n,1,1,lab/reports/analysis/gen_tables.py
+table-gates.csv,known-good | rule / fired,1,1,lab/reports/analysis/gen_tables.py
+table-gates.csv,known-good | rule / keep,1,1,lab/reports/analysis/gen_tables.py
+table-gates.csv,known-good | rule / kill,0,0,lab/reports/analysis/gen_tables.py
+table-gates.csv,known-good | rule / rerun,0,0,lab/reports/analysis/gen_tables.py
+table-gates.csv,known-good | rule / recorded_kill,0,0,lab/reports/analysis/gen_tables.py
+table-gates.csv,known-good | gated skill / n,1,1,lab/reports/analysis/gen_tables.py
+table-gates.csv,known-good | gated skill / fired,1,1,lab/reports/analysis/gen_tables.py
+table-gates.csv,known-good | gated skill / keep,1,1,lab/reports/analysis/gen_tables.py
+table-gates.csv,known-good | gated skill / kill,0,0,lab/reports/analysis/gen_tables.py
+table-gates.csv,known-good | gated skill / rerun,0,0,lab/reports/analysis/gen_tables.py
+table-gates.csv,known-good | gated skill / recorded_kill,0,0,lab/reports/analysis/gen_tables.py
+table-gates.csv,known-good | always-on skill / n,2,2,lab/reports/analysis/gen_tables.py
+table-gates.csv,known-good | always-on skill / fired,0,0,lab/reports/analysis/gen_tables.py
+table-gates.csv,known-good | always-on skill / keep,0,0,lab/reports/analysis/gen_tables.py
+table-gates.csv,known-good | always-on skill / kill,1,1,lab/reports/analysis/gen_tables.py
+table-gates.csv,known-good | always-on skill / rerun,1,1,lab/reports/analysis/gen_tables.py
+table-gates.csv,known-good | always-on skill / recorded_kill,2,2,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | A | changelog-requirement / form,rule,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | A | changelog-requirement / scope,shop/**,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | A | changelog-requirement / chars,518,518,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | A | changelog-requirement / fires_own_pct,98,98,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | A | changelog-requirement / fires_other_pct,97,97,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | A | changelog-requirement / score,3,3,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | A | changelog-requirement / held_out_loaded,25/25,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | B | billing-helpers / form,rule,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | B | billing-helpers / scope,shop/billing/**,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | B | billing-helpers / chars,317,317,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | B | billing-helpers / fires_own_pct,96,96,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | B | billing-helpers / fires_other_pct,21,21,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | B | billing-helpers / score,3,3,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | B | billing-helpers / held_out_loaded,28/30,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | C | exporter-checklist / form,skill,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | C | exporter-checklist / scope,shop/plugins/**,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | C | exporter-checklist / chars,1135,1135,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | C | exporter-checklist / fires_own_pct,100,100,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | C | exporter-checklist / fires_other_pct,0,0,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | C | exporter-checklist / score,3,3,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | C | exporter-checklist / held_out_loaded,30/30,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | E | shop-clock-rule / form,rule,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | E | shop-clock-rule / scope,shop/**,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | E | shop-clock-rule / chars,327,327,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | E | shop-clock-rule / fires_own_pct,98,98,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | E | shop-clock-rule / fires_other_pct,97,97,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | E | shop-clock-rule / score,3,3,lab/reports/analysis/gen_tables.py
+table-kept.csv,R1 | E | shop-clock-rule / held_out_loaded,29/30,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | A | changelog-user-visible / form,rule,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | A | changelog-user-visible / scope,shop/**,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | A | changelog-user-visible / chars,529,529,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | A | changelog-user-visible / fires_own_pct,98,98,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | A | changelog-user-visible / fires_other_pct,97,97,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | A | changelog-user-visible / score,3,3,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | A | changelog-user-visible / held_out_loaded,25/25,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | B | billing-exact-arithmetic / form,rule,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | B | billing-exact-arithmetic / scope,shop/billing/**,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | B | billing-exact-arithmetic / chars,564,564,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | B | billing-exact-arithmetic / fires_own_pct,98,98,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | B | billing-exact-arithmetic / fires_other_pct,18,18,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | B | billing-exact-arithmetic / score,3,3,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | B | billing-exact-arithmetic / held_out_loaded,30/30,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | C | exporter-docs-and-golden / form,rule,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | C | exporter-docs-and-golden / scope,shop/plugins/**,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | C | exporter-docs-and-golden / chars,427,427,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | C | exporter-docs-and-golden / fires_own_pct,100,100,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | C | exporter-docs-and-golden / fires_other_pct,0,0,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | C | exporter-docs-and-golden / score,3,3,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | C | exporter-docs-and-golden / held_out_loaded,30/30,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | E | shop-clock-not-datetime / form,rule,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | E | shop-clock-not-datetime / scope,shop/**,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | E | shop-clock-not-datetime / chars,353,353,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | E | shop-clock-not-datetime / fires_own_pct,93,93,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | E | shop-clock-not-datetime / fires_other_pct,98,98,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | E | shop-clock-not-datetime / score,2,2,lab/reports/analysis/gen_tables.py
+table-kept.csv,R2 | E | shop-clock-not-datetime / held_out_loaded,27/30,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | A | changelog-shop-reminder / form,rule,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | A | changelog-shop-reminder / scope,shop/**,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | A | changelog-shop-reminder / chars,261,261,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | A | changelog-shop-reminder / fires_own_pct,100,100,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | A | changelog-shop-reminder / fires_other_pct,99,99,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | A | changelog-shop-reminder / score,3,3,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | A | changelog-shop-reminder / held_out_loaded,25/25,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | A | changelog-user-facing / form,rule,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | A | changelog-user-facing / scope,"shop/cli.py, shop/formatting.py, shop/report.py",,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | A | changelog-user-facing / chars,334,334,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | A | changelog-user-facing / fires_own_pct,100,100,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | A | changelog-user-facing / fires_other_pct,8,8,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | A | changelog-user-facing / score,3,3,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | A | changelog-user-facing / held_out_loaded,25/25,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | B | billing-rate-helpers / form,rule,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | B | billing-rate-helpers / scope,"shop/billing/shipping.py, shop/billing/refunds.py",,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | B | billing-rate-helpers / chars,510,510,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | B | billing-rate-helpers / fires_own_pct,13,13,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | B | billing-rate-helpers / fires_other_pct,0,0,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | B | billing-rate-helpers / score,3,3,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | B | billing-rate-helpers / held_out_loaded,0/30,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | B | rate-helpers-narrow / form,rule,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | B | rate-helpers-narrow / scope,"shop/billing/tax.py, shop/billing/discount.py, shop/billing/fx.py",,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | B | rate-helpers-narrow / chars,380,380,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | B | rate-helpers-narrow / fires_own_pct,19,19,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | B | rate-helpers-narrow / fires_other_pct,0,0,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | B | rate-helpers-narrow / score,3,3,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | B | rate-helpers-narrow / held_out_loaded,0/30,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | C | exporter-checklist-v2 / form,rule,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | C | exporter-checklist-v2 / scope,shop/plugins/*_export.py,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | C | exporter-checklist-v2 / chars,621,621,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | C | exporter-checklist-v2 / fires_own_pct,100,100,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | C | exporter-checklist-v2 / fires_other_pct,0,0,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | C | exporter-checklist-v2 / score,3,3,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | C | exporter-checklist-v2 / held_out_loaded,30/30,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | E | shop-clock-narrow / form,rule,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | E | shop-clock-narrow / scope,"shop/billing/invoice.py, shop/cart.py, shop/orders.py",,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | E | shop-clock-narrow / chars,335,335,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | E | shop-clock-narrow / fires_own_pct,43,43,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | E | shop-clock-narrow / fires_other_pct,28,28,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | E | shop-clock-narrow / score,3,3,lab/reports/analysis/gen_tables.py
+table-kept.csv,R3 | E | shop-clock-narrow / held_out_loaded,10/30,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | A | shop-changelog-reminder / form,rule,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | A | shop-changelog-reminder / scope,shop/**,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | A | shop-changelog-reminder / chars,616,616,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | A | shop-changelog-reminder / fires_own_pct,98,98,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | A | shop-changelog-reminder / fires_other_pct,98,98,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | A | shop-changelog-reminder / score,2,2,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | A | shop-changelog-reminder / held_out_loaded,25/25,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | B | billing-rates-helpers / form,rule,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | B | billing-rates-helpers / scope,shop/billing/**,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | B | billing-rates-helpers / chars,823,823,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | B | billing-rates-helpers / fires_own_pct,100,100,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | B | billing-rates-helpers / fires_other_pct,18,18,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | B | billing-rates-helpers / score,3,3,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | B | billing-rates-helpers / held_out_loaded,30/30,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | C | exporter-checklist / form,skill,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | C | exporter-checklist / scope,shop/plugins/**,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | C | exporter-checklist / chars,940,940,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | C | exporter-checklist / fires_own_pct,83,83,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | C | exporter-checklist / fires_other_pct,0,0,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | C | exporter-checklist / score,3,3,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | C | exporter-checklist / held_out_loaded,26/30,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | E | shop-clock-queries / form,rule,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | E | shop-clock-queries / scope,shop/**,,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | E | shop-clock-queries / chars,574,574,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | E | shop-clock-queries / fires_own_pct,93,93,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | E | shop-clock-queries / fires_other_pct,99,99,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | E | shop-clock-queries / score,2,2,lab/reports/analysis/gen_tables.py
+table-kept.csv,R4 | E | shop-clock-queries / held_out_loaded,27/30,,lab/reports/analysis/gen_tables.py
+figures-diagrams.json,grid/k,3,3,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,grid/exposed,6,6,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,grid/base_pass,1,1,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,grid/cand_pass,16,16,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,grid/runs_exposed,18,18,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,grid/gain,5.0,5.0,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,grid/regression,0.0,0.0,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,grid/worst_drop,0.0,0.0,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,grid/net_runs,15,15,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,grid/fired,18,18,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,kill/k,3,3,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,kill/ntasks,15,15,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,kill/exposed,15,15,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,kill/protected,6,6,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,kill/base_pass,25,25,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,kill/cand_pass,33,33,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,kill/runs_exposed,45,45,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,kill/gain,3.0,3.0,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,kill/regression,0.33,0.33,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,kill/worst_drop,0.33,0.33,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,kill/net,2.67,2.67,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,kill/net_runs,8,8,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,kill/fired,45,45,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,kill/successor/files,3,3,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,funnel/cycles,39,39,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,funnel/barren,14,14,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,funnel/active,25,25,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,funnel/swept,26,26,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,funnel/stopped_screen,4,4,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,funnel/killed_screen,2,2,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,funnel/unscored_screen,2,2,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,funnel/confirmed,22,22,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,funnel/rechecked,3,3,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,funnel/recheck_keep,2,2,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,funnel/recheck_kill,1,1,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,funnel/keep,18,18,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,funnel/kill_confirm,3,3,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,funnel/unscored_confirm,1,1,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,funnel/rollouts/screen,300,300,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,funnel/rollouts/confirm,1494,1494,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,funnel/rollouts/recheck,24,24,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,funnel/cost/screen,42.76,42.76,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,funnel/cost/confirm,195.86,195.86,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,funnel/cost/recheck,2.46,2.46,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,funnel/runs,4,4,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,cycles/runs[0]/swept,4,4,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,cycles/runs[0]/kept,4,4,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,cycles/runs[0]/barren_after_full,4,4,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,cycles/runs[1]/swept,5,5,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,cycles/runs[1]/kept,4,4,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,cycles/runs[1]/barren_after_full,4,4,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,cycles/runs[2]/swept,10,10,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,cycles/runs[2]/kept,6,6,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,cycles/runs[2]/barren_after_full,1,1,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,cycles/runs[3]/swept,7,7,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,cycles/runs[3]/kept,4,4,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,cycles/runs[3]/barren_after_full,4,4,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,cycles/ncycles,11,11,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,cycles/barren,14,14,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,cycles/barren_after_full,13,13,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,loaded/kept_rules,16,16,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,loaded/kept_skills,2,2,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,loaded/gated/offered,66,66,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,loaded/gated/invoked,28,28,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,loaded/gated/candidates,4,4,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,loaded/always/offered,198,198,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,loaded/always/invoked,0,0,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,loaded/always/candidates,25,25,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,loaded/swept/rule,22,22,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,loaded/swept/gated,3,3,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,loaded/swept/always,1,1,lab/reports/analysis/gen_diagram_data.py
+figures-diagrams.json,setup/max_corrections,3,3,lab/reports/analysis/gen_diagram_data.py
+figures-results.json,headline/A/a,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/A/b,97.0,97.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/A/diff,97.0,97.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/A/lo,91.0,91.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/A/hi,100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/A/p,9.999000099990002e-05,9.999000099990002e-05,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/A/cells,20,20,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/A/runs/R1[0],0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/A/runs/R1[1],100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/A/runs/R2[0],0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/A/runs/R2[1],96.0,96.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/A/runs/R3[0],0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/A/runs/R3[1],100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/A/runs/R4[0],0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/A/runs/R4[1],92.0,92.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/A/holm,0.00039996000399960006,0.00039996000399960006,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/B/a,25.8,25.8,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/B/b,79.2,79.2,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/B/diff,53.3,53.3,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/B/lo,17.5,17.5,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/B/hi,88.3,88.3,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/B/p,9.999000099990002e-05,9.999000099990002e-05,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/B/cells,24,24,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/B/runs/R1[0],26.7,26.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/B/runs/R1[1],90.0,90.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/B/runs/R2[0],23.3,23.3,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/B/runs/R2[1],100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/B/runs/R3[0],26.7,26.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/B/runs/R3[1],26.7,26.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/B/runs/R4[0],26.7,26.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/B/runs/R4[1],100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/B/holm,0.00039996000399960006,0.00039996000399960006,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/C/a,1.7,1.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/C/b,51.7,51.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/C/diff,50.0,50.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/C/lo,25.0,25.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/C/hi,73.3,73.3,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/C/p,9.999000099990002e-05,9.999000099990002e-05,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/C/cells,24,24,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/C/runs/R1[0],0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/C/runs/R1[1],70.0,70.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/C/runs/R2[0],3.3,3.3,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/C/runs/R2[1],56.7,56.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/C/runs/R3[0],3.3,3.3,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/C/runs/R3[1],40.0,40.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/C/runs/R4[0],0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/C/runs/R4[1],40.0,40.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/C/holm,0.00039996000399960006,0.00039996000399960006,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/D/a,100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/D/b,99.2,99.2,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/D/diff,-0.8,-0.8,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/D/lo,-5.0,-5.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/D/hi,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/D/p,1.0,1.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/D/cells,24,24,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/D/runs/R1[0],100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/D/runs/R1[1],100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/D/runs/R2[0],100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/D/runs/R2[1],96.7,96.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/D/runs/R3[0],100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/D/runs/R3[1],100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/D/runs/R4[0],100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/D/runs/R4[1],100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/E/a,55.0,55.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/E/b,81.7,81.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/E/diff,26.7,26.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/E/lo,1.7,1.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/E/hi,60.0,60.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/E/p,9.999000099990002e-05,9.999000099990002e-05,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/E/cells,24,24,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/E/runs/R1[0],56.7,56.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/E/runs/R1[1],90.0,90.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/E/runs/R2[0],56.7,56.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/E/runs/R2[1],93.3,93.3,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/E/runs/R3[0],56.7,56.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/E/runs/R3[1],50.0,50.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/E/runs/R4[0],50.0,50.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/E/runs/R4[1],93.3,93.3,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/E/holm,0.00039996000399960006,0.00039996000399960006,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/pool/a,21.5,21.5,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/pool/b,76.5,76.5,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/pool/diff,55.0,55.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/pool/lo,34.1,34.1,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/pool/hi,74.1,74.1,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/pool/p,9.999000099990002e-05,9.999000099990002e-05,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/pool/cells,92,92,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/pool/runs/R1[0],21.7,21.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/pool/runs/R1[1],87.0,87.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/pool/runs/R2[0],21.7,21.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/pool/runs/R2[1],86.1,86.1,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/pool/runs/R3[0],22.6,22.6,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/pool/runs/R3[1],52.2,52.2,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/pool/runs/R4[0],20.0,20.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,headline/pool/runs/R4[1],80.9,80.9,lab/reports/analysis/gen_results_data.py
+figures-results.json,aa/diff,-3.3,-3.3,lab/reports/analysis/gen_results_data.py
+figures-results.json,aa/lo,-7.3,-7.3,lab/reports/analysis/gen_results_data.py
+figures-results.json,aa/hi,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[0]/evolved,87.5,87.5,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[0]/rate,20.8,20.8,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[0]/diff,-66.7,-66.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[0]/lo,-80.8,-80.8,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[0]/hi,-51.7,-51.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[0]/chars,559,559,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[0]/evolved_chars,559,559,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[1]/evolved,87.5,87.5,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[1]/rate,16.7,16.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[1]/diff,-70.8,-70.8,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[1]/lo,-85.8,-85.8,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[1]/hi,-55.0,-55.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[1]/chars,559,559,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[1]/evolved_chars,559,559,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[2]/evolved,87.5,87.5,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[2]/rate,76.4,76.4,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[2]/diff,-11.1,-11.1,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[2]/lo,-22.5,-22.5,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[2]/hi,-0.0,-0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[2]/chars,2519,2519,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[2]/evolved_chars,559,559,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[3]/evolved,87.5,87.5,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[3]/rate,48.6,48.6,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[3]/diff,-38.9,-38.9,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[3]/lo,-58.1,-58.1,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[3]/hi,-20.0,-20.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[3]/chars,728,728,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[3]/evolved_chars,559,559,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[4]/evolved,87.5,87.5,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[4]/rate,75.0,75.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[4]/diff,-12.5,-12.5,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[4]/lo,-28.3,-28.3,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[4]/hi,1.7,1.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[4]/chars,1688,1688,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[4]/evolved_chars,559,559,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[5]/evolved,87.5,87.5,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[5]/rate,73.6,73.6,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[5]/diff,-13.9,-13.9,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[5]/lo,-28.9,-28.9,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[5]/hi,-0.0,-0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[5]/chars,559,559,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[5]/evolved_chars,559,559,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[6]/evolved,86.7,86.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[6]/rate,77.8,77.8,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[6]/diff,-8.9,-8.9,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[6]/lo,-16.1,-16.1,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[6]/hi,-1.7,-1.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[6]/chars,559,559,lab/reports/analysis/gen_results_data.py
+figures-results.json,ablations[6]/evolved_chars,559,559,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak/a,20.8,20.8,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak/b,87.5,87.5,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak/diff,66.7,66.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak/lo,51.7,51.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak/hi,80.8,80.8,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak/p,9.999000099990002e-05,9.999000099990002e-05,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak/cells,24,24,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak/runs/R1[0],20.8,20.8,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak/runs/R1[1],87.5,87.5,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong/a,88.9,88.9,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong/b,94.4,94.4,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong/diff,5.6,5.6,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong/lo,-2.8,-2.8,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong/hi,13.9,13.9,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong/p,0.30226977302269775,0.30226977302269775,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong/cells,24,24,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong/runs/M1[0],88.9,88.9,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong/runs/M1[1],94.4,94.4,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/A/a,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/A/b,100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/A/diff,100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/A/lo,100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/A/hi,100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/A/p,9.999000099990002e-05,9.999000099990002e-05,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/A/cells,6,6,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/A/runs/R1[0],0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/A/runs/R1[1],100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/B/a,26.7,26.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/B/b,90.0,90.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/B/diff,63.3,63.3,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/B/lo,36.7,36.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/B/hi,86.7,86.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/B/p,9.999000099990002e-05,9.999000099990002e-05,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/B/cells,6,6,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/B/runs/R1[0],26.7,26.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/B/runs/R1[1],90.0,90.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/C/a,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/C/b,70.0,70.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/C/diff,70.0,70.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/C/lo,50.0,50.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/C/hi,90.0,90.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/C/p,9.999000099990002e-05,9.999000099990002e-05,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/C/cells,6,6,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/C/runs/R1[0],0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/C/runs/R1[1],70.0,70.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/D/a,100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/D/b,100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/D/diff,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/D/lo,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/D/hi,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/D/p,1.0,1.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/D/cells,6,6,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/D/runs/R1[0],100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/D/runs/R1[1],100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/E/a,56.7,56.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/E/b,90.0,90.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/E/diff,33.3,33.3,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/E/lo,6.7,6.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/E/hi,66.7,66.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/E/p,0.00019998000199980003,0.00019998000199980003,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/E/cells,6,6,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/E/runs/R1[0],56.7,56.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/weak_by_family/E/runs/R1[1],90.0,90.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/A/a,94.4,94.4,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/A/b,100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/A/diff,5.6,5.6,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/A/lo,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/A/hi,16.7,16.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/A/p,1.0,1.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/A/cells,6,6,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/A/runs/M1[0],94.4,94.4,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/A/runs/M1[1],100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/B/a,100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/B/b,100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/B/diff,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/B/lo,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/B/hi,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/B/p,1.0,1.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/B/cells,6,6,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/B/runs/M1[0],100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/B/runs/M1[1],100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/C/a,77.8,77.8,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/C/b,88.9,88.9,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/C/diff,11.1,11.1,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/C/lo,-11.1,-11.1,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/C/hi,38.9,38.9,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/C/p,0.6086391360863913,0.6086391360863913,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/C/cells,6,6,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/C/runs/M1[0],77.8,77.8,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/C/runs/M1[1],88.9,88.9,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/D/a,100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/D/b,100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/D/diff,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/D/lo,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/D/hi,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/D/p,1.0,1.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/D/cells,6,6,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/D/runs/M1[0],100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/D/runs/M1[1],100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/E/a,83.3,83.3,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/E/b,88.9,88.9,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/E/diff,5.6,5.6,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/E/lo,-11.1,-11.1,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/E/hi,22.2,22.2,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/E/p,1.0,1.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/E/cells,6,6,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/E/runs/M1[0],83.3,83.3,lab/reports/analysis/gen_results_data.py
+figures-results.json,model/strong_by_family/E/runs/M1[1],88.9,88.9,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/B/none/rule,85,85,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/B/none/n,120,120,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/B/none/pass,31,31,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/B/none/test,4,4,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/B/none/failed_pct,74,74,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/B/evolved/pass,95,95,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/B/evolved/n,120,120,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/B/evolved/rule,25,25,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/B/evolved/failed_pct,21,21,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/D/none/pass,120,120,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/D/none/n,120,120,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/D/none/failed_pct,0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/D/evolved/pass,119,119,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/D/evolved/n,120,120,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/D/evolved/test,1,1,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/D/evolved/failed_pct,1,1,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/A/none/rule,98,98,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/A/none/n,100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/A/none/test,2,2,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/A/none/pass,0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/A/none/failed_pct,100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/A/evolved/pass,97,97,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/A/evolved/n,100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/A/evolved/rule,2,2,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/A/evolved/test,1,1,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/A/evolved/failed_pct,3,3,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/C/none/rule,108,108,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/C/none/n,120,120,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/C/none/tampered,7,7,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/C/none/test,3,3,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/C/none/pass,2,2,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/C/none/failed_pct,98,98,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/C/evolved/rule,43,43,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/C/evolved/n,120,120,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/C/evolved/pass,62,62,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/C/evolved/test,7,7,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/C/evolved/tampered,8,8,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/C/evolved/failed_pct,48,48,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/E/none/pass,66,66,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/E/none/n,120,120,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/E/none/rule,50,50,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/E/none/tampered,2,2,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/E/none/test,2,2,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/E/none/failed_pct,45,45,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/E/evolved/pass,98,98,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/E/evolved/n,120,120,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/E/evolved/tampered,5,5,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/E/evolved/rule,16,16,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/E/evolved/test,1,1,lab/reports/analysis/gen_results_data.py
+figures-results.json,failures/E/evolved/failed_pct,18,18,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R1/A/loaded,25,25,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R1/A/n,25,25,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R1/A/gain,100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R1/B/loaded,28,28,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R1/B/n,30,30,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R1/B/gain,63.3,63.3,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R1/C/loaded,30,30,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R1/C/n,30,30,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R1/C/gain,70.0,70.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R1/E/loaded,29,29,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R1/E/n,30,30,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R1/E/gain,33.3,33.3,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R2/A/loaded,25,25,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R2/A/n,25,25,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R2/A/gain,96.0,96.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R2/B/loaded,30,30,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R2/B/n,30,30,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R2/B/gain,76.7,76.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R2/C/loaded,30,30,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R2/C/n,30,30,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R2/C/gain,53.3,53.3,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R2/E/loaded,27,27,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R2/E/n,30,30,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R2/E/gain,36.7,36.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R3/A/loaded,25,25,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R3/A/n,25,25,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R3/A/gain,100.0,100.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R3/B/loaded,0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R3/B/n,30,30,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R3/B/gain,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R3/C/loaded,30,30,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R3/C/n,30,30,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R3/C/gain,36.7,36.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R3/E/loaded,10,10,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R3/E/n,30,30,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R3/E/gain,-6.7,-6.7,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R4/A/loaded,25,25,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R4/A/n,25,25,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R4/A/gain,92.0,92.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R4/B/loaded,30,30,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R4/B/n,30,30,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R4/B/gain,73.3,73.3,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R4/C/loaded,26,26,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R4/C/n,30,30,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R4/C/gain,40.0,40.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R4/E/loaded,27,27,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R4/E/n,30,30,lab/reports/analysis/gen_results_data.py
+figures-results.json,kept_grid/R4/E/gain,43.3,43.3,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[0]/net,9,9,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[0]/drop,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[1]/net,7,7,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[1]/drop,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[2]/net,6,6,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[2]/drop,0.333,0.333,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[3]/net,4,4,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[3]/drop,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[4]/net,5,5,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[4]/drop,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[5]/net,6,6,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[5]/drop,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[6]/net,8,8,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[6]/drop,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[7]/net,6,6,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[7]/drop,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[8]/net,5,5,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[8]/drop,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[9]/net,9,9,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[9]/drop,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[10]/net,7,7,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[10]/drop,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[11]/net,1,1,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[11]/drop,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[12]/net,4,4,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[12]/drop,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[13]/net,8,8,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[13]/drop,0.333,0.333,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[14]/net,7,7,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[14]/drop,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[15]/net,2,2,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[15]/drop,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[16]/net,-4,-4,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[16]/drop,0.667,0.667,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[17]/net,15,15,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[17]/drop,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[18]/net,9,9,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[18]/drop,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[19]/net,5,5,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[19]/drop,0.0,0.0,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[20]/net,6,6,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[20]/drop,0.333,0.333,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[21]/net,7,7,lab/reports/analysis/gen_results_data.py
+figures-results.json,confirm_sweeps[21]/drop,0.333,0.333,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[0]/cells[0],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[0]/cells[1],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[0]/cells[2],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[0]/cells[3],80,80,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[0]/cells[4],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[0]/cells[5],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[0]/cells[6],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[0]/cells[7],80,80,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[0]/cells[8],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[0]/cells[9],67,67,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[0]/cells[10],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[0]/cells[11],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[0]/cells[12],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[0]/cells[13],33,33,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[1]/cells[0],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[1]/cells[1],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[1]/cells[2],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[1]/cells[3],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[1]/cells[4],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[1]/cells[5],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[1]/cells[6],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[1]/cells[7],80,80,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[1]/cells[8],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[1]/cells[9],67,67,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[1]/cells[10],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[1]/cells[11],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[1]/cells[12],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[1]/cells[13],67,67,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[2]/cells[0],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[2]/cells[1],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[2]/cells[2],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[2]/cells[3],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[2]/cells[4],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[2]/cells[5],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[2]/cells[6],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[2]/cells[7],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[2]/cells[8],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[2]/cells[9],33,33,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[2]/cells[10],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[2]/cells[11],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[2]/cells[12],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[2]/cells[13],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[3]/cells[0],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[3]/cells[1],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[3]/cells[2],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[3]/cells[3],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[3]/cells[4],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[3]/cells[5],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[3]/cells[6],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[3]/cells[7],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[3]/cells[8],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[3]/cells[9],67,67,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[3]/cells[10],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[3]/cells[11],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[3]/cells[12],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[3]/cells[13],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[4]/cells[0],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[4]/cells[1],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[4]/cells[2],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[4]/cells[3],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[4]/cells[4],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[4]/cells[5],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[4]/cells[6],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[4]/cells[7],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[4]/cells[8],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[4]/cells[9],67,67,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[4]/cells[10],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[4]/cells[11],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[4]/cells[12],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[4]/cells[13],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[5]/cells[0],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[5]/cells[1],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[5]/cells[2],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[5]/cells[3],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[5]/cells[4],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[5]/cells[5],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[5]/cells[8],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[5]/cells[9],33,33,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[5]/cells[10],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[5]/cells[11],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[5]/cells[12],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[5]/cells[13],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[6]/cells[0],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[6]/cells[1],60,60,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[6]/cells[2],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[6]/cells[3],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[6]/cells[4],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[6]/cells[5],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[6]/cells[6],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[6]/cells[7],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[6]/cells[8],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[6]/cells[9],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[6]/cells[10],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[6]/cells[11],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[6]/cells[12],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[6]/cells[13],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[7]/cells[0],40,40,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[7]/cells[1],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[7]/cells[2],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[7]/cells[3],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[7]/cells[4],40,40,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[7]/cells[5],40,40,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[7]/cells[6],40,40,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[7]/cells[7],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[7]/cells[8],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[7]/cells[9],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[7]/cells[10],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[7]/cells[11],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[7]/cells[12],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[7]/cells[13],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[8]/cells[0],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[8]/cells[1],80,80,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[8]/cells[2],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[8]/cells[3],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[8]/cells[4],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[8]/cells[5],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[8]/cells[6],20,20,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[8]/cells[7],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[8]/cells[8],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[8]/cells[9],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[8]/cells[10],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[8]/cells[11],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[8]/cells[12],67,67,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[8]/cells[13],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[9]/cells[0],20,20,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[9]/cells[1],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[9]/cells[2],20,20,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[9]/cells[3],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[9]/cells[4],20,20,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[9]/cells[5],20,20,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[9]/cells[6],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[9]/cells[7],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[9]/cells[8],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[9]/cells[9],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[9]/cells[10],33,33,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[9]/cells[11],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[9]/cells[12],67,67,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[9]/cells[13],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[10]/cells[0],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[10]/cells[1],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[10]/cells[2],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[10]/cells[3],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[10]/cells[4],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[10]/cells[5],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[10]/cells[6],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[10]/cells[7],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[10]/cells[8],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[10]/cells[9],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[10]/cells[10],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[10]/cells[11],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[10]/cells[12],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[10]/cells[13],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[11]/cells[0],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[11]/cells[1],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[11]/cells[2],20,20,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[11]/cells[3],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[11]/cells[4],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[11]/cells[5],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[11]/cells[6],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[11]/cells[7],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[11]/cells[8],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[11]/cells[9],67,67,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[11]/cells[10],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[11]/cells[11],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[11]/cells[12],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[11]/cells[13],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[12]/cells[0],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[12]/cells[1],40,40,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[12]/cells[2],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[12]/cells[3],60,60,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[12]/cells[4],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[12]/cells[5],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[12]/cells[6],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[12]/cells[7],20,20,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[12]/cells[8],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[12]/cells[9],33,33,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[12]/cells[10],33,33,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[12]/cells[11],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[12]/cells[12],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[12]/cells[13],33,33,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[13]/cells[0],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[13]/cells[1],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[13]/cells[2],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[13]/cells[3],60,60,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[13]/cells[4],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[13]/cells[5],40,40,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[13]/cells[6],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[13]/cells[7],60,60,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[13]/cells[8],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[13]/cells[9],67,67,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[13]/cells[10],33,33,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[13]/cells[11],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[13]/cells[12],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[13]/cells[13],33,33,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[14]/cells[0],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[14]/cells[1],80,80,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[14]/cells[2],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[14]/cells[3],60,60,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[14]/cells[4],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[14]/cells[5],20,20,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[14]/cells[6],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[14]/cells[7],60,60,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[14]/cells[8],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[14]/cells[9],67,67,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[14]/cells[10],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[14]/cells[11],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[14]/cells[12],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[14]/cells[13],33,33,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[15]/cells[0],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[15]/cells[1],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[15]/cells[2],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[15]/cells[3],80,80,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[15]/cells[4],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[15]/cells[5],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[15]/cells[6],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[15]/cells[7],80,80,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[15]/cells[8],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[15]/cells[9],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[15]/cells[10],67,67,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[15]/cells[11],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[15]/cells[12],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[15]/cells[13],67,67,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[16]/cells[0],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[16]/cells[1],60,60,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[16]/cells[2],20,20,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[16]/cells[3],80,80,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[16]/cells[4],20,20,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[16]/cells[5],80,80,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[16]/cells[6],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[16]/cells[7],20,20,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[16]/cells[8],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[16]/cells[9],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[16]/cells[10],33,33,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[16]/cells[11],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[16]/cells[12],67,67,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[16]/cells[13],67,67,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[17]/cells[0],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[17]/cells[1],40,40,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[17]/cells[2],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[17]/cells[3],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[17]/cells[4],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[17]/cells[5],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[17]/cells[6],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[17]/cells[7],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[17]/cells[8],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[17]/cells[9],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[17]/cells[10],33,33,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[17]/cells[11],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[17]/cells[12],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[17]/cells[13],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[18]/cells[0],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[18]/cells[1],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[18]/cells[2],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[18]/cells[3],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[18]/cells[4],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[18]/cells[5],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[18]/cells[6],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[18]/cells[7],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[18]/cells[8],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[18]/cells[9],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[18]/cells[10],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[18]/cells[11],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[18]/cells[12],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[18]/cells[13],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[19]/cells[0],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[19]/cells[1],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[19]/cells[2],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[19]/cells[3],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[19]/cells[4],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[19]/cells[5],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[19]/cells[6],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[19]/cells[7],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[19]/cells[8],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[19]/cells[9],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[19]/cells[10],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[19]/cells[11],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[19]/cells[12],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[19]/cells[13],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[20]/cells[0],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[20]/cells[1],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[20]/cells[2],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[20]/cells[3],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[20]/cells[4],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[20]/cells[5],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[20]/cells[6],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[20]/cells[7],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[20]/cells[8],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[20]/cells[9],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[20]/cells[10],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[20]/cells[11],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[20]/cells[12],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[20]/cells[13],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[21]/cells[0],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[21]/cells[1],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[21]/cells[2],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[21]/cells[3],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[21]/cells[4],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[21]/cells[5],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[21]/cells[6],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[21]/cells[7],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[21]/cells[8],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[21]/cells[9],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[21]/cells[10],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[21]/cells[11],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[21]/cells[12],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[21]/cells[13],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[22]/cells[0],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[22]/cells[1],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[22]/cells[2],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[22]/cells[3],80,80,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[22]/cells[4],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[22]/cells[5],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[22]/cells[6],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[22]/cells[7],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[22]/cells[8],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[22]/cells[9],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[22]/cells[10],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[22]/cells[11],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[22]/cells[12],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[22]/cells[13],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[23]/cells[0],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[23]/cells[1],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[23]/cells[2],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[23]/cells[3],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[23]/cells[4],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[23]/cells[5],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[23]/cells[6],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[23]/cells[7],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[23]/cells[8],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[23]/cells[9],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[23]/cells[10],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[23]/cells[11],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[23]/cells[12],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[23]/cells[13],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[24]/cells[0],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[24]/cells[1],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[24]/cells[2],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[24]/cells[3],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[24]/cells[4],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[24]/cells[5],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[24]/cells[6],80,80,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[24]/cells[7],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[24]/cells[8],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[24]/cells[9],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[24]/cells[10],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[24]/cells[11],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[24]/cells[12],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[24]/cells[13],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[25]/cells[0],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[25]/cells[1],40,40,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[25]/cells[2],20,20,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[25]/cells[3],60,60,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[25]/cells[4],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[25]/cells[5],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[25]/cells[6],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[25]/cells[7],80,80,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[25]/cells[8],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[25]/cells[9],67,67,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[25]/cells[10],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[25]/cells[11],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[25]/cells[12],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[25]/cells[13],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[26]/cells[0],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[26]/cells[1],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[26]/cells[2],80,80,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[26]/cells[3],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[26]/cells[4],80,80,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[26]/cells[5],80,80,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[26]/cells[6],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[26]/cells[7],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[26]/cells[8],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[26]/cells[9],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[26]/cells[10],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[26]/cells[11],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[26]/cells[12],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[26]/cells[13],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[27]/cells[0],40,40,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[27]/cells[1],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[27]/cells[2],40,40,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[27]/cells[3],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[27]/cells[4],60,60,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[27]/cells[5],20,20,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[27]/cells[6],20,20,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[27]/cells[7],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[27]/cells[8],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[27]/cells[9],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[27]/cells[10],33,33,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[27]/cells[11],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[27]/cells[12],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[27]/cells[13],67,67,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[28]/cells[0],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[28]/cells[1],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[28]/cells[2],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[28]/cells[3],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[28]/cells[4],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[28]/cells[5],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[28]/cells[6],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[28]/cells[7],80,80,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[28]/cells[8],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[28]/cells[9],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[28]/cells[10],0,0,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[28]/cells[11],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[28]/cells[12],67,67,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[28]/cells[13],67,67,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[29]/cells[0],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[29]/cells[1],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[29]/cells[2],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[29]/cells[3],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[29]/cells[4],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[29]/cells[5],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[29]/cells[6],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[29]/cells[7],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[29]/cells[8],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[29]/cells[9],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[29]/cells[10],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[29]/cells[11],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[29]/cells[12],100,100,lab/reports/analysis/gen_results_data.py
+figures-results.json,heatmap/rows[29]/cells[13],100,100,lab/reports/analysis/gen_results_data.py

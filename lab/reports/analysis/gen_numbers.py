@@ -60,7 +60,7 @@ def main():
     cards = json.loads((DATA / "scorecard.json").read_text())
     cards = {c["id"]: c for c in (cards if isinstance(cards, list) else cards.get("hypotheses", []))}
     spend = json.loads((DATA / "spend.json").read_text())
-    M = {}
+    M = paper_data.Numbers("gen_numbers.py")
 
     # the primary result
     h1 = cards["H1"]
@@ -89,7 +89,7 @@ def main():
     h5 = cards["H5"]
     m = need(r"false KEEP (\d+)/(\d+); harmful kept (\d+)/(\d+) \(score.sh: (\d+) KILL, (\d+) RERUN\); "
              r"positives kept (\d+)/(\d+)", h5["estimate"], "H5")
-    (M["PlaceboKept"], M["Placebos"], _harmful_kept, M["Harmful"], h5_kill, h5_rerun,
+    (M["PlaceboKept"], M["Placebos"], M["HarmfulKept"], M["Harmful"], h5_kill, h5_rerun,
      M["PositivesKept"], M["Positives"]) = m.groups()
     M["PlaceboUpper"] = interval(h5["interval"])[1] + r"\%"
     h6 = cards["H6"]
@@ -168,9 +168,10 @@ def main():
     items_ev = [i for i in d.items if i["run"] in ev]
     M["LoopWritten"] = str(len(items_ev))
     M["LoopSwept"] = str(len(cs))
+    M["LoopKept"] = str(sum(1 for c in cs if c["verdict"] == "KEEP"))
     M["LoopKilled"] = str(sum(1 for c in cs if c["verdict"] == "KILL"))
     M["LoopUnscored"] = str(sum(1 for c in cs if c["verdict"] == "RERUN" and c["recorded"] == "buried"))
-    if sum(1 for c in cs if c["verdict"] == "KEEP") != len(kept):
+    if int(M["LoopKept"]) != len(kept):
         raise SystemExit("gen_numbers.py: the rules and the loop disagree on what was kept")
     ex = next(c for c in cs if (c["run"], c["name"]) == ("R3", "exporter-checklist-v2"))
     ex_conf = next(x for x in ex["sweeps"] if x["phase"] == "confirm")
@@ -303,6 +304,8 @@ def main():
 
     # scale and cost
     M["EvalRuns"] = str(len(ev))
+    # the lab's task families, and those built around a house rule (the text says them in words)
+    M["Families"], M["RuleFamilies"] = str(len(load.FAMILIES)), str(len(load.RULE_FAMILIES))
     M["HoldoutTasks"] = str(len({r["task"] for r in d.bench(runs=ev, split="holdout")}))
     M["TrainTasks"] = str(len({r["task"] for r in d.bench(runs=ev, split="train")}))
     M["Rollouts"] = f"{len(d.rollouts):,}".replace(",", "{,}")
@@ -940,6 +943,8 @@ def results(d, M, cards, ev, gates_all, sessions, at_tag):
     if xruns != {xtr["run"]} or not xtr["base"].startswith(M["SecondRepoBase"]) or not xtr["cycles"]:
         stop("the second repository's training rows are not the benchmark's run and commit, or hold no cycle")
     M["ExtTasks"], M["ExtLessons"] = str(xtr["tasks"]), str(xtr["lessons"])
+    # what the loop did with them: its cycles, and the items it kept (the text says "nothing")
+    M["ExtCycles"], M["ExtKept"] = str(len(xtr["cycles"])), str(xtr["kept"])
     M["ExtFirstTime"] = str(sum(1 for x in xtr["sessions"] if x["verdicts"] == ["ok"]))
     if len(xtr["sessions"]) != xtr["tasks"] or M["ExtLessons"] != "1":
         stop("the second repository's sessions did not each leave a task, or its single lesson is not one")

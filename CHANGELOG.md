@@ -9,10 +9,31 @@ and each release is the git tag `v<version>`.
 Two older tags name a role instead of a version: `v1.0-eval` is the Cortex that every
 evaluation run used, and `v1.0-paper` is the first public release, 1.0.0.
 
+## [1.0.5] - 2026-10-05
+
+The tool measures and decides exactly as in 1.0.4, and no measured number changed. This
+release is the one the paper cites.
+
+### Added
+
+- `NUMBERS.csv`, at the top of the repository: one row per value the paper prints, in its
+  text, its tables and its figures, with the script that computes it (and, for a number
+  of the text, the line). It is rebuilt from `lab/reports/paper-data/` by the scripts that
+  write that folder.
+- Six rows for facts the paper states in words: the task families and the rule families,
+  the KEEP verdicts of the loop, the harmful candidates kept, and the cycles and kept
+  items on the second repository.
+- The share of rollouts that failed, which the chart of failures prints beside each bar,
+  is part of `figures-results.json`.
+
+### Changed
+
+- `lab/reports/paper-data/numbers.csv` gives, for each number, the line of
+  `gen_numbers.py` that computes it.
+
 ## [1.0.4] - 2026-10-05
 
-The tool measures and decides exactly as in 1.0.3, and no measured number changed. This
-release is the one the paper cites.
+The tool measures and decides exactly as in 1.0.3, and no measured number changed.
 
 ### Added
 

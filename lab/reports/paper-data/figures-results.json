@@ -479,23 +479,27 @@
     "rule": 85,
     "n": 120,
     "pass": 31,
-    "test": 4
+    "test": 4,
+    "failed_pct": 74
    },
    "evolved": {
     "pass": 95,
     "n": 120,
-    "rule": 25
+    "rule": 25,
+    "failed_pct": 21
    }
   },
   "D": {
    "none": {
     "pass": 120,
-    "n": 120
+    "n": 120,
+    "failed_pct": 0
    },
    "evolved": {
     "pass": 119,
     "n": 120,
-    "test": 1
+    "test": 1,
+    "failed_pct": 1
    }
   },
   "A": {
@@ -503,13 +507,15 @@
     "rule": 98,
     "n": 100,
     "test": 2,
-    "pass": 0
+    "pass": 0,
+    "failed_pct": 100
    },
    "evolved": {
     "pass": 97,
     "n": 100,
     "rule": 2,
-    "test": 1
+    "test": 1,
+    "failed_pct": 3
    }
   },
   "C": {
@@ -518,14 +524,16 @@
     "n": 120,
     "tampered": 7,
     "test": 3,
-    "pass": 2
+    "pass": 2,
+    "failed_pct": 98
    },
    "evolved": {
     "rule": 43,
     "n": 120,
     "pass": 62,
     "test": 7,
-    "tampered": 8
+    "tampered": 8,
+    "failed_pct": 48
    }
   },
   "E": {
@@ -534,14 +542,16 @@
     "n": 120,
     "rule": 50,
     "tampered": 2,
-    "test": 2
+    "test": 2,
+    "failed_pct": 45
    },
    "evolved": {
     "pass": 98,
     "n": 120,
     "tampered": 5,
     "rule": 16,
-    "test": 1
+    "test": 1,
+    "failed_pct": 18
    }
   }
  },

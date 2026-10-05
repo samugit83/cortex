@@ -149,6 +149,10 @@ def main():
             if abs(100 * fails[f][arm]["pass"] / fails[f][arm]["n"] - head[f][i]) > 0.051:
                 raise SystemExit(f"gen_results_data.py: family {f}'s passes are not the headline's")
     R["failures"] = {f: {a: dict(v) for a, v in arms.items()} for f, arms in fails.items()}
+    # the share that failed, which the chart prints at the right of each bar
+    for arms in R["failures"].values():
+        for v in arms.values():
+            v["failed_pct"] = int(100 * (v["n"] - v.get("pass", 0)) / v["n"] + 0.5)
 
     # ---- what each run kept, and whether it reached the held-out tasks ------------------
     fam_of = {(r["run"], r["name"]): r["family"] for r in
