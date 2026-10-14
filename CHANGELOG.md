@@ -9,6 +9,14 @@ and each release is the git tag `v<version>`.
 Two older tags name a role instead of a version: `v1.0-eval` is the Cortex that every
 evaluation run used, and `v1.0-paper` is the first public release, 1.0.0.
 
+## [Unreleased]
+
+### Changed
+
+- The paper is out: [arXiv:2610.14216](https://arxiv.org/abs/2610.14216). The README links and cites it,
+  `CITATION.cff` gives it as the preferred citation, and `lab/reports/REPRODUCE.md`
+  and the visual guides in `diagram/` link it. Nothing the paper depends on changed.
+
 ## [1.0.5] - 2026-10-05
 
 The tool measures and decides exactly as in 1.0.4, and no measured number changed. This

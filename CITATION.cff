@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 title: "Cortex: a measured loop for agent context, and the lab that tests it"
-message: "If you use this software or its data, please cite it."
+message: "If you use this software or its data, please cite the paper given as preferred-citation."
 type: software
 authors:
   - family-names: Giampieri
@@ -18,6 +18,21 @@ abstract: >-
   every number in lab/reports/REPORT.md. The gates contain no model of any kind, by design; a
   calibrated judge is confined to the proposal layer and every primary number in
   the report was produced with it switched off.
+preferred-citation:
+  type: article
+  title: "Cortex: Measurement-Gated Evolution and Pruning of Coding-Agent Skills and Rules"
+  authors:
+    - family-names: Giampieri
+      given-names: Samuele
+  journal: "arXiv preprint"
+  year: 2026
+  month: 10
+  doi: "10.48550/arXiv.2610.14216"
+  url: "https://arxiv.org/abs/2610.14216"
+  identifiers:
+    - type: other
+      value: "arXiv:2610.14216"
+      description: "The paper's arXiv identifier"
 keywords:
   - llm-agents
   - context-engineering

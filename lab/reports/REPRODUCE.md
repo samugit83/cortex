@@ -2,6 +2,9 @@
 
 Written for someone who has never seen this project.
 
+The paper this lab supports is [arXiv:2610.14216](https://arxiv.org/abs/2610.14216). Every value it prints is a row of
+[`NUMBERS.csv`](../../NUMBERS.csv), at the top of the repository.
+
 There are three levels, and they cost very different things. **Level 1 needs no API
 key, no network and no Cortex** — it rebuilds every number, table and figure in the
 report from the shipped rows. It is the level most readers want, and it is the one

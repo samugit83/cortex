@@ -10,7 +10,9 @@
 <b><a href="https://samugit83.github.io/cortex/diagram/timeline.html">Why tasks rewind</a></b> &nbsp;·&nbsp;
 <b><a href="https://samugit83.github.io/cortex/diagram/lab.html">Does it work? The lab, step by step</a></b>
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![Claude Code](https://img.shields.io/badge/Claude%20Code-%E2%89%A5%202.1.276-d97757.svg)](#requirements) [![Cite](https://img.shields.io/badge/cite-CITATION.cff-555.svg)](CITATION.cff)
+[![arXiv](https://img.shields.io/badge/arXiv-2610.14216-b31b1b.svg)](https://arxiv.org/abs/2610.14216) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![Claude Code](https://img.shields.io/badge/Claude%20Code-%E2%89%A5%202.1.276-d97757.svg)](#requirements) [![Cite](https://img.shields.io/badge/cite-CITATION.cff-555.svg)](CITATION.cff)
+
+**The paper:** [Cortex: Measurement-Gated Evolution and Pruning of Coding-Agent Skills and Rules](https://arxiv.org/abs/2610.14216) (arXiv:2610.14216)
 
 </div>
 
@@ -188,6 +190,7 @@ already sets `JEV_ENABLED=1`), then run `cortex doctor`.
 
 | Read | For |
 |---|---|
+| [**The paper**](https://arxiv.org/abs/2610.14216) | the study: how Cortex decides, how it was evaluated, and what the evaluation found (arXiv:2610.14216) |
 | [**docs/GUIDE.md**](docs/GUIDE.md) | the complete guide: each command step by step, tiers and routing, task anatomy, isolation, every `cortex score` field, the configuration reference |
 | [docs/THEORY.md](docs/THEORY.md) | why Cortex is built this way, principle by principle |
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | every known failure mode and its fix |
@@ -212,8 +215,23 @@ diagram/      the visual guides, as HTML pages (served by GitHub Pages)
 
 ## Citation
 
-If you use Cortex or its data, please cite it. GitHub's **Cite this repository**
-button reads [`CITATION.cff`](CITATION.cff).
+If you use Cortex or its data, please cite the paper, [arXiv:2610.14216](https://arxiv.org/abs/2610.14216):
+
+```bibtex
+@misc{giampieri2026cortex,
+  title         = {Cortex: Measurement-Gated Evolution and Pruning of Coding-Agent Skills and Rules},
+  author        = {Giampieri, Samuele},
+  year          = {2026},
+  eprint        = {2610.14216},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.SE},
+  doi           = {10.48550/arXiv.2610.14216},
+  url           = {https://arxiv.org/abs/2610.14216}
+}
+```
+
+GitHub's **Cite this repository** button gives the same reference: it reads
+[`CITATION.cff`](CITATION.cff).
 
 ## License
 
